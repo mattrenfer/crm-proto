@@ -20,11 +20,12 @@ export interface Task {
     updated_at: string;
 }
 
-export interface Note {
+interface Note {
     id: string;
     client_id: string;
     content: string;
     created_at: string;
+    updated_at: string;
 }
 
 export const MOCK_CLIENTS: Client[] = [
@@ -163,6 +164,7 @@ export const MOCK_NOTES: Note[] = [
         content:
             'Initial contact made. Client interested in web development project.',
         created_at: '2025-07-19T09:15:00Z',
+        updated_at: '2025-07-20T14:20:00Z',
     },
     {
         id: '2',
@@ -170,12 +172,14 @@ export const MOCK_NOTES: Note[] = [
         content:
             'Follow-up call scheduled for next week to discuss requirements.',
         created_at: '2025-07-19T15:30:00Z',
+        updated_at: '2025-07-21T14:20:00Z',
     },
     {
         id: '3',
         client_id: '2',
         content: 'Proposal sent. Waiting for feedback from stakeholders.',
         created_at: '2025-07-18T14:45:00Z',
+        updated_at: '2025-07-22T14:20:00Z',
     },
 ];
 

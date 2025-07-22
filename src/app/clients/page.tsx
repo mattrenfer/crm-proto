@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { MOCK_CLIENTS } from '@/lib/mockData'
 
 // Mock client type and data
 interface Client {
@@ -13,54 +14,6 @@ interface Client {
     created_at: string
     updated_at: string
 }
-
-const MOCK_CLIENTS: Client[] = [
-    {
-        id: '1',
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+1-555-0123',
-        company: 'Tech Solutions Inc.',
-        created_at: '2025-01-15T09:00:00Z',
-        updated_at: '2025-01-15T09:00:00Z'
-    },
-    {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane.smith@example.com',
-        phone: '+1-555-0124',
-        company: 'Marketing Pro',
-        created_at: '2025-01-16T10:30:00Z',
-        updated_at: '2025-01-16T10:30:00Z'
-    },
-    {
-        id: '3',
-        name: 'Bob Johnson',
-        email: 'bob.johnson@example.com',
-        phone: '+1-555-0125',
-        company: 'Design Studio',
-        created_at: '2025-01-17T14:15:00Z',
-        updated_at: '2025-01-17T14:15:00Z'
-    },
-    {
-        id: '4',
-        name: 'Sarah Wilson',
-        email: 'sarah.wilson@example.com',
-        phone: '+1-555-0126',
-        company: 'Wilson Consulting',
-        created_at: '2025-01-18T11:45:00Z',
-        updated_at: '2025-01-18T11:45:00Z'
-    },
-    {
-        id: '5',
-        name: 'Mike Chen',
-        email: 'mike.chen@startup.com',
-        phone: '+1-555-0127',
-        company: 'StartupXYZ',
-        created_at: '2025-01-19T16:20:00Z',
-        updated_at: '2025-01-19T16:20:00Z'
-    }
-]
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { MOCK_CLIENTS, MOCK_TASKS, MOCK_NOTES } from '@/lib/mockData'
 
 // Mock types and data
 interface Client {
@@ -34,77 +35,6 @@ interface Note {
     created_at: string
     updated_at: string
 }
-
-const MOCK_CLIENTS: Client[] = [
-    {
-        id: '1',
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+1-555-0123',
-        company: 'Tech Solutions Inc.',
-        created_at: '2025-01-15T09:00:00Z',
-        updated_at: '2025-01-15T09:00:00Z'
-    },
-    {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane.smith@example.com',
-        phone: '+1-555-0124',
-        company: 'Marketing Pro',
-        created_at: '2025-01-16T10:30:00Z',
-        updated_at: '2025-01-16T10:30:00Z'
-    },
-    {
-        id: '3',
-        name: 'Bob Johnson',
-        email: 'bob.johnson@example.com',
-        phone: '+1-555-0125',
-        company: 'Design Studio',
-        created_at: '2025-01-17T14:15:00Z',
-        updated_at: '2025-01-17T14:15:00Z'
-    }
-]
-
-const MOCK_TASKS: Task[] = [
-    {
-        id: '1',
-        client_id: '1',
-        title: 'Initial consultation',
-        description: 'Schedule and conduct initial project consultation with the client',
-        status: 'pending',
-        priority: 'high',
-        due_date: '2025-07-25',
-        created_at: '2025-07-19T09:00:00Z',
-        updated_at: '2025-07-19T09:00:00Z'
-    },
-    {
-        id: '2',
-        client_id: '1',
-        title: 'Follow-up meeting',
-        description: 'Schedule follow-up meeting to discuss project progress',
-        status: 'pending',
-        priority: 'low',
-        created_at: '2025-07-19T15:00:00Z',
-        updated_at: '2025-07-19T15:00:00Z'
-    }
-]
-
-const MOCK_NOTES: Note[] = [
-    {
-        id: '1',
-        client_id: '1',
-        content: 'Client is interested in a full website redesign. Prefers modern, minimalist design. Budget range: $10k-15k.',
-        created_at: '2025-07-19T09:30:00Z',
-        updated_at: '2025-07-19T09:30:00Z'
-    },
-    {
-        id: '2',
-        client_id: '1',
-        content: 'Follow-up call scheduled for next week. Client mentioned they want to include e-commerce functionality.',
-        created_at: '2025-07-19T14:15:00Z',
-        updated_at: '2025-07-19T14:15:00Z'
-    }
-]
 
 export default function ClientDetailPage() {
     const params = useParams()
@@ -290,8 +220,8 @@ export default function ClientDetailPage() {
                             <button
                                 onClick={() => setActiveTab('tasks')}
                                 className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'tasks'
-                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+                                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
                                     }`}
                             >
                                 Tasks ({tasks.length})
@@ -299,8 +229,8 @@ export default function ClientDetailPage() {
                             <button
                                 onClick={() => setActiveTab('notes')}
                                 className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'notes'
-                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+                                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
                                     }`}
                             >
                                 Notes ({notes.length})
@@ -433,14 +363,14 @@ export default function ClientDetailPage() {
                                                 )}
                                                 <div className="mt-2 flex items-center space-x-4 text-sm">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${task.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                                                            task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                                                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                                                        task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                                                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                                                         }`}>
                                                         {task.status.replace('_', ' ')}
                                                     </span>
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${task.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                                                            task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                                                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                                                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                                                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                                                         }`}>
                                                         {task.priority} priority
                                                     </span>

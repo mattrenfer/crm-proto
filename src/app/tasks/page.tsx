@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { MOCK_TASKS } from '@/lib/mockData'
+import { MOCK_CLIENTS } from '@/lib/mockData'
 
 // Mock types and data
 interface Client {
@@ -30,92 +32,6 @@ interface TaskWithClient extends Task {
     client: Pick<Client, 'id' | 'name'>
 }
 
-const MOCK_TASKS: TaskWithClient[] = [
-    {
-        id: '1',
-        client_id: '1',
-        title: 'Initial consultation',
-        description: 'Schedule and conduct initial project consultation with the client',
-        status: 'pending',
-        priority: 'high',
-        due_date: '2025-07-25',
-        created_at: '2025-07-19T09:00:00Z',
-        updated_at: '2025-07-19T09:00:00Z',
-        client: { id: '1', name: 'John Doe' }
-    },
-    {
-        id: '2',
-        client_id: '2',
-        title: 'Proposal review',
-        description: 'Review and finalize project proposal with stakeholders',
-        status: 'in_progress',
-        priority: 'medium',
-        due_date: '2025-07-30',
-        created_at: '2025-07-18T14:30:00Z',
-        updated_at: '2025-07-19T10:15:00Z',
-        client: { id: '2', name: 'Jane Smith' }
-    },
-    {
-        id: '3',
-        client_id: '3',
-        title: 'Design mockups',
-        description: 'Create initial design mockups for review and approval',
-        status: 'completed',
-        priority: 'medium',
-        due_date: '2025-07-20',
-        created_at: '2025-07-15T11:00:00Z',
-        updated_at: '2025-07-19T16:45:00Z',
-        client: { id: '3', name: 'Bob Johnson' }
-    },
-    {
-        id: '4',
-        client_id: '4',
-        title: 'Contract negotiation',
-        description: 'Finalize contract terms and pricing structure',
-        status: 'in_progress',
-        priority: 'high',
-        due_date: '2025-07-22',
-        created_at: '2025-07-17T13:20:00Z',
-        updated_at: '2025-07-19T09:30:00Z',
-        client: { id: '4', name: 'Sarah Wilson' }
-    },
-    {
-        id: '5',
-        client_id: '5',
-        title: 'Technical requirements gathering',
-        description: 'Collect detailed technical requirements and specifications',
-        status: 'pending',
-        priority: 'medium',
-        due_date: '2025-07-28',
-        created_at: '2025-07-19T08:45:00Z',
-        updated_at: '2025-07-19T08:45:00Z',
-        client: { id: '5', name: 'Mike Chen' }
-    },
-    {
-        id: '6',
-        client_id: '1',
-        title: 'Follow-up meeting',
-        description: 'Schedule follow-up meeting to discuss project progress',
-        status: 'pending',
-        priority: 'low',
-        created_at: '2025-07-19T15:00:00Z',
-        updated_at: '2025-07-19T15:00:00Z',
-        client: { id: '1', name: 'John Doe' }
-    },
-    {
-        id: '7',
-        client_id: '2',
-        title: 'Budget approval',
-        description: 'Get final budget approval from finance team',
-        status: 'completed',
-        priority: 'high',
-        due_date: '2025-07-21',
-        created_at: '2025-07-16T10:30:00Z',
-        updated_at: '2025-07-18T14:20:00Z',
-        client: { id: '2', name: 'Jane Smith' }
-    }
-]
-
 export default function TasksPage() {
     const [tasks, setTasks] = useState<TaskWithClient[]>([])
     const [loading, setLoading] = useState(true)
@@ -138,7 +54,18 @@ export default function TasksPage() {
         try {
             // Simulate loading and use mock data
             setTimeout(() => {
-                setTasks(MOCK_TASKS)
+                setTasks(
+                    MOCK_TASKS.map(task => {
+                        const client = MOCK_CLIENTS.find(c => c.id === task.client_id)
+                        return {
+                            ...task,
+                            client: {
+                                id: task.client_id,
+                                name: client ? client.name : `Client ${task.client_id}`
+                            }
+                        }
+                    })
+                )
                 setLoading(false)
             }, 300)
         } catch (error) {
