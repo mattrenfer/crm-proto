@@ -2,6 +2,8 @@
   "name": "crm-proto",
   "version": "0.1.0",
   "private": true,
+  "author": "Matt Renfer <mr.renfer@gmail.com>",
+  "description": "A simple Customer Relationship Management system built with Next.js, TypeScript, and Supabase",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

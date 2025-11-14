@@ -1,6 +1,8 @@
 # Simple CRM
 
-A simple Customer Relationship Management (CRM) system built with Next.js, TypeScript, Tailwind CSS, and Supabase.
+A Customer Relationship Management (CRM) system using modern web development with Next.js, TypeScript, Tailwind CSS, and Supabase.
+
+**Author**: Matt Renfer
 
 ## Features
 
@@ -29,7 +31,7 @@ A simple Customer Relationship Management (CRM) system built with Next.js, TypeS
 1. Clone the repository:
 
     ```bash
-    git clone <your-repo-url>
+    git clone https://github.com/yourusername/crm-proto.git
     cd crm-proto
     ```
 
@@ -126,10 +128,10 @@ This is a basic CRM implementation. You can extend it by:
 -   Implementing calendar integration
 -   Adding client communication history
 
-## Contributing
+## About This Project
 
-This is a prototype project. Feel free to fork and modify according to your needs.
+This started as a scaffolded prototype with GitHub Copilot and is now being developed and customized as a learning project. The goal is to build a functional CRM while exploring Next.js 15's App Router, React 19, Tailwind CSS 4, and Supabase integration.
 
 ## License
 
-MIT License - feel free to use this for your own projects.
+MIT License
