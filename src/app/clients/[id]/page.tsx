@@ -3,38 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { MOCK_CLIENTS, MOCK_TASKS, MOCK_NOTES } from '@/lib/mockData'
-
-// Mock types and data
-interface Client {
-    id: string
-    name: string
-    email: string
-    phone?: string
-    company?: string
-    created_at: string
-    updated_at: string
-}
-
-interface Task {
-    id: string
-    client_id: string
-    title: string
-    description?: string
-    status: 'pending' | 'in_progress' | 'completed'
-    priority: 'low' | 'medium' | 'high'
-    due_date?: string
-    created_at: string
-    updated_at: string
-}
-
-interface Note {
-    id: string
-    client_id: string
-    content: string
-    created_at: string
-    updated_at: string
-}
+import { getClientById, getTasksByClientId, getNotesByClientId } from '@/lib/data'
+import type { Client, Task, Note } from '@/lib/supabase'
 
 export default function ClientDetailPage() {
     const params = useParams()
@@ -44,6 +14,7 @@ export default function ClientDetailPage() {
     const [tasks, setTasks] = useState<Task[]>([])
     const [notes, setNotes] = useState<Note[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<'tasks' | 'notes'>('tasks')
     const [showTaskForm, setShowTaskForm] = useState(false)
     const [showNoteForm, setShowNoteForm] = useState(false)
@@ -64,83 +35,71 @@ export default function ClientDetailPage() {
 
     const fetchClientData = async () => {
         try {
-            // Simulate loading and use mock data
-            setTimeout(() => {
-                const mockClient = MOCK_CLIENTS.find(c => c.id === clientId)
-                setClient(mockClient || null)
+            setLoading(true)
+            setError(null)
 
-                const clientTasks = MOCK_TASKS.filter(t => t.client_id === clientId)
-                setTasks(clientTasks)
+            const [clientData, tasksData, notesData] = await Promise.all([
+                getClientById(clientId),
+                getTasksByClientId(clientId),
+                getNotesByClientId(clientId)
+            ])
 
-                const clientNotes = MOCK_NOTES.filter(n => n.client_id === clientId)
-                setNotes(clientNotes)
-
-                setLoading(false)
-            }, 300)
-        } catch (error) {
-            console.error('Error fetching client data:', error)
+            setClient(clientData)
+            setTasks(tasksData)
+            setNotes(notesData)
+        } catch (err) {
+            console.error('Error fetching client data:', err)
+            setError('Failed to load client data. Please try again.')
+        } finally {
             setLoading(false)
         }
     }
 
     const addTask = async (e: React.FormEvent) => {
         e.preventDefault()
-        try {
-            const mockTask: Task = {
-                id: Date.now().toString(),
-                client_id: clientId,
-                ...newTask,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }
-
-            setTasks([mockTask, ...tasks])
-            setNewTask({
-                title: '',
-                description: '',
-                status: 'pending',
-                priority: 'medium',
-                due_date: ''
-            })
-            setShowTaskForm(false)
-        } catch (error) {
-            console.error('Error adding task:', error)
-        }
+        // TODO: Implement in Ticket 1.4
+        alert('Add task functionality will be implemented in Ticket 1.4!')
     }
 
     const addNote = async (e: React.FormEvent) => {
         e.preventDefault()
-        try {
-            const mockNote: Note = {
-                id: Date.now().toString(),
-                client_id: clientId,
-                content: newNote.content,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }
-
-            setNotes([mockNote, ...notes])
-            setNewNote({ content: '' })
-            setShowNoteForm(false)
-        } catch (error) {
-            console.error('Error adding note:', error)
-        }
+        // TODO: Implement in Ticket 1.5
+        alert('Add note functionality will be implemented in Ticket 1.5!')
     }
 
     const updateTaskStatus = async (taskId: string, status: Task['status']) => {
-        try {
-            setTasks(tasks.map(task =>
-                task.id === taskId ? { ...task, status, updated_at: new Date().toISOString() } : task
-            ))
-        } catch (error) {
-            console.error('Error updating task:', error)
-        }
+        // TODO: Implement in Ticket 1.4
+        alert('Update task status will be implemented in Ticket 1.4!')
     }
 
     if (loading) {
         return (
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center">Loading client details...</div>
+                <div className="text-center py-12">
+                    <div className="text-gray-500 dark:text-gray-400">Loading client details...</div>
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="text-center py-12">
+                    <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
+                    <button
+                        onClick={fetchClientData}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 mr-4"
+                    >
+                        Try Again
+                    </button>
+                    <Link
+                        href="/clients"
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 underline"
+                    >
+                        Return to Clients
+                    </Link>
+                </div>
             </div>
         )
     }
@@ -148,7 +107,7 @@ export default function ClientDetailPage() {
     if (!client) {
         return (
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center">
+                <div className="text-center py-12">
                     <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Client not found</h2>
                     <Link
                         href="/clients"
@@ -200,16 +159,6 @@ export default function ClientDetailPage() {
                                 </p>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* Mock Data Notice */}
-                <div className="mb-6 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
-                    <div className="flex items-center">
-                        <div className="w-3 h-3 rounded-full mr-3 bg-blue-500"></div>
-                        <span className="font-medium text-blue-800 dark:text-blue-200">
-                            Using Mock Data - Configure Supabase to persist changes
-                        </span>
                     </div>
                 </div>
 

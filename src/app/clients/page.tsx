@@ -2,22 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { MOCK_CLIENTS } from '@/lib/mockData'
-
-// Mock client type and data
-interface Client {
-    id: string
-    name: string
-    email: string
-    phone?: string
-    company?: string
-    created_at: string
-    updated_at: string
-}
+import { getClients } from '@/lib/data'
+import type { Client } from '@/lib/supabase'
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [showAddForm, setShowAddForm] = useState(false)
     const [newClient, setNewClient] = useState({
         name: '',
@@ -26,61 +17,58 @@ export default function ClientsPage() {
         company: ''
     })
 
-    // Check if environment variables are set up
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    const isSupabaseConfigured = supabaseUrl &&
-        supabaseKey &&
-        !supabaseUrl.includes('your_supabase') &&
-        !supabaseKey.includes('your_supabase')
-
     useEffect(() => {
-        // Simulate loading and use mock data
-        setTimeout(() => {
-            setClients(MOCK_CLIENTS)
-            setLoading(false)
-        }, 500)
+        loadClients()
     }, [])
+
+    async function loadClients() {
+        try {
+            setLoading(true)
+            setError(null)
+            const data = await getClients()
+            setClients(data)
+        } catch (err) {
+            console.error('Failed to load clients:', err)
+            setError('Failed to load clients. Please try again.')
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const addClient = async (e: React.FormEvent) => {
         e.preventDefault()
-
-        if (!isSupabaseConfigured) {
-            // Add to mock data
-            const mockClient: Client = {
-                id: Date.now().toString(),
-                ...newClient,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            }
-            setClients([mockClient, ...clients])
-            setNewClient({ name: '', email: '', phone: '', company: '' })
-            setShowAddForm(false)
-            return
-        }
-
-        // Here you would add the real Supabase logic when configured
-        alert('Supabase integration will be added here when configured.')
+        // TODO: Implement in next ticket (1.3)
+        alert('Add client functionality will be implemented in the next ticket!')
     }
 
     const deleteClient = async (id: string) => {
         if (!confirm('Are you sure you want to delete this client?')) return
-
-        if (!isSupabaseConfigured) {
-            // Remove from mock data
-            setClients(clients.filter(client => client.id !== id))
-            return
-        }
-
-        // Here you would add the real Supabase logic when configured
-        alert('Supabase integration will be added here when configured.')
+        // TODO: Implement in next ticket (1.3)
+        alert('Delete client functionality will be implemented in the next ticket!')
     }
 
     if (loading) {
         return (
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center">Loading clients...</div>
+                <div className="text-center py-12">
+                    <div className="text-gray-500 dark:text-gray-400">Loading clients...</div>
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="text-center py-12">
+                    <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
+                    <button
+                        onClick={loadClients}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                        Try Again
+                    </button>
+                </div>
             </div>
         )
     }
@@ -98,22 +86,6 @@ export default function ClientsPage() {
                     >
                         Add Client
                     </button>
-                </div>
-
-                {/* Configuration Status */}
-                <div className={`mb-6 p-4 rounded-lg ${isSupabaseConfigured
-                    ? 'bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700'
-                    : 'bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700'
-                    }`}>
-                    <div className="flex items-center">
-                        <div className={`w-3 h-3 rounded-full mr-3 ${isSupabaseConfigured ? 'bg-green-500' : 'bg-blue-500'}`}></div>
-                        <span className={`font-medium ${isSupabaseConfigured
-                            ? 'text-green-800 dark:text-green-200'
-                            : 'text-blue-800 dark:text-blue-200'
-                            }`}>
-                            {isSupabaseConfigured ? 'Database Connected' : 'Using Mock Data - Configure Supabase to persist changes'}
-                        </span>
-                    </div>
                 </div>
 
                 {/* Add Client Form */}
