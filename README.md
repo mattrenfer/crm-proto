@@ -2,7 +2,7 @@
 
 A Customer Relationship Management (CRM) system using modern web development with Next.js, TypeScript, Tailwind CSS, and Supabase.
 
-**Author**: Matt Renfer
+**Author**: Matthew Russell Renfer
 
 ## Features
 
