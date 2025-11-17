@@ -1,0 +1,458 @@
+# Claude Code Context - CRM Project
+
+**Author**: Matthew Russell Renfer
+**Last Updated**: November 17, 2025
+
+---
+
+## Project Vision & Goals
+
+### Primary Goal
+Launch a production-ready CRM application end-to-end while deeply learning Next.js 15 and Supabase.
+
+### Learning Objectives
+- Master Next.js 15 App Router, Server Components, and modern patterns
+- Gain deep understanding of Supabase (database, auth, real-time, storage)
+- Build practical experience with a committed tech stack
+- Learn proper production deployment and maintenance
+
+### Tech Stack (Committed)
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS 4
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Auth
+- **Deployment**: TBD (Vercel recommended)
+
+---
+
+## Current State (as of Nov 17, 2025)
+
+### What's Built ✅
+- Complete UI/UX with mock data for all core features
+- Client management (list, add, delete, detail view)
+- Task management (list, filter by status, add, update status, delete)
+- Notes management (add, view by client)
+- Dashboard with statistics
+- Responsive design with dark mode
+- Well-designed PostgreSQL schema (3 tables: clients, tasks, notes)
+- TypeScript interfaces and type safety
+
+### What's Missing ❌
+- **Critical**: Supabase database integration (currently all mock data)
+- **Critical**: Authentication system
+- **Important**: Form validation and error handling
+- **Important**: Loading states and user feedback
+- API routes for server-side operations
+- Testing suite
+- Production deployment
+
+### Code Quality
+- **Status**: Good foundation
+- TypeScript strict mode enabled
+- Clean component structure
+- Responsive design patterns
+- Well-organized file structure
+
+---
+
+## Strategic Roadmap
+
+This roadmap is designed to be executed in small, manageable tickets that can be tracked in GitHub Projects and tied to commits. Each phase builds on the previous one.
+
+### 🎯 PHASE 1: Foundation - Database Connection (Weeks 1-2)
+**Goal**: Get real data persistence working. Learn Supabase CRUD operations deeply.
+
+#### Ticket 1.1: Supabase Project Setup
+**Size**: XS (30 min)
+- [ ] Create Supabase project
+- [ ] Run schema.sql in Supabase SQL Editor
+- [ ] Copy project URL and anon key
+- [ ] Create `.env.local` file with credentials
+- [ ] Create `.env.local.example` template
+- [ ] Verify connection in Supabase client
+- **Learning**: Supabase project structure, environment variables in Next.js
+
+#### Ticket 1.2: Client CRUD - Read Operations
+**Size**: S (2-3 hours)
+- [ ] Implement `getClients()` function using Supabase client
+- [ ] Replace mock data in clients list page
+- [ ] Implement `getClientById()` function
+- [ ] Replace mock data in client detail page
+- [ ] Add loading state with React Suspense
+- [ ] Add error handling with try/catch
+- [ ] Test with sample data
+- **Learning**: Supabase select queries, async/await patterns, error handling
+
+#### Ticket 1.3: Client CRUD - Write Operations
+**Size**: S (2-3 hours)
+- [ ] Implement `createClient()` function
+- [ ] Hook up Add Client form to Supabase
+- [ ] Implement `deleteClient()` function
+- [ ] Add optimistic updates for better UX
+- [ ] Add success/error toast notifications
+- [ ] Test cascade deletes (should delete related tasks/notes)
+- **Learning**: Supabase insert/delete, optimistic updates, cascade behavior
+
+#### Ticket 1.4: Task CRUD - Full Implementation
+**Size**: M (4-5 hours)
+- [ ] Implement all task CRUD functions (create, read, update, delete)
+- [ ] Replace mock data in tasks page
+- [ ] Replace mock data in client detail page (task tab)
+- [ ] Implement status update functionality
+- [ ] Add proper filtering by status using Supabase queries
+- [ ] Add loading states and error handling
+- **Learning**: Supabase filtering, updates, complex queries
+
+#### Ticket 1.5: Notes CRUD - Full Implementation
+**Size**: S (2-3 hours)
+- [ ] Implement all note CRUD functions
+- [ ] Replace mock data in client detail page (notes tab)
+- [ ] Add loading states and error handling
+- [ ] Test data persistence across all features
+- **Learning**: Completing the CRUD pattern, data relationships
+
+#### Ticket 1.6: Dashboard Real-Time Stats
+**Size**: S (2 hours)
+- [ ] Implement `getDashboardStats()` using Supabase aggregation
+- [ ] Replace mock stats in dashboard
+- [ ] Add loading state
+- [ ] Verify counts match actual data
+- **Learning**: Supabase count queries, aggregations
+
+---
+
+### 🔐 PHASE 2: Authentication & Security (Weeks 3-4)
+**Goal**: Secure the application. Learn Supabase Auth deeply.
+
+#### Ticket 2.1: Supabase Auth Setup
+**Size**: S (2-3 hours)
+- [ ] Enable Email/Password auth in Supabase dashboard
+- [ ] Configure auth settings (email confirmations, etc.)
+- [ ] Create auth helper functions (signUp, signIn, signOut, getSession)
+- [ ] Test auth flow manually in Supabase
+- **Learning**: Supabase Auth concepts, session management
+
+#### Ticket 2.2: Auth UI - Login Page
+**Size**: M (3-4 hours)
+- [ ] Create `/login` page with email/password form
+- [ ] Implement form validation
+- [ ] Add login error handling (wrong password, etc.)
+- [ ] Add loading state during login
+- [ ] Redirect to dashboard on success
+- [ ] Style with Tailwind to match app design
+- **Learning**: Form handling, auth error states, redirects
+
+#### Ticket 2.3: Auth UI - Signup Page
+**Size**: M (3-4 hours)
+- [ ] Create `/signup` page
+- [ ] Implement form with validation (email format, password strength)
+- [ ] Add signup error handling (user exists, etc.)
+- [ ] Add email confirmation flow
+- [ ] Redirect to login or dashboard
+- **Learning**: User registration flows, email confirmation
+
+#### Ticket 2.4: Session Management & Context
+**Size**: M (4 hours)
+- [ ] Create AuthContext with React Context API
+- [ ] Implement session persistence
+- [ ] Add useAuth hook for components
+- [ ] Handle session refresh
+- [ ] Add logout functionality to navigation
+- **Learning**: React Context, session management, hooks
+
+#### Ticket 2.5: Protected Routes & Middleware
+**Size**: M (4 hours)
+- [ ] Create Next.js middleware for auth checks
+- [ ] Protect all routes except /login and /signup
+- [ ] Redirect unauthenticated users to login
+- [ ] Add loading state during auth check
+- [ ] Test authentication flow completely
+- **Learning**: Next.js middleware, route protection
+
+#### Ticket 2.6: Row Level Security (RLS)
+**Size**: L (5-6 hours)
+- [ ] Update RLS policies to restrict data by user
+- [ ] Add `user_id` column to clients, tasks, notes tables
+- [ ] Create migration script for existing data
+- [ ] Update all CRUD operations to include user_id
+- [ ] Test that users can only see their own data
+- [ ] Add proper indexes on user_id columns
+- **Learning**: PostgreSQL RLS, database security, migrations
+
+---
+
+### 🎨 PHASE 3: Polish & Production Readiness (Weeks 5-6)
+**Goal**: Make it production-ready. Learn deployment and best practices.
+
+#### Ticket 3.1: Form Validation Library
+**Size**: M (3-4 hours)
+- [ ] Install and configure react-hook-form + zod
+- [ ] Add validation to all forms (clients, tasks, notes)
+- [ ] Show inline error messages
+- [ ] Prevent submission with invalid data
+- [ ] Add proper TypeScript types
+- **Learning**: Form libraries, schema validation
+
+#### Ticket 3.2: Loading States & Skeletons
+**Size**: M (4 hours)
+- [ ] Create skeleton components for all pages
+- [ ] Add loading spinners where appropriate
+- [ ] Implement proper Suspense boundaries
+- [ ] Test with slow network (throttling)
+- **Learning**: UX patterns, React Suspense, skeleton screens
+
+#### Ticket 3.3: Toast Notifications System
+**Size**: S (2-3 hours)
+- [ ] Install toast library (react-hot-toast or similar)
+- [ ] Create toast wrapper component
+- [ ] Add success toasts for all CRUD operations
+- [ ] Add error toasts with helpful messages
+- [ ] Style toasts to match app theme
+- **Learning**: User feedback patterns, notification systems
+
+#### Ticket 3.4: Confirmation Dialogs
+**Size**: S (2 hours)
+- [ ] Create reusable confirmation dialog component
+- [ ] Add to delete operations (clients, tasks, notes)
+- [ ] Add keyboard support (Esc to close, Enter to confirm)
+- [ ] Make accessible with proper ARIA labels
+- **Learning**: Accessible UI patterns, modals
+
+#### Ticket 3.5: Error Boundaries & 404 Pages
+**Size**: S (2-3 hours)
+- [ ] Create error boundary components
+- [ ] Add custom 404 page
+- [ ] Add custom error page
+- [ ] Add error tracking (Sentry or similar - optional)
+- [ ] Test error scenarios
+- **Learning**: Error handling, Next.js error pages
+
+#### Ticket 3.6: Environment & Build Configuration
+**Size**: S (2 hours)
+- [ ] Validate environment variables at build time
+- [ ] Add helpful error messages for missing config
+- [ ] Set up proper TypeScript build checks
+- [ ] Test production build locally
+- [ ] Optimize bundle size
+- **Learning**: Build optimization, environment management
+
+---
+
+### 🚀 PHASE 4: Deployment & DevOps (Week 7)
+**Goal**: Launch the application. Learn deployment and monitoring.
+
+#### Ticket 4.1: Vercel Deployment Setup
+**Size**: M (3 hours)
+- [ ] Create Vercel account and link GitHub repo
+- [ ] Configure environment variables in Vercel
+- [ ] Set up automatic deployments from main branch
+- [ ] Configure preview deployments for PRs
+- [ ] Test deployment pipeline
+- **Learning**: Vercel platform, CI/CD basics
+
+#### Ticket 4.2: Database Migrations Setup
+**Size**: M (3-4 hours)
+- [ ] Set up Supabase migrations folder
+- [ ] Create initial migration from schema.sql
+- [ ] Document migration workflow
+- [ ] Test migration rollback
+- **Learning**: Database migrations, version control for schemas
+
+#### Ticket 4.3: Production Monitoring
+**Size**: S (2 hours)
+- [ ] Set up Vercel Analytics
+- [ ] Configure error tracking
+- [ ] Set up uptime monitoring
+- [ ] Create basic dashboard for monitoring
+- **Learning**: Production monitoring, observability
+
+#### Ticket 4.4: Documentation & Launch Prep
+**Size**: M (3 hours)
+- [ ] Update README with production setup
+- [ ] Create user documentation
+- [ ] Write deployment runbook
+- [ ] Create backup/restore procedures
+- [ ] Document known issues and future features
+- **Learning**: Technical writing, documentation practices
+
+---
+
+### 🎁 PHASE 5: Enhancement & Advanced Features (Week 8+)
+**Goal**: Add value-add features. Learn advanced patterns.
+
+#### Ticket 5.1: Search & Filtering
+**Size**: M (4 hours)
+- [ ] Add search bar for clients (name, email, company)
+- [ ] Add advanced filters for tasks (date range, priority)
+- [ ] Implement debounced search
+- [ ] Add search results highlighting
+- **Learning**: Search UX, debouncing, complex queries
+
+#### Ticket 5.2: Pagination & Infinite Scroll
+**Size**: M (4-5 hours)
+- [ ] Implement pagination for clients list
+- [ ] Add infinite scroll for tasks
+- [ ] Optimize queries with proper limits/offsets
+- [ ] Add "load more" functionality
+- **Learning**: Performance optimization, pagination patterns
+
+#### Ticket 5.3: Data Export Feature
+**Size**: M (4 hours)
+- [ ] Add export to CSV functionality for clients
+- [ ] Add export for tasks
+- [ ] Create download button with proper formatting
+- [ ] Add date range filters for exports
+- **Learning**: File generation, data formatting
+
+#### Ticket 5.4: Real-time Updates (Supabase Realtime)
+**Size**: L (5-6 hours)
+- [ ] Enable Supabase Realtime on tables
+- [ ] Subscribe to client changes
+- [ ] Subscribe to task changes
+- [ ] Update UI automatically when data changes
+- [ ] Handle concurrent edits gracefully
+- **Learning**: Real-time subscriptions, WebSockets, conflict resolution
+
+#### Ticket 5.5: File Attachments (Supabase Storage)
+**Size**: L (6-8 hours)
+- [ ] Set up Supabase Storage bucket
+- [ ] Add file upload to client notes
+- [ ] Add file preview/download
+- [ ] Implement file size limits
+- [ ] Add file type validation
+- [ ] Clean up orphaned files
+- **Learning**: File storage, uploads, cloud storage
+
+#### Ticket 5.6: Email Notifications
+**Size**: L (6-8 hours)
+- [ ] Choose email service (Resend, SendGrid, etc.)
+- [ ] Create email templates
+- [ ] Send task due date reminders
+- [ ] Send welcome emails to new users
+- [ ] Add email preferences
+- **Learning**: Email integration, background jobs
+
+---
+
+## Development Workflow
+
+### Git Workflow
+- Create branch for each ticket: `feature/ticket-1-1-supabase-setup`
+- Commit frequently with descriptive messages
+- Reference ticket in commit: `feat: implement client CRUD read operations (#1.2)`
+- Open PR for each ticket
+- Merge to main after review/testing
+
+### GitHub Projects Setup
+- Create project board with columns: Backlog, In Progress, Review, Done
+- Add all tickets as issues
+- Use labels: `phase-1`, `phase-2`, `learning`, `critical`, `enhancement`
+- Track progress and time estimates
+- Link commits to issues
+
+### Testing Strategy
+- Manual testing for each ticket
+- Add automated tests in Phase 3
+- Test in production-like environment before deploying
+
+---
+
+## First Recommended Step
+
+### 🎯 START HERE: Ticket 1.1 - Supabase Project Setup
+
+**Why this first?**
+1. **Smallest possible win** - You can complete this in 30 minutes
+2. **Foundation for everything** - Nothing else works without this
+3. **Immediate learning** - You'll understand Supabase basics right away
+4. **Low risk** - Just configuration, no code changes
+5. **Validates the stack** - Confirms your tech choices work together
+
+**What you'll learn:**
+- How Supabase projects work
+- Database schema deployment
+- Environment variable management in Next.js
+- Supabase client initialization
+
+**Success criteria:**
+- Supabase project created and accessible
+- Schema deployed successfully
+- Can connect from your local app
+- Environment variables working
+
+**After this ticket:**
+You'll be ready to tackle Ticket 1.2 (Client CRUD - Read Operations), which will give you your first experience with real data persistence.
+
+---
+
+## Learning Resources
+
+### Next.js 15
+- Official docs: https://nextjs.org/docs
+- App Router patterns
+- Server vs Client Components
+- Data fetching patterns
+
+### Supabase
+- Official docs: https://supabase.com/docs
+- Database: https://supabase.com/docs/guides/database
+- Auth: https://supabase.com/docs/guides/auth
+- Realtime: https://supabase.com/docs/guides/realtime
+
+### Best Practices
+- TypeScript strict mode
+- Error handling patterns
+- Loading state UX
+- Security best practices
+- Performance optimization
+
+---
+
+## Success Metrics
+
+### Phase 1 Complete
+- All CRUD operations use Supabase
+- Data persists across sessions
+- No mock data remaining
+
+### Phase 2 Complete
+- Users can sign up and log in
+- Data is isolated per user
+- Protected routes working
+
+### Phase 3 Complete
+- All forms validated
+- Proper error handling everywhere
+- Production-ready UX
+
+### Phase 4 Complete
+- Deployed to production
+- Monitoring in place
+- Documentation complete
+
+### Phase 5 Complete
+- Advanced features working
+- Real-time updates
+- File attachments working
+
+---
+
+## Notes & Decisions
+
+### Architecture Decisions
+- Using App Router (not Pages Router) for modern Next.js patterns
+- Client Components for interactivity, Server Components where possible
+- Direct Supabase client calls (may add API routes later for sensitive operations)
+- PostgreSQL with Row Level Security for multi-tenant data
+
+### Future Considerations
+- Add API routes in Phase 2 for better security
+- Consider React Server Actions for mutations
+- Evaluate need for state management library (Zustand, Redux)
+- Plan for analytics and user behavior tracking
+- Consider adding a blog/help section
+
+---
+
+**Last Updated**: November 17, 2025
+**Next Review**: After completing Phase 1
