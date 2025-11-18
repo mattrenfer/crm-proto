@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getClients } from '@/lib/data'
+import { getClients, createClient, deleteClient } from '@/lib/data'
 import type { Client } from '@/lib/supabase'
+import toast from 'react-hot-toast'
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
@@ -37,14 +38,35 @@ export default function ClientsPage() {
 
     const addClient = async (e: React.FormEvent) => {
         e.preventDefault()
-        // TODO: Implement in next ticket (1.3)
-        alert('Add client functionality will be implemented in the next ticket!')
+        try {
+            setLoading(true)
+            const created = await createClient(newClient)
+            setClients([created, ...clients])
+            setShowAddForm(false)
+            setNewClient({ name: '', email: '', phone: '', company: '' })
+            toast.success('Client added successfully!')
+        } catch (err) {
+            console.error('Failed to add client:', err)
+            toast.error('Failed to add client. Please try again.')
+        } finally {
+            setLoading(false)
+        }
     }
 
-    const deleteClient = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this client?')) return
-        // TODO: Implement in next ticket (1.3)
-        alert('Delete client functionality will be implemented in the next ticket!')
+
+    const handleDeleteClient = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this client? This will also delete all associated tasks and notes.')) return
+        try {
+            setLoading(true)
+            await deleteClient(id)
+            setClients(clients.filter((client) => client.id !== id))
+            toast.success('Client deleted successfully!')
+        } catch (err) {
+            console.error('Failed to delete client:', err)
+            toast.error('Failed to delete client. Please try again.')
+        } finally {
+            setLoading(false)
+        }
     }
 
     if (loading) {
@@ -201,7 +223,7 @@ export default function ClientsPage() {
                                                     View
                                                 </Link>
                                                 <button
-                                                    onClick={() => deleteClient(client.id)}
+                                                    onClick={() => handleDeleteClient(client.id)}
                                                     className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                                                 >
                                                     Delete

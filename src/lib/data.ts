@@ -48,6 +48,41 @@ export async function getClientById(id: string): Promise<Client | null> {
     }
 }
 
+export async function createClient(
+    clientData: Partial<Client>,
+): Promise<Client> {
+    try {
+        const { data, error } = await supabase
+            .from('clients')
+            .insert(clientData)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error creating client:', error);
+            throw new Error(`Failed to create client: ${error.message}`);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Unexpected error in createClient:', error);
+        throw error;
+    }
+}
+
+export async function deleteClient(id: string): Promise<void> {
+    try {
+        const { error } = await supabase.from('clients').delete().eq('id', id);
+        if (error) {
+            console.error('Error deleting client:', error);
+            throw new Error(`Failed to delete client: ${error.message}`);
+        }
+    } catch (error) {
+        console.error('Unexpected error in deleteClient:', error);
+        throw error;
+    }
+}
+
 /**
  * Task Data Access Functions (for future use)
  */
