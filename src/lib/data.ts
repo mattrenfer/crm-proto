@@ -126,6 +126,65 @@ export async function getTasksByClientId(clientId: string): Promise<Task[]> {
     }
 }
 
+export async function createTask(
+    clientId: string,
+    taskData: Partial<Task>,
+): Promise<Task> {
+    try {
+        const { data, error } = await supabase
+            .from('tasks')
+            .insert({ client_id: clientId, ...taskData })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error creating task:', error);
+            throw new Error(`Failed to create task: ${error.message}`);
+        }
+        return data;
+    } catch (error) {
+        console.error('Unexpected error in createTask:', error);
+        throw error;
+    }
+}
+
+export async function updateTask(
+    id: string,
+    taskData: Partial<Task>,
+): Promise<Task> {
+    try {
+        const { data, error } = await supabase
+            .from('tasks')
+            .update(taskData)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating task:', error);
+            throw new Error(`Failed to update task: ${error.message}`);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Unexpected error in updateTask:', error);
+        throw error;
+    }
+}
+
+export async function deleteTask(id: string): Promise<void> {
+    try {
+        const { error } = await supabase.from('tasks').delete().eq('id', id);
+        if (error) {
+            console.error('Error deleting task:', error);
+            throw new Error(`Failed to delete task: ${error.message}`);
+        }
+    } catch (error) {
+        console.error('Unexpected error in deleteTask:', error);
+        throw error;
+    }
+}
+
 /**
  * Note Data Access Functions (for future use)
  */

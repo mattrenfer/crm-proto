@@ -4,29 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { MOCK_TASKS } from '@/lib/mockData'
 import { MOCK_CLIENTS } from '@/lib/mockData'
+import type { Client, Task } from '@/lib/supabase'
+import { getTasks, getClients, createTask, deleteTask, updateTask } from '@/lib/data'
+import toast from 'react-hot-toast'
 
-// Mock types and data
-interface Client {
-    id: string
-    name: string
-    email: string
-    phone?: string
-    company?: string
-    created_at: string
-    updated_at: string
-}
-
-interface Task {
-    id: string
-    client_id: string
-    title: string
-    description?: string
-    status: 'pending' | 'in_progress' | 'completed'
-    priority: 'low' | 'medium' | 'high'
-    due_date?: string
-    created_at: string
-    updated_at: string
-}
 
 interface TaskWithClient extends Task {
     client: Pick<Client, 'id' | 'name'>
@@ -41,70 +22,85 @@ export default function TasksPage() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    const isSupabaseConfigured = supabaseUrl &&
+    const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(
+        supabaseUrl &&
         supabaseKey &&
         !supabaseUrl.includes('your_supabase') &&
         !supabaseKey.includes('your_supabase')
+    )
 
     useEffect(() => {
-        fetchTasks()
-    }, [])
+        loadTasks()
+    }, [filter]) // Re-fetch when filter changes
 
-    const fetchTasks = async () => {
+    async function loadTasks() {
+        setLoading(true)
         try {
-            // Simulate loading and use mock data
-            setTimeout(() => {
-                setTasks(
-                    MOCK_TASKS.map(task => {
-                        const client = MOCK_CLIENTS.find(c => c.id === task.client_id)
-                        return {
-                            ...task,
-                            client: {
-                                id: task.client_id,
-                                name: client ? client.name : `Client ${task.client_id}`
-                            }
-                        }
-                    })
-                )
-                setLoading(false)
-            }, 300)
+            // Fetch all tasks from Supabase
+            const tasksData = await getTasks()
+
+            // Fetch all clients to join with tasks
+            const clientsData = await getClients()
+
+            // Create lookup map for efficient client joins
+            const clientsMap = new Map(clientsData.map(c => [c.id, c]))
+
+            // Join tasks with their client data
+            const tasksWithClients = tasksData
+                .map(task => {
+                    const client = clientsMap.get(task.client_id)
+                    if (!client) return null
+                    return {
+                        ...task,
+                        client: { id: client.id, name: client.name },
+                    }
+                })
+                .filter((task): task is TaskWithClient => task !== null)
+
+            setTasks(tasksWithClients)
+            setIsSupabaseConfigured(true)
         } catch (error) {
-            console.error('Error fetching tasks:', error)
+            console.error('Failed to load tasks:', error)
+            toast.error('Failed to load tasks. Please try again.')
+            setIsSupabaseConfigured(false)
+        } finally {
             setLoading(false)
         }
     }
 
-    const updateTaskStatus = async (taskId: string, status: Task['status']) => {
+    const updateTaskStatus = async (taskId: string, newStatus: Task['status']) => {
         try {
-            if (!isSupabaseConfigured) {
-                // Update mock data
-                setTasks(tasks.map(task =>
-                    task.id === taskId ? { ...task, status, updated_at: new Date().toISOString() } : task
-                ))
-                return
-            }
+            const updated = await updateTask(taskId, { status: newStatus })
 
-            // Here you would add the real Supabase logic when configured
-            alert('Supabase integration will be added here when configured.')
+            setTasks(tasks.map(task =>
+                task.id === taskId ? { ...task, ...updated } : task
+            ))
+
+            // Success feedback
+            const statusLabels = {
+                pending: 'Pending',
+                in_progress: 'In Progress',
+                completed: 'Completed'
+            }
+            toast.success(`Task marked as ${statusLabels[newStatus]}`)
+
         } catch (error) {
             console.error('Error updating task:', error)
         }
     }
 
-    const deleteTask = async (taskId: string) => {
+    const handleDeleteTask = async (taskId: string) => {
         if (!confirm('Are you sure you want to delete this task?')) return
-
+        setLoading(true)
         try {
-            if (!isSupabaseConfigured) {
-                // Remove from mock data
-                setTasks(tasks.filter(task => task.id !== taskId))
-                return
-            }
-
-            // Here you would add the real Supabase logic when configured
-            alert('Supabase integration will be added here when configured.')
-        } catch (error) {
-            console.error('Error deleting task:', error)
+            await deleteTask(taskId)
+            setTasks(tasks.filter(task => task.id !== taskId))
+            toast.success('Task deleted successfully!')
+        } catch (err) {
+            console.error('Failed to delete task:', err)
+            toast.error('Failed to delete task. Please try again.')
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -368,7 +364,7 @@ export default function TasksPage() {
                                             </button>
                                         )}
                                         <button
-                                            onClick={() => deleteTask(task.id)}
+                                            onClick={() => handleDeleteTask(task.id)}
                                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm"
                                         >
                                             Delete

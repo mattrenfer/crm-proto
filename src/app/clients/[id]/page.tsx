@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { getClientById, getTasksByClientId, getNotesByClientId } from '@/lib/data'
+import { getClientById, getTasksByClientId, getNotesByClientId, createTask, deleteTask, updateTask } from '@/lib/data'
 import type { Client, Task, Note } from '@/lib/supabase'
+import toast from 'react-hot-toast'
 
 export default function ClientDetailPage() {
     const params = useParams()
@@ -58,18 +59,56 @@ export default function ClientDetailPage() {
     const addTask = async (e: React.FormEvent) => {
         e.preventDefault()
         // TODO: Implement in Ticket 1.4
-        alert('Add task functionality will be implemented in Ticket 1.4!')
+        try {
+            setLoading(true)
+            const created = await createTask(clientId, newTask)
+            setTasks([created, ...tasks])
+            setShowTaskForm(false)
+            setNewTask({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '' })
+            toast.success('Task added successfully!')
+        } catch (err) {
+            console.error('Error adding task:', err)
+            setError('Failed to add task. Please try again.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleDeleteTask = async (taskId: string) => {
+        try {
+            setLoading(true)
+            await deleteTask(taskId)
+            setTasks(tasks.filter(task => task.id !== taskId))
+            toast.success('Task deleted successfully!')
+        }
+        catch (err) {
+            console.error('Error deleting task:', err)
+            setError('Failed to delete task. Please try again.')
+            toast.error('Failed to delete task. Please try again.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const updateTaskStatus = async (taskId: string, status: Task['status']) => {
+        try {
+            setLoading(true)
+            const updated = await updateTask(taskId, { status: status })
+            setTasks(tasks.map(task => task.id === taskId ? updated : task))
+            toast.success('Task status updated successfully!')
+        } catch (err) {
+            console.error('Error updating task status:', err)
+            setError('Failed to update task status. Please try again.')
+            toast.error('Failed to update task status. Please try again.')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const addNote = async (e: React.FormEvent) => {
         e.preventDefault()
         // TODO: Implement in Ticket 1.5
         alert('Add note functionality will be implemented in Ticket 1.5!')
-    }
-
-    const updateTaskStatus = async (taskId: string, status: Task['status']) => {
-        // TODO: Implement in Ticket 1.4
-        alert('Update task status will be implemented in Ticket 1.4!')
     }
 
     if (loading) {
@@ -347,6 +386,20 @@ export default function ClientDetailPage() {
                                                         Start
                                                     </button>
                                                 )}
+                                                {task.status === 'completed' && (
+                                                    <button
+                                                        onClick={() => updateTaskStatus(task.id, 'pending')}
+                                                        className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 text-sm"
+                                                    >
+                                                        Reopen
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleDeleteTask(task.id)}
+                                                    className="text-red-600 hover:text-red-900 dark:text-red-400"
+                                                >
+                                                    Delete
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
