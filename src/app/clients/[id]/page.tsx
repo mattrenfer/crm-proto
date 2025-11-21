@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { getClientById, getTasksByClientId, getNotesByClientId, createTask, deleteTask, updateTask } from '@/lib/data'
+import { getClientById, getTasksByClientId, createTask, deleteTask, updateTask, getNotesByClientId, createNote, deleteNote } from '@/lib/data'
 import type { Client, Task, Note } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -107,9 +107,40 @@ export default function ClientDetailPage() {
 
     const addNote = async (e: React.FormEvent) => {
         e.preventDefault()
-        // TODO: Implement in Ticket 1.5
-        alert('Add note functionality will be implemented in Ticket 1.5!')
+        try {
+            setLoading(true)
+            const created = await createNote(clientId, newNote.content)
+            setNotes([created, ...notes])
+            setShowNoteForm(false)
+            setNewNote({ content: '' })
+            toast.success('Note added successfully!')
+        } catch (err) {
+            console.error('Error adding note:', err)
+            setError('Failed to add note. Please try again.')
+            toast.error('Failed to add note. Please try again.')
+        } finally {
+            setLoading(false)
+        }
     }
+
+    const handleDeleteNote = async (noteId: string) => {
+        if (!confirm('Are you sure you want to delete this note?')) return;
+        try {
+            setLoading(true)
+            await deleteNote(noteId)
+            setNotes(notes.filter(note => note.id !== noteId))
+            toast.success('Note deleted successfully!')
+        }
+        catch (err) {
+            console.error('Error deleting note:', err)
+            setError('Failed to delete note. Please try again.')
+            toast.error('Failed to delete note. Please try again.')
+        }
+        finally {
+            setLoading(false)
+        }
+    }
+
 
     if (loading) {
         return (
@@ -469,12 +500,20 @@ export default function ClientDetailPage() {
                         ) : (
                             <div className="space-y-4">
                                 {notes.map((note) => (
-                                    <div key={note.id} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-                                        <div className="text-gray-900 dark:text-white whitespace-pre-wrap">
-                                            {note.content}
+                                    <div key={note.id} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex">
+                                        <div className="flex-1">
+                                            <div className="text-gray-900 dark:text-white whitespace-pre-wrap">
+                                                {note.content}
+                                            </div>
+                                            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                                {new Date(note.created_at).toLocaleString()}
+                                            </div>
+
                                         </div>
-                                        <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                            {new Date(note.created_at).toLocaleString()}
+                                        <div className="flex items-center space-x-2">
+                                            <button onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
+                                                Delete
+                                            </button>
                                         </div>
                                     </div>
                                 ))}

@@ -208,3 +208,40 @@ export async function getNotesByClientId(clientId: string): Promise<Note[]> {
         throw error;
     }
 }
+
+export async function createNote(
+    clientId: string,
+    content: string,
+): Promise<Note> {
+    try {
+        const { data, error } = await supabase
+            .from('notes')
+            .insert({ client_id: clientId, content })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error creating note:', error);
+            throw new Error(`Failed to create note: ${error.message}`);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Unexpected error in createNote:', error);
+        throw error;
+    }
+}
+
+export async function deleteNote(id: string): Promise<void> {
+    try {
+        const { error } = await supabase.from('notes').delete().eq('id', id);
+
+        if (error) {
+            console.error('Error deleting note:', error);
+            throw new Error(`Failed to delete note: ${error.message}`);
+        }
+    } catch (error) {
+        console.error('Unexpected error in deleteNote:', error);
+        throw error;
+    }
+}
