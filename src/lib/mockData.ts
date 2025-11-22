@@ -184,18 +184,18 @@ export const MOCK_NOTES: Note[] = [
 ];
 
 // Utility functions for dashboard metrics
-export const getDashboardStats = () => {
-    const totalClients = MOCK_CLIENTS.length;
-    const activeTasks = MOCK_TASKS.filter(
-        task => task.status === 'pending' || task.status === 'in_progress',
-    ).length;
-    const pendingTasks = MOCK_TASKS.filter(
-        task => task.status === 'pending',
-    ).length;
+// export const getDashboardStats = () => {
+//     const totalClients = MOCK_CLIENTS.length;
+//     const activeTasks = MOCK_TASKS.filter(
+//         task => task.status === 'pending' || task.status === 'in_progress',
+//     ).length;
+//     const pendingTasks = MOCK_TASKS.filter(
+//         task => task.status === 'pending',
+//     ).length;
 
-    return {
-        totalClients,
-        activeTasks,
-        pendingTasks,
-    };
-};
+//     return {
+//         totalClients,
+//         activeTasks,
+//         pendingTasks,
+//     };
+// };

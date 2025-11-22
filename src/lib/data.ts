@@ -2,6 +2,27 @@ import { supabase } from './supabase';
 import type { Client, Task, Note } from './supabase';
 
 /**
+ * Dashboard Data Access Functions
+ */
+
+export async function getDashboardStats() {
+    try {
+        const [clients, tasks] = await Promise.all([getClients(), getTasks()]);
+        const totalClients = clients.length;
+        const activeTasks = tasks.filter(
+            task => task.status === 'pending' || task.status === 'in_progress',
+        ).length;
+        const pendingTasks = tasks.filter(
+            task => task.status === 'pending',
+        ).length;
+        return { totalClients, activeTasks, pendingTasks };
+    } catch (error) {
+        console.error('Unexpected error in getDashboardStats:', error);
+        throw error;
+    }
+}
+
+/**
  * Client Data Access Functions
  */
 

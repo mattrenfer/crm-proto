@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { getDashboardStats } from "../lib/mockData";
+import { getDashboardStats } from "../lib/data";
 
-export default function HomePage() {
-  const { totalClients, activeTasks, pendingTasks } = getDashboardStats();
+export default async function HomePage() {
+  const { totalClients, activeTasks, pendingTasks } = await getDashboardStats();
 
   return (
     <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8" id="homepage-container">
@@ -122,7 +122,7 @@ export default function HomePage() {
           </h2>
           <div className="space-y-3 text-gray-600 dark:text-gray-300">
             <p>
-              • Add your first client using the "Manage Clients" section
+              • Add your first client using the &ldquo;Manage Clients&rdquo; section
             </p>
             <p>
               • Create tasks for each client to track your work

@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(gh:*)",
+      "Bash(npm install:*)",
+      "Bash(node test-connection.js:*)",
+      "Bash(timeout 10 bash:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

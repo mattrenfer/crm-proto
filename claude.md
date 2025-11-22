@@ -111,13 +111,30 @@ This roadmap is designed to be executed in small, manageable tickets that can be
 - [ ] Test data persistence across all features
 - **Learning**: Completing the CRUD pattern, data relationships
 
-#### Ticket 1.6: Dashboard Real-Time Stats
+#### Ticket 1.6: Dashboard Real-Time Stats ✅ COMPLETED
 **Size**: S (2 hours)
-- [ ] Implement `getDashboardStats()` using Supabase aggregation
-- [ ] Replace mock stats in dashboard
-- [ ] Add loading state
-- [ ] Verify counts match actual data
-- **Learning**: Supabase count queries, aggregations
+- [x] Implement `getDashboardStats()` using Supabase aggregation
+- [x] Replace mock stats in dashboard
+- [x] Add loading state (via Next.js async component streaming)
+- [x] Verify counts match actual data
+
+**What We Built:**
+- Created `getDashboardStats()` function in `src/lib/data.ts` that fetches real data from Supabase
+- Used `Promise.all()` to fetch clients and tasks in parallel for better performance
+- Converted homepage to async Server Component to handle async data fetching
+- Removed mock data implementation from `mockData.ts`
+
+**Key Learnings:**
+1. **Parallel Query Execution**: Using `Promise.all([getClients(), getTasks()])` fetches both datasets concurrently instead of sequentially, reducing total wait time
+2. **Async Server Components**: Next.js 15 allows page components to be async, enabling direct data fetching without useEffect or separate data layers
+3. **Automatic Loading States**: Async Server Components get automatic loading states through React streaming - no need for explicit loading.tsx for basic cases
+4. **Data Aggregation Strategy**: Chose client-side filtering (fetch all, filter in JS) over SQL COUNT queries for simplicity. Trade-off: simpler code but less efficient at scale
+5. **Type Safety**: Return types are automatically inferred from existing getClients/getTasks functions, maintaining end-to-end type safety
+
+**Architecture Decision:**
+We fetch all clients and tasks then filter in JavaScript rather than using SQL COUNT queries. This is less efficient but simpler for learning and fine for small datasets. Future optimization: use Supabase `.select('*', { count: 'exact', head: true })` for better performance at scale.
+
+**Related**: Issue #7, commits on 2025-11-22
 
 ---
 
@@ -351,9 +368,45 @@ This roadmap is designed to be executed in small, manageable tickets that can be
 - Link commits to issues
 
 ### Testing Strategy
-- Manual testing for each ticket
-- Add automated tests in Phase 3
-- Test in production-like environment before deploying
+
+**When to Add Tests: After Phase 2**
+
+For this learning project, add automated testing **after Phase 2 (Authentication)** is complete, right before or during Phase 3. Here's why:
+
+**Why Wait:**
+- Schema will change significantly when adding `user_id` columns and RLS in Phase 2
+- Writing tests now means rewriting them when auth lands
+- Primary goal is learning - tests slow down experimentation
+- Manual testing is faster for rapid learning and iteration
+
+**Testing Roadmap:**
+
+**Phase 1 (Current):**
+- ✅ Manual testing only
+- ✅ Use console.log and browser DevTools
+- ✅ Click through and verify behavior
+
+**Phase 2 (Auth):**
+- ✅ Manual testing for auth flows
+- ✅ Test with multiple browser profiles (different users)
+- ✅ Verify RLS policies in Supabase dashboard
+
+**Phase 3 (Polish) - ADD TESTS HERE:**
+- 🧪 Install Jest + React Testing Library
+- 🧪 Unit tests for all data.ts functions (high value - protects database)
+- 🧪 Integration tests for auth + CRUD with RLS
+- 🧪 E2E tests for critical flows (login, add client, delete client)
+- 🧪 Skip component tests (overkill for simple CRUD forms)
+
+**Phase 4 (Deployment):**
+- 🧪 Run tests in CI/CD pipeline
+- 🧪 Block deployments on test failures
+
+**Phase 5 (Enhancements):**
+- 🧪 Add tests for new features as you build them
+- 🧪 TDD becomes easier once patterns are established
+
+**Key Principle:** Optimize for learning speed now, add tests when schema stabilizes and you understand the patterns. Tests written after understanding the system are better tests.
 
 ---
 
