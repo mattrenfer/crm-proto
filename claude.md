@@ -141,13 +141,30 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 ### 🔐 PHASE 2: Authentication & Security (Weeks 3-4)
 **Goal**: Secure the application. Learn Supabase Auth deeply.
 
-#### Ticket 2.1: Supabase Auth Setup
+#### Ticket 2.1: Supabase Auth Setup ✅ COMPLETED
 **Size**: S (2-3 hours)
-- [ ] Enable Email/Password auth in Supabase dashboard
-- [ ] Configure auth settings (email confirmations, etc.)
-- [ ] Create auth helper functions (signUp, signIn, signOut, getSession)
-- [ ] Test auth flow manually in Supabase
-- **Learning**: Supabase Auth concepts, session management
+- [x] Enable Email/Password auth in Supabase dashboard
+- [x] Configure auth settings (email confirmations disabled for dev)
+- [x] Create three Supabase client utilities (browser, server, middleware)
+- [x] Create auth helper functions (signUp, signIn, signOut, getSession, getUser)
+- [x] Test auth flow manually with test page
+
+**What We Built:**
+- Created `src/lib/supabase/client.ts` - Browser client for Client Components
+- Created `src/lib/supabase/server.ts` - Server client for Server Components
+- Created `src/lib/supabase/middleware.ts` - Middleware client for route protection
+- Created `src/lib/auth.ts` - Helper functions wrapping the clients
+- Created `src/app/test-auth/page.tsx` - Test page to verify auth (can be deleted)
+
+**Key Learnings:**
+1. **JWT Authentication**: Supabase uses JWT tokens (not session database) - tokens contain user info + signature, verified without DB queries
+2. **Cookie-Based Storage**: Tokens stored in cookies (not localStorage) so both browser and server can access them
+3. **Access + Refresh Tokens**: Access token expires in 1h (security), refresh token expires in 30d (UX), automatic refresh happens transparently
+4. **Three Execution Contexts**: Browser (interactive UI), Server (data fetching), Middleware (route protection) each need different Supabase client configurations
+5. **Server vs Client Boundary**: Client Components can't import server-only code (next/headers), must use browser client directly
+6. **Token Refresh in Middleware**: Must return the response object (not NextResponse.next()) or refreshed tokens get lost
+
+**Related**: Learning notes in LEARNING_NOTES.md, completed 2024-11-24
 
 #### Ticket 2.2: Auth UI - Login Page
 **Size**: M (3-4 hours)
@@ -490,6 +507,48 @@ You'll be ready to tackle Ticket 1.2 (Client CRUD - Read Operations), which will
 
 ---
 
+## Git Workflow & Tagging Strategy
+
+### Git Tags for Milestones
+
+**Purpose:** Mark major milestones with Git tags to create snapshots of project progress at key phases.
+
+**When to Tag:**
+- ✅ **Phase completions** (required) - When all tickets in a phase are complete
+- ✅ **Major architectural changes** (optional) - Significant infrastructure updates
+- ❌ **Individual tickets** (avoid) - Too granular, creates noise
+
+**Tagging Workflow:**
+
+When completing a phase:
+```bash
+# After final commit of the phase is pushed
+git tag -a phase-X-complete -m "Phase X: [Phase Name] - Brief summary"
+git push --tags
+```
+
+**Example:**
+```bash
+git tag -a phase-2-complete -m "Phase 2: Authentication & Security - All auth features and RLS complete"
+git push --tags
+```
+
+**Phase Tags:**
+- ✅ `phase-1-complete` - Foundation: Database Connection (Tagged: 2024-11-24)
+- ✅ `phase-2-ticket-2.1-complete` - Auth Setup (Tagged: 2024-11-24)
+- 🔜 `phase-2-complete` - After Ticket 2.6 (RLS)
+- 🔜 `phase-3-complete` - After final polish ticket
+- 🔜 `phase-4-complete` - After deployment
+- 🔜 `phase-5-complete` - After advanced features
+
+**Benefits:**
+- Easy navigation to any phase: `git checkout phase-1-complete`
+- Compare phases: `git diff phase-1-complete phase-2-complete`
+- Visual milestones on GitHub under Tags/Releases
+- Time-travel through project evolution for learning/demos
+
+---
+
 ## Notes & Decisions
 
 ### Architecture Decisions
@@ -507,5 +566,5 @@ You'll be ready to tackle Ticket 1.2 (Client CRUD - Read Operations), which will
 
 ---
 
-**Last Updated**: November 17, 2025
-**Next Review**: After completing Phase 1
+**Last Updated**: November 24, 2024
+**Next Review**: After completing Phase 2
