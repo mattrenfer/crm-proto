@@ -1827,5 +1827,635 @@ This will round out your data access skills with **analytics queries**.
 
 ---
 
+## Phase 2: Authentication & Security
+
+### Ticket 2.1: Supabase Auth Setup - Core Concepts
+
+**Completed**: November 24, 2024
+**What We Built**: The foundational authentication plumbing - three Supabase clients for browser, server, and middleware contexts
+
+---
+
+## 🎯 The Big Picture: What We Built
+
+**Three different Supabase clients** for three different contexts:
+1. **Browser Client** (`client.ts`) - For interactive UI (login, logout, signup)
+2. **Server Client** (`server.ts`) - For fetching data on the server
+3. **Middleware Client** (`middleware.ts`) - For protecting routes before they load
+
+**Why three?** Because Next.js App Router has three execution contexts with different capabilities:
+- **Browser**: Can access localStorage, cookies, DOM, user events
+- **Server**: Can access Node.js APIs, databases, environment variables (but not localStorage or DOM)
+- **Middleware**: Runs on the Edge (limited Node.js APIs), can intercept ALL requests
+
+Each context needs to handle cookies differently, so we configure Supabase differently for each.
+
+---
+
+## 🔑 Core Concept 1: JWT-Based Authentication (Not Sessions!)
+
+### Traditional Session-Based Auth (What We Didn't Build):
+```
+User logs in → Server creates record in sessions table → Returns session ID cookie
+Every request → Server queries sessions table → Validates session → Returns user data
+
+Pros: Easy to understand, can revoke sessions instantly
+Cons: Database query on EVERY request (slow at scale)
+```
+
+### JWT-Based Auth (What Supabase Uses):
+```
+User logs in → Supabase generates JWT token → Returns token in cookie
+Every request → Server reads JWT → Verifies signature → User data is IN the token
+
+Pros: No database query needed, stateless, scales infinitely
+Cons: Can't revoke until expiry (mitigated by short lifespan + refresh tokens)
+```
+
+**Key Insight:** The JWT **is** the session. It's a cryptographically signed package containing:
+- User ID
+- Email
+- Expiration timestamp (1 hour)
+- Signature (proves it came from Supabase and wasn't tampered with)
+
+### 🏢 Analogies That Helped
+
+**The Nightclub Analogy:**
+- **Traditional sessions** = You get wristband #1247 → Every time you order a drink, bartender calls bouncer to check if #1247 is valid (database lookup)
+- **JWT tokens** = You get a STAMPED HAND with your name and expiration → Bartender reads your hand directly, no need to call bouncer (no database lookup!)
+
+The stamp can't be forged (cryptographic signature), and bartenders can verify it themselves (stateless).
+
+---
+
+## 🍪 Core Concept 2: Why Cookies (Not localStorage)?
+
+**The Problem to Solve:**
+- Browser code needs to read/write tokens (for login/logout)
+- Server code needs to read tokens (to know who's making the request)
+- localStorage only works in the browser
+- Server can't access localStorage
+
+**The Solution: Cookies**
+
+Cookies are automatically sent with EVERY request:
+```
+Browser → Makes request → Browser automatically includes cookies
+Server → Reads cookies → Knows who you are
+```
+
+This is why `@supabase/ssr` stores JWT tokens in cookies by default.
+
+**Analogy:** Cookies are like a key card that works at ALL three checkpoints (lobby/browser, executive office/server, security gate/middleware). localStorage is like a personal wallet that only works in the lobby.
+
+---
+
+## 🎫 Core Concept 3: Access Tokens vs Refresh Tokens
+
+When you log in, you get **TWO tokens**:
+
+### Access Token
+```
+Lifespan: 1 hour
+Purpose: Proves who you are right now
+Size: ~1-2KB (contains user info)
+Sent with: Every API request
+Security: Short lifespan limits damage if stolen
+```
+
+### Refresh Token
+```
+Lifespan: 30 days (configurable)
+Purpose: Get a NEW access token when it expires
+Size: Small (just a random string)
+Sent with: Only token refresh requests
+Security: Longer lifespan, but can only be used for one thing (getting new access tokens)
+```
+
+**The Concert Ticket Analogy:**
+- **Access token** = Wristband that gets you into the venue (expires after 1 hour for security)
+- **Refresh token** = Will-call ticket that lets you get a NEW wristband when yours expires (good for 30 days)
+
+**The Flow:**
+```
+Login:
+  → Get access_token (1h) + refresh_token (30d)
+  → Both stored in cookies
+
+Hour 1: Making requests
+  → Send access_token with each request
+  → Supabase validates token
+  → Request succeeds
+
+Hour 2: Access token expired
+  → Supabase sees expired access_token
+  → Automatically uses refresh_token to get NEW access_token
+  → Updates cookies with new access_token
+  → Request succeeds (you didn't even notice!)
+
+Day 31: Refresh token expired
+  → No way to get new access tokens
+  → Must log in again (enter email/password)
+```
+
+**Why this complexity?** Security tradeoff:
+- Short access token lifespan = Less damage if stolen (only works 1 hour)
+- Long refresh token lifespan = Good UX (stay logged in for weeks)
+- Refresh tokens can only do ONE thing (get new access tokens), so even if stolen, attacker can't access your data directly
+
+---
+
+## 🏢 Core Concept 4: The Three Clients (When to Use What)
+
+### 1. Browser Client (`src/lib/supabase/client.ts`)
+
+**The Office Building Analogy: Lobby Reception Desk**
+```
+Location: Front desk in the lobby (your browser)
+Job: Handle people coming in/out (login, logout, signup)
+Can do: Issue stamps, remove stamps, access guest book
+Can't do: Access secure file room, read company databases
+```
+
+**When to use:**
+- Component has `'use client'` directive
+- Handling user interactions (button clicks, form submits)
+- Calling auth methods (login, logout, signup)
+
+**What it does:**
+```typescript
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(url, key)
+  // Supabase handles EVERYTHING:
+  //   - Reading cookies ✅
+  //   - Writing cookies ✅
+  //   - Refreshing tokens ✅
+}
+```
+
+**Capabilities:**
+- ✅ Read cookies (via browser Cookie API)
+- ✅ Write cookies (via browser Cookie API)
+- ✅ Access browser APIs (localStorage, window, etc.)
+- ❌ Can't access Node.js APIs
+- ❌ Can't read server-side environment variables
+
+---
+
+### 2. Server Client (`src/lib/supabase/server.ts`)
+
+**The Office Building Analogy: Executive Office**
+```
+Location: Private office on the top floor (your server)
+Job: Fetch sensitive data, make important decisions
+Can do: Read secure database, access employee records, read stamps
+Can't do: Issue new stamps (can't write cookies from Server Components)
+```
+
+**When to use:**
+- Server Component (no `'use client'` directive)
+- Server Action (functions with `'use server'`)
+- API Route Handler
+- Fetching data that requires authentication
+
+**What it does:**
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export async function createClient() {
+  const cookieStore = await cookies()  // Next.js 15: now async!
+
+  return createServerClient(url, key, {
+    cookies: {
+      // Teach Supabase HOW to read cookies in Node.js
+      getAll() {
+        return cookieStore.getAll()
+      },
+      // Try to write, but usually fails (Server Components can't write)
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options)
+          })
+        } catch {
+          // Ignore - cookie writing happens client-side
+        }
+      }
+    }
+  })
+}
+```
+
+**Capabilities:**
+- ✅ Read cookies (via Next.js cookies() API)
+- ⚠️ Write cookies (usually fails in Server Components)
+- ✅ Access Node.js APIs
+- ✅ Read server-side environment variables
+- ❌ Can't access browser APIs (window, localStorage, etc.)
+- ❌ Can't handle user events (onClick, onChange, etc.)
+
+**Important:** Don't call `supabase.auth.signIn()` from server! It won't write cookies correctly. Auth actions must happen client-side.
+
+---
+
+### 3. Middleware Client (`src/lib/supabase/middleware.ts`)
+
+**The Office Building Analogy: Security Gate**
+```
+Location: The gate BEFORE you enter the building (before page loads)
+Job: Check credentials before anyone gets in
+Can do: Read stamps, turn people away, re-stamp if expired, let people through
+Special power: Can both READ and WRITE stamps
+```
+
+**When to use:**
+- `middleware.ts` file only
+- Protecting routes (redirect if not logged in)
+- Refreshing expired tokens automatically
+- Running logic BEFORE pages load
+
+**The Plumbing Complexity:**
+
+This is the most complex one because we need to "pipe" cookies from incoming request to outgoing response:
+
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { type NextRequest, NextResponse } from 'next/server'
+
+export function createClient(request: NextRequest) {
+  let response = NextResponse.next({ request })
+
+  const supabase = createServerClient(url, key, {
+    cookies: {
+      // Read cookies from incoming request
+      getAll() {
+        return request.cookies.getAll()
+      },
+      // Write cookies to outgoing response
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options)
+        })
+
+        // Recreate response to ensure cookies persist
+        response = NextResponse.next({ request })
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options)
+        })
+      }
+    }
+  })
+
+  return { supabase, response }  // Return BOTH!
+}
+```
+
+**Why return both?** When tokens get refreshed (access token expires), the NEW token must be written to the response object. If you return `NextResponse.next()` instead, the updated cookies get lost!
+
+**Capabilities:**
+- ✅ Read cookies (from request)
+- ✅ Write cookies (to response)
+- ✅ Redirect users
+- ✅ Modify requests before they reach pages
+- ⚠️ Limited Node.js APIs (runs on Edge runtime)
+- ❌ Can't access browser APIs
+
+**Critical Gotcha:** Must return the `response` object, not `NextResponse.next()`. If tokens were refreshed, the new tokens are stored in `response`. If you don't return it, the browser never gets the updated tokens!
+
+---
+
+## 🧩 Core Concept 5: Server vs Client Component Boundary
+
+**The Error We Hit:**
+```
+Error: You're importing a component that needs "next/headers".
+That only works in a Server Component.
+```
+
+**What Happened:**
+```tsx
+'use client'  // This is a Client Component
+import { signIn } from '@/lib/auth'
+// auth.ts imports server.ts
+// server.ts uses 'next/headers' (server-only!)
+// ❌ Can't bundle server code in client!
+```
+
+**The Rule:**
+
+| Component Type | Can Import | Cannot Import |
+|----------------|------------|---------------|
+| Client Component (`'use client'`) | Browser-safe code, other Client Components | Server Components, `next/headers`, `next/cache` |
+| Server Component (default) | Anything | Nothing (can import everything) |
+
+**Why?** Webpack bundles Client Components to send to the browser. It can't bundle server-only APIs (they don't exist in browsers).
+
+**Mental Model:** Client Components are like JavaScript files that get sent to the user's browser. You can only import things that work in browsers. Server Components run on your server and never get sent to the browser, so they can use anything.
+
+---
+
+## 🔄 Core Concept 6: How Token Refresh Works (The Magic)
+
+**The Problem:**
+Access tokens expire after 1 hour. How do you stay logged in for days/weeks?
+
+**The Solution: Automatic Token Refresh**
+
+```
+1. You're logged in, using the app
+2. Access token expires (after 1 hour)
+3. You click "View Clients"
+4. Supabase client checks token expiration
+5. Token is expired!
+6. Client automatically makes request:
+   POST /auth/v1/token?grant_type=refresh_token
+   Body: { refresh_token: "..." }
+7. Supabase validates refresh token
+8. Returns NEW access token
+9. Client updates cookies with new token
+10. Original request retries with new token
+11. You see your clients (never knew anything happened!)
+```
+
+**Where This Happens:**
+- **Browser:** `createBrowserClient()` handles it automatically
+- **Middleware:** `createServerClient()` in middleware handles it (writes to response)
+- **Server Components:** Usually doesn't refresh (can't write cookies reliably)
+
+**Key Insight:** This is why we had to carefully configure cookie handling in middleware. When tokens refresh, the NEW token must make it back to the browser, or you'll appear logged out on the next request!
+
+---
+
+## 📊 Mental Model: The Full Auth Flow
+
+### Initial Login
+```
+1. User enters email/password in login form (Client Component)
+2. Component calls: createClient().auth.signInWithPassword()
+3. Request sent to Supabase: POST /auth/v1/token
+4. Supabase validates credentials against auth.users table
+5. Supabase generates:
+   - access_token (JWT, expires in 1h)
+   - refresh_token (random string, expires in 30d)
+6. Supabase returns both tokens
+7. @supabase/ssr automatically writes to cookies:
+   - sb-<project>-auth-token = access_token
+   - sb-<project>-auth-token-refresh = refresh_token
+8. Browser stores cookies
+9. Next request automatically includes cookies
+```
+
+### Checking Auth (Server Component)
+```
+1. Server Component renders: await createClient()
+2. Reads cookies using Next.js cookies() API
+3. Finds sb-<project>-auth-token cookie
+4. Calls: supabase.auth.getUser()
+5. Supabase verifies JWT signature
+6. Returns user object: { id, email, ... }
+7. Component can now fetch user's data
+```
+
+### Route Protection (Middleware)
+```
+1. User navigates to /dashboard
+2. Middleware runs BEFORE page loads
+3. Calls: createClient(request)
+4. Calls: supabase.auth.getUser()
+5. If token expired:
+   a. Supabase uses refresh_token to get new access_token
+   b. New token written to response cookies
+6. If no user:
+   a. Middleware returns redirect to /login
+7. If user exists:
+   a. Middleware returns response (with updated cookies)
+   b. Page loads
+```
+
+### Logout
+```
+1. User clicks logout (Client Component)
+2. Component calls: createClient().auth.signOut()
+3. Request sent to Supabase: POST /auth/v1/logout
+4. Supabase invalidates refresh token in database
+5. @supabase/ssr clears cookies
+6. User redirected to login page
+```
+
+---
+
+## ⚠️ IMPORTANT: Execution Order vs. Teaching Order
+
+### The Confusion
+When we numbered the three clients (Browser = 1, Server = 2, Middleware = 3), this was **teaching complexity order**, NOT **execution order**. This caused confusion about when each client runs.
+
+### The ACTUAL Execution Order
+
+**When you visit a protected page like `/dashboard`, here's what really happens:**
+
+```
+Step 1: 🚪 MIDDLEWARE (The Security Gate)
+        ↓
+        Runs FIRST, before anything else
+        Intercepts the request at the edge
+        Checks if you're logged in
+        ↓
+        ✅ Valid? → Allow request to continue
+        ❌ Invalid? → Redirect to /login (STOPS HERE!)
+        ↓
+Step 2: 🏢 SERVER COMPONENT (The Executive Office)
+        ↓
+        Only runs if middleware allowed the request through
+        Fetches your private data from database
+        Renders page with your data
+        Sends HTML to browser
+        ↓
+Step 3: 🌐 BROWSER RECEIVES PAGE
+        ↓
+        Page displays in user's browser
+        ↓
+Step 4: 👆 CLIENT COMPONENT (The Lobby)
+        ↓
+        Only runs when user interacts with UI
+        Example: User clicks "Logout" button
+        Uses Browser Client to remove auth cookies
+```
+
+### The Building Analogy - CORRECTED
+
+**Original analogy order was wrong!** Here's the correct version:
+
+```
+🏢 Company Campus Security Flow:
+
+1️⃣ SECURITY GATE (Middleware) - FIRST!
+   📍 Location: Before you even enter the property
+   🎯 Job: Check ID badge, update if expired, turn away unauthorized
+   ⏰ When: EVERY time someone tries to enter
+   🔒 Power: Can block entry completely
+
+   After passing the gate, you can enter either:
+
+2️⃣ EXECUTIVE OFFICE (Server Component)
+   📍 Location: Secure area inside building
+   🎯 Job: Access private files, read sensitive data
+   ⏰ When: When page needs to load user's data
+   🔒 Power: Can read your badge, fetch your files
+
+3️⃣ LOBBY DESK (Client Component)
+   📍 Location: Public area inside building
+   🎯 Job: Interactive - get badges, check in/out
+   ⏰ When: User clicks buttons, submits forms
+   🔒 Power: Can issue/remove badges, interactive actions
+```
+
+### Real-World Example: Visiting `/dashboard`
+
+```
+User types: example.com/dashboard
+       ↓
+─────────────────────────────────────────────
+🚪 MIDDLEWARE INTERCEPTS (Gate)
+─────────────────────────────────────────────
+const { supabase, response } = createClient(request)
+const { data: { user } } = await supabase.auth.getUser()
+
+if (!user) {
+  return NextResponse.redirect('/login')  // ❌ STOPS HERE
+}
+
+return response  // ✅ CONTINUE
+       ↓
+─────────────────────────────────────────────
+🏢 SERVER COMPONENT RUNS (Executive Office)
+─────────────────────────────────────────────
+const supabase = await createServerClient()
+const clients = await supabase.from('clients').select()
+
+return <Dashboard clients={clients} />
+       ↓
+─────────────────────────────────────────────
+🌐 BROWSER DISPLAYS PAGE
+─────────────────────────────────────────────
+User sees dashboard with their data
+       ↓
+─────────────────────────────────────────────
+👆 USER CLICKS "LOGOUT" (Lobby Desk)
+─────────────────────────────────────────────
+const supabase = createBrowserClient()
+await supabase.auth.signOut()  // Removes badges
+```
+
+### Why Middleware Comes First (And Why It's Critical)
+
+**Without middleware:**
+```
+User → Page tries to load → Server Component checks auth → "Not logged in!" → Redirect
+❌ Problem: Page tried to execute first, might leak data or waste resources
+```
+
+**With middleware:**
+```
+User → 🚪 Middleware stops them → Redirect to login
+✅ Better: Request never reaches the page, completely blocked at the gate
+```
+
+**Middleware is the ONLY place that can:**
+- ✅ Block requests BEFORE any page code runs
+- ✅ Protect ALL routes from one file
+- ✅ Refresh tokens and guarantee browser gets the update
+- ✅ Run on every single request automatically
+
+### Why We Built Them in "Reverse" Order
+
+We built them **simple → complex** for learning:
+
+1. **Browser Client** (simplest) - Just call `createBrowserClient()`, it handles everything!
+2. **Server Client** (medium) - Need to teach Supabase how to read cookies in Node.js
+3. **Middleware Client** (hardest) - Cookie piping, must return response object
+
+**But they execute in reverse:**
+1. Middleware (first to run)
+2. Server Component (if middleware allows)
+3. Client Component (if user interacts)
+
+### Key Insight
+
+> **Teaching order ≠ Execution order**
+>
+> We learned them simple → complex for education.
+> They run in reverse for actual requests.
+
+**The most complex client (Middleware) is the most important** - it's your app's security bouncer that runs on EVERY request before anything else can happen.
+
+---
+
+## 🎓 Key Takeaways
+
+### 1. **JWTs Are Self-Contained**
+Traditional sessions require database lookups. JWTs contain user info + signature. Server can verify them cryptographically without database queries.
+
+### 2. **Cookies Bridge Client/Server**
+localStorage only works in browser. Cookies work everywhere. That's why Supabase uses cookies.
+
+### 3. **Three Contexts = Three Clients**
+Browser, Server, and Middleware have different cookie APIs. We configure Supabase differently for each.
+
+### 4. **Refresh Tokens Enable Long Sessions**
+Short-lived access tokens (1h) + long-lived refresh tokens (30d) = secure + good UX.
+
+### 5. **Middleware Response Must Be Returned**
+If tokens refresh in middleware, new tokens are in the `response` object. Don't return `NextResponse.next()` or you'll lose them!
+
+### 6. **Client Components Can't Import Server Code**
+Webpack bundles Client Components for the browser. Can't include Node.js APIs.
+
+---
+
+## 📝 What We Implemented
+
+**Files Created:**
+- `src/lib/supabase/client.ts` - Browser client for interactive UI
+- `src/lib/supabase/server.ts` - Server client for Server Components
+- `src/lib/supabase/middleware.ts` - Middleware client for route protection
+- `src/lib/auth.ts` - Helper functions (signUp, signIn, signOut, getSession, getUser)
+- `src/app/test-auth/page.tsx` - Test page to verify auth works (can be deleted)
+
+**What We Learned:**
+- ✅ JWT-based authentication vs traditional sessions
+- ✅ Why cookies are used instead of localStorage
+- ✅ Access tokens vs refresh tokens
+- ✅ How automatic token refresh works
+- ✅ Three different Supabase clients for three contexts
+- ✅ Server vs Client Component boundaries in Next.js
+- ✅ The `@supabase/ssr` package and cookie management
+- ✅ Next.js 15 breaking change: `cookies()` is now async
+
+**Testing Results:**
+- ✅ Sign in working with real JWT tokens
+- ✅ Session retrieval working
+- ✅ Sign out working
+- ✅ Tokens stored in cookies (visible in DevTools)
+- ✅ No console errors
+
+---
+
+## 🔮 What's Next
+
+Now that we have the **auth foundation**, we can build:
+
+- **Ticket 2.2**: Login UI (form that calls our client utilities)
+- **Ticket 2.3**: Signup UI (create new users)
+- **Ticket 2.4**: Auth Context (provide user to all components)
+- **Ticket 2.5**: Middleware (protect all routes, use middleware client)
+- **Ticket 2.6**: RLS (database-level security, add user_id columns)
+
+Every subsequent ticket builds on this foundation. The hard conceptual work is done!
+
+---
+
 **Notes Section** (Add your own observations here):
 
