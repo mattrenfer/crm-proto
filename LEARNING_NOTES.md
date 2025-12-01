@@ -7,11 +7,21 @@
 ---
 
 ## Table of Contents
+
+### Phase 1: Foundation - Database Connection
 - [Architecture Patterns](#architecture-patterns)
 - [Ticket 1.2: Data Access Layer](#ticket-12-data-access-layer)
 - [Ticket 1.3: Client Write Operations](#ticket-13-client-write-operations)
 - [Ticket 1.4: Task CRUD - Full Implementation](#ticket-14-task-crud---full-implementation)
 - [Ticket 1.5: Notes CRUD - Reinforcement](#ticket-15-notes-crud---reinforcement)
+- [Ticket 1.6: Dashboard Real-Time Stats](#ticket-16-dashboard-real-time-stats)
+
+### Phase 2: Authentication & Security
+- [Ticket 2.1: Supabase Auth Setup](#ticket-21-supabase-auth-setup)
+- [Ticket 2.2: Auth UI - Login Page](#ticket-22-auth-ui---login-page)
+- [Ticket 2.3: Auth UI - Signup Page](#ticket-23-auth-ui---signup-page)
+- [Ticket 2.4: Session Management & Context](#ticket-24-session-management--context)
+- [Ticket 2.5: Protected Routes & Middleware](#-ticket-25-protected-routes--middleware)
 
 ---
 
@@ -3511,4 +3521,29 @@ The middleware will use the context to make routing decisions!
 ---
 
 **Notes Section** (Add your own observations here):
+
+
+---
+---
+
+# 🔐 Ticket 2.5: Protected Routes & Middleware
+
+**Date Completed:** December 1, 2024
+**Status:** ✅ Complete
+**GitHub Issue:** #12
+**Difficulty:** ⭐⭐⭐ (3/5)
+
+## What We Built
+
+Created Next.js middleware to protect all routes with authentication, redirect unauthenticated users to login, and enhanced dev tools for RLS testing.
+
+**Files Created:**
+- src/middleware.ts - Route protection
+- src/app/dev/auth-test/ - Dev-only auth testing tool
+
+**Files Modified:**
+- src/components/Navigation.tsx - Added logout redirect
+
+**Files Deleted:**
+- src/app/test-auth/ - Moved to dev route
 

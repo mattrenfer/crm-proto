@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function Navigation() {
     const pathname = usePathname()
+    const router = useRouter()
     const { user, signOut } = useAuth()
     const navItems = [
         { href: '/', label: 'Dashboard' },
@@ -41,7 +42,7 @@ export default function Navigation() {
                     {user ? (
                         <div className="flex items-center space-x-4">
                             <span className="text-sm text-gray-500">{user.email}</span>
-                            <button onClick={signOut} className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer">Logout</button>
+                            <button onClick={async () => { await signOut(); router.push('/login') }} className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer">Logout</button>
                         </div>
                     ) : (
                         <div className="flex items-center space-x-4">
