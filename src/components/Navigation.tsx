@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function Navigation() {
     const pathname = usePathname()
-
+    const { user, signOut } = useAuth()
     const navItems = [
         { href: '/', label: 'Dashboard' },
         { href: '/clients', label: 'Clients' },
@@ -28,8 +29,8 @@ export default function Navigation() {
                                     key={item.href}
                                     href={item.href}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname === item.href
-                                            ? 'border-blue-500 text-gray-900 dark:text-white'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white'
+                                        ? 'border-blue-500 text-gray-900 dark:text-white'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white'
                                         }`}
                                 >
                                     {item.label}
@@ -37,6 +38,17 @@ export default function Navigation() {
                             ))}
                         </div>
                     </div>
+                    {user ? (
+                        <div className="flex items-center space-x-4">
+                            <span className="text-sm text-gray-500">{user.email}</span>
+                            <button onClick={signOut} className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer">Logout</button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center space-x-4">
+                            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700">Login</Link>
+                            <Link href="/signup" className="text-sm text-gray-500 hover:text-gray-700">Signup</Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </nav>

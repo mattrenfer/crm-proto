@@ -2457,5 +2457,1058 @@ Every subsequent ticket builds on this foundation. The hard conceptual work is d
 
 ---
 
+### Ticket 2.2: Login Page - Form Patterns & Validation
+
+**Completed**: November 25, 2024
+**What We Built**: Full-featured login page with validation, error handling, and user feedback
+
+---
+
+## 🎯 Core Concepts Learned
+
+### 1. **Client Components for Forms (Required!)**
+
+**Why forms MUST be Client Components:**
+- Need `useState` for form state (controlled inputs)
+- Need event handlers (`onSubmit`, `onChange`)
+- Need interactivity and real-time validation
+- Need to write cookies (browser client)
+
+**Server Components can't do any of this** - they're pre-rendered static HTML.
+
+```tsx
+'use client'  // ← Required for forms!
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'  // Browser client
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('')  // Track input
+  const [password, setPassword] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const supabase = createClient()  // Uses browser client
+    await supabase.auth.signInWithPassword({ email, password })
+  }
+}
+```
+
+---
+
+### 2. **Controlled vs Uncontrolled Inputs**
+
+**Uncontrolled (simple but limited):**
+```tsx
+<input name="email" />  // React doesn't track value
+// Read on submit: formData.get('email')
+```
+
+**Pros:** Less code
+**Cons:** Can't validate while typing, can't conditionally disable buttons
+
+**Controlled (React way) - What we used:**
+```tsx
+const [email, setEmail] = useState('')
+
+<input
+  value={email}  // React controls the value
+  onChange={(e) => setEmail(e.target.value)}  // Update state
+/>
+```
+
+**Pros:** Full control, real-time validation, conditional rendering
+**Cons:** More code (but worth it!)
+
+**Key insight:** Controlled inputs give you power to build better UX.
+
+---
+
+### 3. **Three-Layer Validation Strategy**
+
+**Layer 1: Client-Side (Immediate Feedback)**
+```tsx
+if (!email.includes('@')) {
+  setError('Invalid email')
+  return  // Don't call API
+}
+```
+- Instant feedback
+- Saves network requests
+- Better UX
+
+**Layer 2: Supabase Auth API (Security)**
+```tsx
+const { error } = await supabase.auth.signInWithPassword({ email, password })
+// Server validates:
+// - Does user exist?
+// - Does password match?
+```
+- Source of truth
+- Can't be bypassed by user
+- Security layer
+
+**Layer 3: Database Constraints (Safety Net)**
+```sql
+email TEXT NOT NULL UNIQUE  -- Database enforces
+```
+- Protects data integrity
+- Catches bugs in application code
+- Last line of defense
+
+**All three layers work together!**
+
+---
+
+### 4. **Error Handling Patterns**
+
+**Supabase Auth Returns Generic Errors (Security Feature):**
+```tsx
+// Wrong password OR user doesn't exist:
+error.message = "Invalid login credentials"  // Same message!
+```
+
+**Why?** Prevents email enumeration attacks (attacker can't discover which emails exist).
+
+**User-Friendly Error Translation:**
+```tsx
+if (authError) {
+  if (authError.message.includes('Invalid login credentials')) {
+    setError('Invalid email or password. Please try again.')
+  } else if (authError.message.includes('Email not confirmed')) {
+    setError('Please confirm your email before logging in.')
+  } else {
+    setError('An error occurred. Please try again.')
+  }
+}
+```
+
+**Pattern:** Parse API errors → Show user-friendly messages
+
+---
+
+### 5. **Loading States (Prevent Double-Submit)**
+
+**The Problem:**
+```
+User clicks "Sign In"
+  ↓ (API takes 500ms)
+User clicks again (impatient)
+  ↓
+TWO API CALLS! 💥
+```
+
+**The Solution:**
+```tsx
+const [loading, setLoading] = useState(false)
+
+const handleSubmit = async (e) => {
+  setLoading(true)  // Disable form
+  try {
+    await supabase.auth.signInWithPassword({ email, password })
+  } finally {
+    setLoading(false)  // Always re-enable (even on error!)
+  }
+}
+
+<button disabled={loading}>
+  {loading ? 'Signing in...' : 'Sign in'}
+</button>
+```
+
+**Benefits:**
+- Prevents double-submit
+- Visual feedback for user
+- Always clears (even on error - that's what `finally` does!)
+
+---
+
+### 6. **Client-Side Navigation: `useRouter.push()`**
+
+**Used in Client Components for navigation after user actions:**
+
+```tsx
+'use client'
+import { useRouter } from 'next/navigation'
+
+export default function LoginPage() {
+  const router = useRouter()
+
+  const handleSubmit = async (e) => {
+    // ... login logic ...
+
+    if (success) {
+      router.push('/')  // Navigate without page reload
+    }
+  }
+}
+```
+
+**Characteristics:**
+- Runs in browser (client-side)
+- Can be in event handlers, async functions
+- Smooth transition, no page reload
+- Must be in Client Component
+
+**vs `redirect()` (Server Components):**
+- `redirect()` = Server decides before page loads (HTTP redirect)
+- `router.push()` = Browser navigates after page loaded (JS navigation)
+
+**For login/signup:** Use `router.push()` because forms need Client Components.
+
+---
+
+### 7. **Early Returns Pattern (Critical!)**
+
+**Always return after showing an error:**
+
+```tsx
+// ✅ CORRECT - Early return prevents execution
+if (!email.includes('@')) {
+  setError('Invalid email')
+  return  // Stop here!
+}
+
+// ❌ WRONG - Missing return, code continues!
+if (!email.includes('@')) {
+  setError('Invalid email')
+  // Oops! Will still call API with invalid email
+}
+
+setLoading(true)
+await supabase.auth.signInWithPassword(...)
+```
+
+**Key learning:** Validation without `return` is a bug! The code will continue executing.
+
+---
+
+## 📝 What We Implemented
+
+**Files Created:**
+- `src/app/login/page.tsx` - Login page with validation
+
+**Features:**
+- Controlled form inputs (email, password)
+- Client-side validation (format, length, empty fields)
+- Supabase authentication integration
+- User-friendly error messages
+- Loading state with disabled inputs
+- Redirect after successful login
+- Already-logged-in check on page load
+- Professional styling with dark mode
+- Accessible form (labels, focus, ARIA)
+
+**Success Criteria:**
+- ✅ Can log in with valid credentials
+- ✅ Shows errors for invalid input
+- ✅ Prevents double-submission
+- ✅ Redirects to home on success
+- ✅ Checks if already logged in
+
+---
+
+### Ticket 2.3: Signup Page - Independent Implementation
+
+**Completed**: November 25, 2024
+**What We Built**: Signup page built independently using patterns from login page
+
+---
+
+## 🎓 Learning Through Building (Not Watching!)
+
+**Approach:**
+Instead of watching a demo, implemented signup page independently:
+1. Copied login page as starting point
+2. Modified for signup requirements
+3. Added password confirmation field
+4. Received code review feedback
+5. Fixed bugs and improved code
+6. Got approval for production
+
+**This is how you actually learn** - by doing, debugging, and iterating!
+
+---
+
+## 🐛 Critical Bug Found & Fixed: Missing Return Statement
+
+**The Bug:**
+```tsx
+if (password !== confirmPassword) {
+  setError('Passwords do not match')
+}  // ← Missing return!
+
+setLoading(true)  // ← Still executes! Bug!
+```
+
+**What Happened:**
+- Shows error message to user
+- BUT still continues and calls Supabase API
+- Wastes API call, confusing UX
+
+**The Fix:**
+```tsx
+if (password !== confirmPassword) {
+  setError('Passwords do not match')
+  return  // ← Stop here!
+}
+```
+
+**Key Learning:**
+- Validation must use early returns
+- Found the bug independently (critical thinking!)
+- Understanding control flow is essential
+
+**This is a common beginner bug** - now you'll never make it again!
+
+---
+
+## 🎯 New Patterns Added to Signup
+
+### **Password Confirmation Validation**
+
+**New state variable:**
+```tsx
+const [confirmPassword, setConfirmPassword] = useState('')
+```
+
+**New validation check:**
+```tsx
+if (password !== confirmPassword) {
+  setError('Passwords do not match')
+  return
+}
+```
+
+**New input field:**
+```tsx
+<input
+  type="password"
+  value={confirmPassword}
+  onChange={(e) => setConfirmPassword(e.target.value)}
+/>
+```
+
+**Pattern:** Three pieces must work together (state, validation, input).
+
+---
+
+### **Validation Order Matters**
+
+**Correct order (what we did):**
+```tsx
+1. Check all fields filled
+2. Validate email format
+3. Validate password length
+4. Validate passwords match  // ← Check matching BEFORE API call
+5. Call API
+```
+
+**Why this order?**
+- Cheapest checks first (no computation)
+- More expensive checks later (regex, API)
+- User gets fastest feedback
+- Saves unnecessary API calls
+
+---
+
+### **User-Friendly Error Messages**
+
+**For duplicate email:**
+```tsx
+if (authError.message.includes('Email already in use')) {
+  setError('Email already in use. Please use a different email.')
+}
+```
+
+**Generic fallback:**
+```tsx
+else {
+  setError('Unable to sign up. Please try again.')
+}
+```
+
+**Pattern:** Parse specific errors, provide helpful messages, have a fallback.
+
+---
+
+## 📊 Code Review Process Learned
+
+**Review Feedback Categories:**
+
+**Critical (Must Fix):**
+- Missing return statement (bug!)
+- Security issues
+- Broken functionality
+
+**Should Fix:**
+- Incorrect documentation
+- Misleading error messages
+- Console.log with wrong text
+
+**Nice to Have:**
+- Better autocomplete attributes
+- Password requirement hints
+- Additional UX improvements
+
+**Key insight:** Not all feedback is equal. Prioritize fixes by impact.
+
+---
+
+## 🎯 Reusable Form Patterns Mastered
+
+**These patterns work for ANY form:**
+
+1. **Controlled inputs with useState**
+   ```tsx
+   const [value, setValue] = useState('')
+   <input value={value} onChange={(e) => setValue(e.target.value)} />
+   ```
+
+2. **Loading state management**
+   ```tsx
+   setLoading(true) → try/catch → finally setLoading(false)
+   ```
+
+3. **Validation with early returns**
+   ```tsx
+   if (invalid) { setError(); return }
+   ```
+
+4. **Error state display**
+   ```tsx
+   {error && <div className="error">{error}</div>}
+   ```
+
+5. **User-friendly error messages**
+   ```tsx
+   Parse API error → Show human-readable message
+   ```
+
+**Next time you build a form (profile, settings, etc.):** Use these exact patterns!
+
+---
+
+## 💡 Key Takeaways
+
+### **What Makes Code Production-Ready:**
+
+1. ✅ **Comprehensive validation** (all fields, all cases)
+2. ✅ **Early returns** (prevent invalid execution paths)
+3. ✅ **User-friendly errors** (not raw API messages)
+4. ✅ **Loading states** (prevent double-submit)
+5. ✅ **Accessibility** (labels, focus, semantic HTML)
+6. ✅ **Error recovery** (`finally` blocks ensure cleanup)
+7. ✅ **TypeScript types** (no `any` usage)
+
+### **Development Workflow:**
+
+1. 🔄 **Copy-paste-modify** for similar features (faster than from scratch)
+2. 🧪 **Test after every change** (don't wait until the end)
+3. 🐛 **Debug incrementally** (comment out, add logs)
+4. 👔 **Code review catches bugs** (even ones you missed!)
+5. 🔧 **Iterate based on feedback** (improve, don't defend)
+
+### **Critical Thinking Moments:**
+
+- 💭 Realizing the missing `return` was a bug (control flow understanding)
+- 💭 Understanding why validation order matters (performance + UX)
+- 💭 Seeing how patterns from login transfer to signup (abstraction)
+- 💭 Recognizing the need for early returns (preventing invalid states)
+
+---
+
+## 🔗 How Login & Signup Connect to Ticket 2.1
+
+**Using the Infrastructure:**
+
+Both pages use the browser client we built in Ticket 2.1:
+```tsx
+import { createClient } from '@/lib/supabase/client'
+
+const supabase = createClient()
+await supabase.auth.signInWithPassword({ email, password })  // Login
+await supabase.auth.signUp({ email, password })              // Signup
+```
+
+**What happens automatically:**
+1. API call to Supabase
+2. Tokens returned
+3. `@supabase/ssr` writes tokens to cookies
+4. Next request includes cookies
+5. Server/middleware can read them
+
+**The payoff:** All that complex infrastructure from 2.1 is now just one line of code!
+
+---
+
+## 📈 Phase 2 Progress
+
+**Completed:**
+- ✅ Ticket 2.1: Auth Setup (infrastructure)
+- ✅ Ticket 2.2: Login Page (built together)
+- ✅ Ticket 2.3: Signup Page (built independently)
+- ✅ Ticket 2.4: Session Management & Context
+
+**Remaining:**
+- 🔜 Ticket 2.5: Protected Routes & Middleware
+- 🔜 Ticket 2.6: Row Level Security (RLS)
+
+**Progress:** 67% of Phase 2 complete! 🎉
+
+---
+
+### Ticket 2.4: Session Management & Context
+
+**Completed**: November 28, 2024
+**What We Built**: React Context for centralized auth state management throughout the app
+
+---
+
+## 🎯 The Problem We Solved
+
+**Before Context:**
+- Every page manually checked auth: `const supabase = createClient(); await supabase.auth.getUser()`
+- Duplicated auth logic across multiple files
+- No way for components to know when auth state changed
+- Login/logout required manual page refreshes to see changes
+
+**After Context:**
+- Single source of truth for auth state
+- Any component can use `useAuth()` hook
+- Automatic updates when auth changes (login, logout, token refresh)
+- Persistent sessions across navigation and page refreshes
+
+---
+
+## 🏗️ What We Built
+
+### 1. **AuthContext** (`src/contexts/AuthContext.tsx`)
+
+**The Core Pattern:**
+```tsx
+'use client'
+
+import { createContext, useContext, useState, useEffect } from 'react'
+import { User, Session } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
+
+type AuthContextType = {
+  user: User | null
+  session: Session | null
+  loading: boolean
+  signOut: () => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const signOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
+```
+
+**Key Components:**
+1. **State Management**: `user`, `session`, `loading`
+2. **Initial Check**: `getSession()` on mount
+3. **Real-time Listener**: `onAuthStateChange()` for live updates
+4. **Cleanup**: Unsubscribe on unmount
+5. **Custom Hook**: `useAuth()` for consuming the context
+
+---
+
+### 2. **Providers Wrapper** (`src/components/Providers.tsx`)
+
+**Why We Need This:**
+
+```tsx
+'use client'
+
+import { AuthProvider } from '@/contexts/AuthContext'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      {children}
+    </AuthProvider>
+  )
+}
+```
+
+**The Server/Client Boundary Problem:**
+- Root `layout.tsx` is a Server Component (default)
+- Context requires hooks → must be Client Component
+- Can't add `'use client'` to root layout (loses Server Component benefits)
+- **Solution**: Create Client Component "island" for providers
+
+**Analogy:** Server Components are the building, Client Components are interactive kiosks inside. The Providers wrapper is the kiosk that makes auth available everywhere inside.
+
+---
+
+### 3. **Root Layout Integration** (`src/app/layout.tsx`)
+
+**Wrapping the entire app:**
+```tsx
+import { Providers } from '@/components/Providers'
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>
+          <Toaster />
+          <Navigation />
+          <main>{children}</main>
+        </Providers>
+      </body>
+    </html>
+  )
+}
+```
+
+**Why this works:**
+- `Providers` is a Client Component
+- Everything inside has access to auth context
+- Layout stays a Server Component
+- Best of both worlds!
+
+---
+
+### 4. **Navigation Updates** (`src/components/Navigation.tsx`)
+
+**Using the context:**
+```tsx
+'use client'
+
+import { useAuth } from '@/contexts/AuthContext'
+
+export default function Navigation() {
+  const { user, signOut } = useAuth()
+
+  return (
+    <nav>
+      {user ? (
+        <div>
+          <span>{user.email}</span>
+          <button onClick={signOut}>Logout</button>
+        </div>
+      ) : (
+        <div>
+          <Link href="/login">Login</Link>
+          <Link href="/signup">Signup</Link>
+        </div>
+      )}
+    </nav>
+  )
+}
+```
+
+**Benefits:**
+- No manual auth checks
+- Automatically updates when user logs in/out
+- Clean, declarative code
+
+---
+
+## 🎓 Key Concepts Learned
+
+### 1. **React Context Pattern**
+
+**Purpose:** Share state across component tree without prop drilling
+
+**The Pattern:**
+```
+1. Create Context
+2. Create Provider component (wraps children, provides value)
+3. Create custom hook (useAuth) for consuming
+4. Wrap app with Provider
+5. Any component can use the hook
+```
+
+**Real-world analogy:** Context is like a company-wide announcement system. Instead of telling each person individually (prop drilling), you broadcast once and everyone hears it.
+
+---
+
+### 2. **onAuthStateChange Listener**
+
+**What it does:**
+Supabase fires events for ALL auth changes:
+- `SIGNED_IN` - User just logged in
+- `SIGNED_OUT` - User just logged out
+- `TOKEN_REFRESHED` - Access token was auto-refreshed
+- `USER_UPDATED` - User profile changed
+
+**Why it's powerful:**
+```tsx
+supabase.auth.onAuthStateChange((_event, session) => {
+  setSession(session)
+  setUser(session?.user ?? null)
+})
+```
+
+Every component using `useAuth()` automatically re-renders when this fires!
+
+**The Flow:**
+```
+User clicks "Logout"
+  → signOut() called
+  → Supabase clears cookies
+  → onAuthStateChange fires with SIGNED_OUT
+  → Context updates: user=null, session=null
+  → ALL components using useAuth() re-render
+  → Navigation shows "Login" link
+```
+
+---
+
+### 3. **Loading State Pattern**
+
+**Why it matters:**
+```tsx
+const [loading, setLoading] = useState(true)  // Start true!
+
+useEffect(() => {
+  supabase.auth.getSession().then(({ data }) => {
+    setUser(data.session?.user ?? null)
+    setLoading(false)  // Done checking
+  })
+}, [])
+```
+
+**Without loading state:**
+```
+Page loads → user = null → Shows "Login" link
+100ms later → Session found → Shows "Logout" + email
+Result: Flash of wrong content!
+```
+
+**With loading state:**
+```
+Page loads → loading = true → Show spinner
+100ms later → Session found → loading = false → Show correct UI
+Result: Smooth, no flash!
+```
+
+**Usage in components:**
+```tsx
+const { user, loading } = useAuth()
+
+if (loading) return <Spinner />
+if (user) return <Dashboard />
+return <LoginPrompt />
+```
+
+---
+
+### 4. **Subscription Cleanup**
+
+**The memory leak problem:**
+```tsx
+useEffect(() => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(...)
+
+  // ❌ Without cleanup:
+  // Component unmounts, but listener keeps running!
+  // Navigate away and back = multiple listeners!
+})
+```
+
+**The solution:**
+```tsx
+useEffect(() => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(...)
+
+  return () => subscription.unsubscribe()  // ✅ Cleanup!
+}, [])
+```
+
+**When cleanup runs:**
+- Component unmounts
+- Dependencies change (empty array = never)
+- Before next effect runs
+
+**Why it matters:** Without cleanup, you get duplicate listeners, callbacks fire multiple times, performance degrades, memory leaks.
+
+---
+
+### 5. **Server vs Client Component Boundary**
+
+**The Error We Would Hit Without Providers:**
+```
+Error: You're importing a component that needs "next/headers".
+That only works in a Server Component.
+```
+
+**Why Providers wrapper works:**
+```
+layout.tsx (Server Component)
+  ↓
+<Providers> (Client Component) ← Boundary!
+  ↓
+Everything inside can use hooks, context, browser APIs
+```
+
+**Key Rule:**
+- Server Components can import Client Components ✅
+- Client Components CANNOT import Server Components ❌
+
+---
+
+### 6. **UI Affordances: cursor-pointer**
+
+**The Issue:**
+Buttons don't show pointer cursor by default in browsers.
+
+**Why:** Historical web standards
+- `<a>` tags = navigation → pointer cursor
+- `<button>` tags = actions → default cursor
+
+**Modern practice:** Add `cursor-pointer` to all interactive elements for better UX
+
+```tsx
+<button className="... cursor-pointer">Logout</button>
+```
+
+---
+
+## 🎨 Architecture Diagram
+
+```
+┌─────────────────────────────────────────────┐
+│ layout.tsx (Server Component)               │
+│                                             │
+│  ┌───────────────────────────────────────┐ │
+│  │ <Providers> (Client Component)        │ │
+│  │                                       │ │
+│  │  ┌─────────────────────────────────┐ │ │
+│  │  │ <AuthProvider>                  │ │ │
+│  │  │                                 │ │ │
+│  │  │  [user, session, loading]      │ │ │
+│  │  │  [signOut function]            │ │ │
+│  │  │                                 │ │ │
+│  │  │  ┌───────────────────────────┐ │ │ │
+│  │  │  │ <Navigation>              │ │ │ │
+│  │  │  │   useAuth() ← Gets data   │ │ │ │
+│  │  │  └───────────────────────────┘ │ │ │
+│  │  │                                 │ │ │
+│  │  │  ┌───────────────────────────┐ │ │ │
+│  │  │  │ Any Page                  │ │ │ │
+│  │  │  │   useAuth() ← Gets data   │ │ │ │
+│  │  │  └───────────────────────────┘ │ │ │
+│  │  │                                 │ │ │
+│  │  └─────────────────────────────────┘ │ │
+│  │                                       │ │
+│  └───────────────────────────────────────┘ │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## 🔄 Execution Flow
+
+### App Initialization
+```
+1. App loads → AuthProvider mounts
+2. State: user=null, session=null, loading=true
+3. useEffect runs
+4. getSession() checks cookies for existing session
+5. If found: Update state with user/session
+6. If not: State stays null
+7. loading set to false
+8. onAuthStateChange listener starts
+9. All components render with current state
+```
+
+### User Logs In
+```
+1. User submits login form
+2. supabase.auth.signInWithPassword() called
+3. Supabase validates, returns tokens
+4. Tokens written to cookies
+5. onAuthStateChange fires (event="SIGNED_IN")
+6. Context updates: session & user populated
+7. ALL components using useAuth() re-render
+8. Navigation shows email + logout button
+9. No manual refresh needed!
+```
+
+### User Logs Out
+```
+1. User clicks logout button
+2. signOut() function called from context
+3. supabase.auth.signOut() clears cookies
+4. onAuthStateChange fires (event="SIGNED_OUT")
+5. Context updates: session=null, user=null
+6. ALL components using useAuth() re-render
+7. Navigation shows login/signup links
+8. App updates instantly
+```
+
+### Token Refresh (Automatic)
+```
+1. Access token expires after 1 hour
+2. User continues using app
+3. Supabase detects expired token
+4. Uses refresh token to get new access token
+5. Updates cookies with new token
+6. onAuthStateChange fires (event="TOKEN_REFRESHED")
+7. Context updates with new session
+8. App continues working seamlessly
+9. User never notices!
+```
+
+---
+
+## 💡 Key Takeaways
+
+### **Pattern Universality**
+This React Context pattern is used in EVERY modern React app:
+- Auth state (what we built)
+- Theme state (dark mode)
+- i18n state (language selection)
+- Cart state (e-commerce)
+- Notification state
+
+**Once you understand Context, you understand a fundamental React pattern.**
+
+---
+
+### **The "Reactive" Mental Model**
+
+**Old way (manual):**
+```tsx
+// Every component manages its own auth state
+const [user, setUser] = useState(null)
+
+useEffect(() => {
+  const supabase = createClient()
+  supabase.auth.getUser().then(({ data }) => setUser(data.user))
+}, [])
+
+// Problem: Other components don't know when auth changes!
+```
+
+**New way (reactive):**
+```tsx
+// One central listener updates ALL components
+const { user } = useAuth()
+
+// Component automatically re-renders when user changes
+// No manual state management needed!
+```
+
+**Key insight:** Reactive programming means "data flows, components react." You don't update components, you update data, and components respond automatically.
+
+---
+
+### **Why This Architecture Matters**
+
+Before Context:
+- 10 components each checking auth = 10 API calls
+- User logs out in one tab, other tabs don't know
+- Have to manually refresh to see auth changes
+
+After Context:
+- 1 API call on mount, shared by all
+- State updates propagate instantly
+- Real-time reactive to auth changes
+
+**This is how production apps are built.**
+
+---
+
+## 🌍 Universal Patterns Learned
+
+| Concept | Our Implementation | Used In |
+|---------|-------------------|---------|
+| **Context Pattern** | AuthContext | Redux, MobX, Zustand, Vue Provide/Inject, Angular Services |
+| **Event Listeners** | onAuthStateChange | WebSockets, SSE, Firebase Realtime, Pusher |
+| **Cleanup Functions** | subscription.unsubscribe() | All event listeners, timers, subscriptions |
+| **Loading States** | loading boolean | Every async operation ever |
+| **Custom Hooks** | useAuth() | All React apps (useTheme, useCart, etc.) |
+
+---
+
+## 📝 Files Modified
+
+**Created:**
+- `src/contexts/AuthContext.tsx` - Auth context and provider
+- `src/components/Providers.tsx` - Client Component wrapper
+
+**Modified:**
+- `src/app/layout.tsx` - Wrapped app with Providers
+- `src/components/Navigation.tsx` - Uses useAuth() hook, shows user email, logout button
+
+**Total Lines:** ~120 lines of code for complete auth state management!
+
+---
+
+## ✅ Success Criteria Met
+
+- ✅ Auth state available throughout entire app via useAuth()
+- ✅ Login updates navigation automatically (no refresh)
+- ✅ Logout updates navigation automatically (no refresh)
+- ✅ User email displayed when logged in
+- ✅ Loading state prevents flash of wrong content
+- ✅ Session persists across page navigation
+- ✅ Session persists across page refreshes
+- ✅ Automatic token refresh handled transparently
+- ✅ No memory leaks (subscription cleanup working)
+- ✅ Type-safe with TypeScript
+
+---
+
+## 🔮 What's Next: Ticket 2.5
+
+With centralized auth state complete, next we'll add:
+- **Middleware** to protect routes at the edge
+- Redirect unauthenticated users to login
+- Refresh tokens automatically in middleware
+- Protect dashboard, clients, tasks pages
+
+The middleware will use the context to make routing decisions!
+
+---
+
 **Notes Section** (Add your own observations here):
 
