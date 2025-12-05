@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getDashboardStats } from "../lib/data";
+import { getDashboardStats } from "../lib/data-server";
 
 export default async function HomePage() {
   const { totalClients, activeTasks, pendingTasks } = await getDashboardStats();

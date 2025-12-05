@@ -23,6 +23,7 @@ export interface Client {
     company?: string;
     created_at: string;
     updated_at: string;
+    user_id: string;
 }
 
 export interface Task {
@@ -35,6 +36,7 @@ export interface Task {
     due_date?: string;
     created_at: string;
     updated_at: string;
+    user_id: string;
 }
 
 export interface Note {
@@ -43,4 +45,5 @@ export interface Note {
     content: string;
     created_at: string;
     updated_at: string;
+    user_id: string;
 }

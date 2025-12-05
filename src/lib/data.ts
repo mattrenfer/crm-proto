@@ -1,5 +1,11 @@
-import { supabase } from './supabase';
+import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import type { Client, Task, Note } from './supabase';
+
+// This data layer is for CLIENT COMPONENTS ONLY
+
+function getSupabase() {
+    return createBrowserClient();
+}
 
 /**
  * Dashboard Data Access Functions
@@ -27,6 +33,7 @@ export async function getDashboardStats() {
  */
 
 export async function getClients(): Promise<Client[]> {
+    const supabase = getSupabase();
     try {
         const { data, error } = await supabase
             .from('clients')
@@ -46,6 +53,7 @@ export async function getClients(): Promise<Client[]> {
 }
 
 export async function getClientById(id: string): Promise<Client | null> {
+    const supabase = getSupabase();
     try {
         const { data, error } = await supabase
             .from('clients')
@@ -72,10 +80,20 @@ export async function getClientById(id: string): Promise<Client | null> {
 export async function createClient(
     clientData: Partial<Client>,
 ): Promise<Client> {
+    const supabase = getSupabase();
     try {
+        // Get the current user's ID
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('User must be authenticated to create a client');
+        }
+
+        // Add user_id to the client data
         const { data, error } = await supabase
             .from('clients')
-            .insert(clientData)
+            .insert({ ...clientData, user_id: user.id })
             .select()
             .single();
 
@@ -92,6 +110,7 @@ export async function createClient(
 }
 
 export async function deleteClient(id: string): Promise<void> {
+    const supabase = getSupabase();
     try {
         const { error } = await supabase.from('clients').delete().eq('id', id);
         if (error) {
@@ -109,6 +128,7 @@ export async function deleteClient(id: string): Promise<void> {
  */
 
 export async function getTasks(): Promise<Task[]> {
+    const supabase = getSupabase();
     try {
         const { data, error } = await supabase
             .from('tasks')
@@ -128,6 +148,7 @@ export async function getTasks(): Promise<Task[]> {
 }
 
 export async function getTasksByClientId(clientId: string): Promise<Task[]> {
+    const supabase = getSupabase();
     try {
         const { data, error } = await supabase
             .from('tasks')
@@ -151,10 +172,19 @@ export async function createTask(
     clientId: string,
     taskData: Partial<Task>,
 ): Promise<Task> {
+    const supabase = getSupabase();
     try {
+        // Get the current user's ID
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('User must be authenticated to create a task');
+        }
+
         const { data, error } = await supabase
             .from('tasks')
-            .insert({ client_id: clientId, ...taskData })
+            .insert({ client_id: clientId, ...taskData, user_id: user.id })
             .select()
             .single();
 
@@ -173,6 +203,7 @@ export async function updateTask(
     id: string,
     taskData: Partial<Task>,
 ): Promise<Task> {
+    const supabase = getSupabase();
     try {
         const { data, error } = await supabase
             .from('tasks')
@@ -194,6 +225,7 @@ export async function updateTask(
 }
 
 export async function deleteTask(id: string): Promise<void> {
+    const supabase = getSupabase();
     try {
         const { error } = await supabase.from('tasks').delete().eq('id', id);
         if (error) {
@@ -211,6 +243,7 @@ export async function deleteTask(id: string): Promise<void> {
  */
 
 export async function getNotesByClientId(clientId: string): Promise<Note[]> {
+    const supabase = getSupabase();
     try {
         const { data, error } = await supabase
             .from('notes')
@@ -234,10 +267,19 @@ export async function createNote(
     clientId: string,
     content: string,
 ): Promise<Note> {
+    const supabase = getSupabase();
     try {
+        // Get the current user's ID
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+            throw new Error('User must be authenticated to create a note');
+        }
+
         const { data, error } = await supabase
             .from('notes')
-            .insert({ client_id: clientId, content })
+            .insert({ client_id: clientId, content, user_id: user.id })
             .select()
             .single();
 
@@ -254,6 +296,7 @@ export async function createNote(
 }
 
 export async function deleteNote(id: string): Promise<void> {
+    const supabase = getSupabase();
     try {
         const { error } = await supabase.from('notes').delete().eq('id', id);
 
