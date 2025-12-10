@@ -3547,3 +3547,176 @@ Created Next.js middleware to protect all routes with authentication, redirect u
 **Files Deleted:**
 - src/app/test-auth/ - Moved to dev route
 
+
+---
+---
+
+# 📋 Ticket 3.1: Form Validation Library
+
+**Date Completed:** December 9, 2025
+**Status:** ✅ Complete
+**GitHub Issue:** #14
+**Difficulty:** ⭐⭐⭐ (3/5)
+
+## What We Built
+
+Implemented comprehensive form validation across all application forms using Zod for schema validation and React Hook Form for form state management.
+
+**Files Created:**
+- `src/lib/schemas.ts` - Centralized Zod validation schemas for all forms
+
+**Files Modified:**
+- `src/app/clients/page.tsx` - Added validation to client form
+- `src/app/clients/[id]/page.tsx` - Added validation to task and note forms
+- `src/app/login/page.tsx` - Added validation to login form
+- `src/app/signup/page.tsx` - Added validation to signup form with password confirmation
+- `package.json` - Added zod, react-hook-form, and @hookform/resolvers
+
+**Dependencies Added:**
+- `zod`: ^4.1.13 - Schema declaration and validation library
+- `react-hook-form`: ^7.68.0 - Performant form library
+- `@hookform/resolvers`: ^5.2.2 - Resolver for Zod integration
+
+## 🎯 The Complete Pattern
+
+### 1. Schema Definition (schemas.ts)
+```tsx
+import { z } from 'zod'
+
+// Define validation schema
+export const clientSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
+  company: z.string().optional(),
+})
+
+// Infer TypeScript type from schema
+export type ClientFormData = z.infer<typeof clientSchema>
+```
+
+### 2. Form Setup with useForm Hook
+```tsx
+const {
+  register: registerClient,
+  handleSubmit: handleSubmitClient,
+  formState: { errors: clientErrors },
+  reset: resetClientForm
+} = useForm<ClientFormData>({ 
+  resolver: zodResolver(clientSchema) 
+})
+```
+
+### 3. Form Submission
+```tsx
+<form onSubmit={handleSubmitClient(addClient)}>
+```
+
+### 4. Input Registration
+```tsx
+<input type="email" {...registerClient('email')} />
+```
+
+### 5. Error Display
+```tsx
+{clientErrors.email && (
+  <p className="mt-1 text-sm text-red-600">
+    {clientErrors.email.message}
+  </p>
+)}
+```
+
+### 6. Clean Handler
+```tsx
+const addClient = async (data: ClientFormData) => {
+  await createClient(data)
+  resetClientForm()
+  toast.success('Client added\!')
+}
+```
+
+## 💡 Key Learnings
+
+### Schema-First Design
+Define your data contract first (the schema), then derive everything else:
+```
+Schema → TypeScript Types → Form Validation → API Contract
+```
+
+### Password Confirmation Pattern
+Used `.refine()` for cross-field validation:
+```tsx
+export const signupSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(8),
+    confirmPassword: z.string().min(8),
+  })
+  .refine(data => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
+```
+
+### Email Validation: Manual vs Zod
+
+**Manual (❌ Too simplistic):**
+```tsx
+if (\!email.includes('@')) {
+  setError('Invalid email')
+}
+```
+Accepts: `test@`, `@example.com`, `test@com` (all invalid\!)
+
+**Zod (✅ RFC 5322 compliant):**
+```tsx
+z.string().email('Invalid email address')
+```
+Properly validates email format with local part, domain, and TLD.
+
+### Error Message Positioning
+**Best Practice:** Place error messages inside the field div, right after the input:
+```tsx
+<div>
+  <label>Email *</label>
+  <input {...register('email')} />
+  {errors.email && <p>{errors.email.message}</p>}
+</div>
+```
+
+## 🐛 Common Pitfalls Avoided
+
+1. **Name Collisions**: Renamed destructured values when multiple forms on same page
+2. **Error Positioning**: Placed errors next to their fields, not at form bottom
+3. **Duplicate Validation**: Removed manual validation - trust the schema\!
+4. **Form Reset**: Added `reset()` calls after successful submission
+5. **Type Safety**: Used `z.infer<>` to derive TypeScript types from schemas
+
+## 📊 Forms Updated
+
+1. **Client Form** - name, email, phone, company validation
+2. **Task Form** - title, description, status, priority, due_date validation
+3. **Note Form** - content validation
+4. **Login Form** - email, password validation
+5. **Signup Form** - email, password, confirmPassword with matching validation
+
+## ✅ Success Criteria Met
+
+- ✅ All forms use schema-based validation
+- ✅ Email validation is RFC 5322 compliant
+- ✅ Password validation enforces minimum 8 characters
+- ✅ Signup validates password confirmation
+- ✅ Field-level error messages displayed inline
+- ✅ TypeScript types inferred from schemas
+- ✅ No duplicate validation logic
+- ✅ Forms reset after successful submission
+- ✅ Consistent error handling across all forms
+
+## 🔮 What's Next
+
+With form validation complete (Phase 3, Ticket 3.1), next up:
+- Ticket 3.2: Loading states & skeletons
+- Ticket 3.3: Toast notifications system (already using react-hot-toast)
+- Ticket 3.4: Confirmation dialogs for destructive actions
+
+---
