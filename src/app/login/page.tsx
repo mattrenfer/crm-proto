@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { loginSchema, LoginFormData } from '@/lib/schemas'
 
 /**
  * Login page - allows users to sign in with email and password.
@@ -17,8 +20,11 @@ import Link from 'next/link'
  */
 export default function LoginPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const {
+    register: registerLogin,
+    handleSubmit: handleSubmitLogin,
+    formState: { errors: loginErrors },
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) })
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -37,33 +43,15 @@ export default function LoginPage() {
     checkUser()
   }, [router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (data: LoginFormData) => {
     setError(null)
-
-    // Client-side validation
-    if (!email || !password) {
-      setError('Please enter both email and password')
-      return
-    }
-
-    if (!email.includes('@')) {
-      setError('Please enter a valid email address')
-      return
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      return
-    }
-
     setLoading(true)
 
     try {
       const supabase = createClient()
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: data.email,
+        password: data.password,
       })
 
       if (authError) {
@@ -109,7 +97,7 @@ export default function LoginPage() {
 
         {/* Form Card */}
         <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow rounded-lg">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmitLogin(handleSubmit)}>
             {/* Error Display */}
             {error && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
@@ -127,17 +115,19 @@ export default function LoginPage() {
               </label>
               <input
                 id="email"
-                name="email"
+                {...registerLogin('email')}
                 type="email"
                 autoComplete="email"
                 autoFocus
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="you@example.com"
               />
+              {loginErrors &&
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {loginErrors.email?.message}
+                </p>
+              }
             </div>
 
             {/* Password Input */}
@@ -150,16 +140,18 @@ export default function LoginPage() {
               </label>
               <input
                 id="password"
-                name="password"
+                {...registerLogin('password')}
                 type="password"
                 autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="••••••••"
               />
+              {loginErrors &&
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {loginErrors.password?.message}
+                </p>
+              }
             </div>
 
             {/* Submit Button */}

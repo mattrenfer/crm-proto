@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { getClientById, getTasksByClientId, createTask, deleteTask, updateTask, getNotesByClientId, createNote, deleteNote } from '@/lib/data'
 import type { Client, Task, Note } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { NoteFormData, noteSchema, TaskFormData, taskSchema } from '@/lib/schemas'
 
 export default function ClientDetailPage() {
     const params = useParams()
@@ -19,14 +22,20 @@ export default function ClientDetailPage() {
     const [activeTab, setActiveTab] = useState<'tasks' | 'notes'>('tasks')
     const [showTaskForm, setShowTaskForm] = useState(false)
     const [showNoteForm, setShowNoteForm] = useState(false)
-    const [newTask, setNewTask] = useState({
-        title: '',
-        description: '',
-        status: 'pending' as Task['status'],
-        priority: 'medium' as Task['priority'],
-        due_date: ''
-    })
-    const [newNote, setNewNote] = useState({ content: '' })
+
+    const {
+        register: registerTask,
+        handleSubmit: handleSubmitTask,
+        formState: { errors: taskErrors },
+        reset: resetTaskForm
+    } = useForm<TaskFormData>({ resolver: zodResolver(taskSchema) })
+
+    const {
+        register: registerNote,
+        handleSubmit: handleSubmitNote,
+        formState: { errors: noteErrors },
+        reset: resetNoteForm
+    } = useForm<NoteFormData>({ resolver: zodResolver(noteSchema) })
 
     useEffect(() => {
         if (clientId) {
@@ -56,15 +65,19 @@ export default function ClientDetailPage() {
         }
     }
 
-    const addTask = async (e: React.FormEvent) => {
-        e.preventDefault()
-        // TODO: Implement in Ticket 1.4
+    const addTask = async (data: TaskFormData) => {
         try {
             setLoading(true)
-            const created = await createTask(clientId, newTask)
+            const created = await createTask(clientId, {
+                title: data.title,
+                description: data.description,
+                status: data.status,
+                priority: data.priority,
+                due_date: data.due_date
+            })
             setTasks([created, ...tasks])
             setShowTaskForm(false)
-            setNewTask({ title: '', description: '', status: 'pending', priority: 'medium', due_date: '' })
+            resetTaskForm()
             toast.success('Task added successfully!')
         } catch (err) {
             console.error('Error adding task:', err)
@@ -105,14 +118,13 @@ export default function ClientDetailPage() {
         }
     }
 
-    const addNote = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const addNote = async (data: NoteFormData) => {
         try {
             setLoading(true)
-            const created = await createNote(clientId, newNote.content)
+            const created = await createNote(clientId, data.content)
             setNotes([created, ...notes])
             setShowNoteForm(false)
-            setNewNote({ content: '' })
+            resetNoteForm()
             toast.success('Note added successfully!')
         } catch (err) {
             console.error('Error adding note:', err)
@@ -277,29 +289,36 @@ export default function ClientDetailPage() {
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                                     Add New Task
                                 </h3>
-                                <form onSubmit={addTask} className="space-y-4">
+                                <form onSubmit={handleSubmitTask(addTask)} className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Title *
                                         </label>
                                         <input
                                             type="text"
-                                            required
-                                            value={newTask.title}
-                                            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                                            {...registerTask('title')}
                                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         />
+                                        {taskErrors &&
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                {taskErrors.title?.message}
+                                            </p>
+                                        }
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Description
                                         </label>
                                         <textarea
-                                            value={newTask.description}
-                                            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                                            {...registerTask('description')}
                                             rows={3}
                                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         />
+                                        {taskErrors &&
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                {taskErrors.description?.message}
+                                            </p>
+                                        }
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div>
@@ -307,28 +326,36 @@ export default function ClientDetailPage() {
                                                 Status
                                             </label>
                                             <select
-                                                value={newTask.status}
-                                                onChange={(e) => setNewTask({ ...newTask, status: e.target.value as Task['status'] })}
+                                                {...registerTask('status')}
                                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             >
                                                 <option value="pending">Pending</option>
                                                 <option value="in_progress">In Progress</option>
                                                 <option value="completed">Completed</option>
                                             </select>
+                                            {taskErrors &&
+                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                    {taskErrors.status?.message}
+                                                </p>
+                                            }
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                                 Priority
                                             </label>
                                             <select
-                                                value={newTask.priority}
-                                                onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as Task['priority'] })}
+                                                {...registerTask('priority')}
                                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             >
                                                 <option value="low">Low</option>
                                                 <option value="medium">Medium</option>
                                                 <option value="high">High</option>
                                             </select>
+                                            {taskErrors &&
+                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                    {taskErrors.priority?.message}
+                                                </p>
+                                            }
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -336,10 +363,14 @@ export default function ClientDetailPage() {
                                             </label>
                                             <input
                                                 type="date"
-                                                value={newTask.due_date}
-                                                onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                                                {...registerTask('due_date')}
                                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             />
+                                            {taskErrors &&
+                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                    {taskErrors.due_date?.message}
+                                                </p>
+                                            }
                                         </div>
                                     </div>
                                     <div className="flex justify-end space-x-3">
@@ -459,19 +490,22 @@ export default function ClientDetailPage() {
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                                     Add New Note
                                 </h3>
-                                <form onSubmit={addNote} className="space-y-4">
+                                <form onSubmit={handleSubmitNote(addNote)} className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Note Content *
                                         </label>
                                         <textarea
-                                            required
-                                            value={newNote.content}
-                                            onChange={(e) => setNewNote({ content: e.target.value })}
+                                            {...registerNote('content')}
                                             rows={4}
                                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             placeholder="Enter your note here..."
                                         />
+                                        {noteErrors && noteErrors.content &&
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                                {noteErrors.content?.message}
+                                            </p>
+                                        }
                                     </div>
                                     <div className="flex justify-end space-x-3">
                                         <button

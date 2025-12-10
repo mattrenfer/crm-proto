@@ -5,18 +5,23 @@ import Link from 'next/link'
 import { getClients, createClient, deleteClient } from '@/lib/data'
 import type { Client } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { clientSchema, ClientFormData } from '@/lib/schemas'
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [showAddForm, setShowAddForm] = useState(false)
-    const [newClient, setNewClient] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        company: ''
-    })
+
+    const {
+        register: registerClient,
+        handleSubmit: handleSubmitClient,
+        formState: { errors: clientErrors },
+        reset: resetClientForm
+    } = useForm<ClientFormData>({ resolver: zodResolver(clientSchema) })
+
 
     useEffect(() => {
         loadClients()
@@ -36,14 +41,18 @@ export default function ClientsPage() {
         }
     }
 
-    const addClient = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const addClient = async (data: ClientFormData) => {
         try {
             setLoading(true)
-            const created = await createClient(newClient)
+            const created = await createClient({
+                name: data.name,
+                email: data.email,
+                phone: data.phone,
+                company: data.company
+            })
             setClients([created, ...clients])
             setShowAddForm(false)
-            setNewClient({ name: '', email: '', phone: '', company: '' })
+            resetClientForm()
             toast.success('Client added successfully!')
         } catch (err) {
             console.error('Failed to add client:', err)
@@ -116,7 +125,7 @@ export default function ClientsPage() {
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                             Add New Client
                         </h2>
-                        <form onSubmit={addClient} className="space-y-4">
+                        <form onSubmit={handleSubmitClient(addClient)} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -124,11 +133,14 @@ export default function ClientsPage() {
                                     </label>
                                     <input
                                         type="text"
-                                        required
-                                        value={newClient.name}
-                                        onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                                        {...registerClient('name')}
                                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     />
+                                    {clientErrors &&
+                                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                            {clientErrors.name?.message}
+                                        </p>
+                                    }
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -136,11 +148,14 @@ export default function ClientsPage() {
                                     </label>
                                     <input
                                         type="email"
-                                        required
-                                        value={newClient.email}
-                                        onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                                        {...registerClient('email')}
                                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     />
+                                    {clientErrors &&
+                                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                            {clientErrors.email?.message}
+                                        </p>
+                                    }
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -148,10 +163,14 @@ export default function ClientsPage() {
                                     </label>
                                     <input
                                         type="tel"
-                                        value={newClient.phone}
-                                        onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                                        {...registerClient('phone')}
                                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     />
+                                    {clientErrors &&
+                                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                            {clientErrors.phone?.message}
+                                        </p>
+                                    }
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -159,10 +178,14 @@ export default function ClientsPage() {
                                     </label>
                                     <input
                                         type="text"
-                                        value={newClient.company}
-                                        onChange={(e) => setNewClient({ ...newClient, company: e.target.value })}
+                                        {...registerClient('company')}
                                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                     />
+                                    {clientErrors &&
+                                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                            {clientErrors.company?.message}
+                                        </p>
+                                    }
                                 </div>
                             </div>
                             <div className="flex justify-end space-x-3">
