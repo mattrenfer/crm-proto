@@ -109,6 +109,30 @@ export async function createClient(
     }
 }
 
+export async function updateClient(
+    id: string,
+    clientData: Partial<Client>,
+): Promise<Client> {
+    const supabase = getSupabase();
+    try {
+        const { data, error } = await supabase
+            .from('clients')
+            .update(clientData)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating client:', error);
+            throw new Error(`Failed to update client: ${error.message}`);
+        }
+        return data;
+    } catch (error) {
+        console.error('Unexpected error in updateClient:', error);
+        throw error;
+    }
+}
+
 export async function deleteClient(id: string): Promise<void> {
     const supabase = getSupabase();
     try {
