@@ -319,6 +319,26 @@ export async function createNote(
     }
 }
 
+export async function updateNote(id: string, content: string): Promise<Note> {
+    const supabase = getSupabase();
+    try {
+        const { data, error } = await supabase
+            .from('notes')
+            .update({ content })
+            .eq('id', id)
+            .select()
+            .single();
+        if (error) {
+            console.error('Error updating note:', error);
+            throw new Error(`Failed to update note: ${error.message}`);
+        }
+        return data;
+    } catch (error) {
+        console.error('Unexpected error in updateNote:', error);
+        throw error;
+    }
+}
+
 export async function deleteNote(id: string): Promise<void> {
     const supabase = getSupabase();
     try {

@@ -23,6 +23,10 @@
 - [Ticket 2.4: Session Management & Context](#ticket-24-session-management--context)
 - [Ticket 2.5: Protected Routes & Middleware](#-ticket-25-protected-routes--middleware)
 
+### Phase 3: Polish & Production Readiness
+- [Ticket 3.1: Form Validation Library](#-ticket-31-form-validation-library)
+- [Ticket 3.7: Edit Clients, Tasks & Notes](#-ticket-37-edit-clients-tasks--notes) (in progress)
+
 ---
 
 ## Architecture Patterns
@@ -3718,5 +3722,152 @@ With form validation complete (Phase 3, Ticket 3.1), next up:
 - Ticket 3.2: Loading states & skeletons
 - Ticket 3.3: Toast notifications system (already using react-hot-toast)
 - Ticket 3.4: Confirmation dialogs for destructive actions
+
+---
+
+---
+---
+
+# 📝 Ticket 3.7: Edit Clients, Tasks & Notes
+
+**Started:** September 23, 2026
+**Status:** 🚧 In progress
+**GitHub Issue:** #30
+**Difficulty:** ⭐⭐⭐ (3/5)
+
+## Why This Ticket Exists
+
+A gap in the original plan. Ticket 1.3 only covered client create/delete, and 1.4 built `updateTask()` but only exposed status changes. You couldn't fix a typo in a client's email, which blocks shipping.
+
+**Approach:** I wrote the code myself, following patterns already in the codebase, with Claude coaching and reviewing.
+
+## What We Built (so far)
+
+- `updateClient()` and `updateNote()` in `src/lib/data.ts`, copying the `updateTask()` pattern
+- `src/components/ClientForm.tsx`: one form for **add and edit**, used on both `/clients` and `/clients/[id]`
+- `src/components/TaskForm.tsx`: one form for add/edit tasks, with an optional client picker on `/tasks`
+- Edit buttons for clients, tasks and notes
+
+## 🎯 Key Concepts
+
+### 1. Data Down, Events Up
+A reusable component gets **data** through props and reports **events** through callbacks. The parent decides what those events mean.
+
+```tsx
+<ClientForm
+    client={editingClient}      // data down: null = add mode, a client = edit mode
+    onSubmit={handleSaveClient} // event up: "the user submitted"
+    onCancel={handleCloseForm}  // event up: "the user cancelled"
+/>
+```
+
+**What I discovered:** I started passing `setShowClientForm` down so Cancel could close the form. Passing an `onCancel` handler instead meant the parent sets its own state, and the component no longer depends on any particular page's state. That's what made `ClientForm` work unchanged on the client detail page.
+
+**Mode from props:** the component works out add vs edit from `client ? 'Edit' : 'Add'`, so there's no separate mode state that could disagree with it. On `/tasks`, passing `clients` is what turns on the client dropdown. The prop that controls the behaviour is the data the behaviour needs.
+
+### 2. `undefined` vs `null` in Updates
+> **In an update, `undefined` means "leave this alone," and `null` means "make this empty."**
+
+**The bug:** clearing a client's phone and saving brought the old number back.
+
+**Why:** `data.phone || undefined` → Supabase converts the object to JSON → **JSON drops `undefined` keys** → the update never mentions `phone` → Postgres leaves the column as it was.
+
+```js
+JSON.stringify({ name: 'Alice', phone: undefined })  // '{"name":"Alice"}'  (phone is gone)
+JSON.stringify({ name: 'Alice', phone: null })       // '{"name":"Alice","phone":null}'
+```
+
+**Fix:** send `data.phone || null`, and correct the type to `phone: string | null`, because Postgres really does return `null`.
+
+**Debugging habit:** DevTools → Network → click the request → **Payload** shows what was *actually* sent. That tells you whether the bug is in your code or on the server.
+
+### 3. Two Copies of the Data
+1. **The database** (Supabase): the real, permanent data
+2. **React state** (`tasks`, `clients`): the browser's copy, which the page draws from
+
+Saving takes two steps. Skip the second and the page won't update until a refresh (this happened on `/tasks`):
+```tsx
+const updated = await updateTask(id, data)                          // 1. update the database
+setTasks(tasks.map(t => t.id === id ? { ...t, ...updated } : t))    // 2. update the screen copy
+```
+
+### 4. Where Form State Lives (and When It's Destroyed)
+- **The page** holds `editingClient` (who is being edited).
+- **The form component** holds the input values (inside `useForm`).
+- Changing the page's state **does not** change the form's values. Only `reset()`, or throwing the component away, does.
+- **Removing a component from the page destroys its state.** Closing the form clears it for free. But the page-wide `loading` flag also removes the form while saving, so **a failed save loses what the user typed** (deferred to #15).
+
+`useForm({ defaultValues })` and `defaultValue=` on inputs are only read **when the input first appears**. Switching from editing task A to task B while the form is open kept A's values, and saving would have **overwritten B with A's contents**. Fix: `reset(values)` whenever the task changes.
+
+**`useEffect` + `reset` vs `key`:** I used a `useEffect` that calls `reset` whenever the `client` prop changes, with an `else` branch that blanks the form for Add. The alternative is `<ClientForm key={client?.id ?? 'new'} />`, which makes React create a fresh component whenever the key changes. **Trade-off:** my version is self-contained (it doesn't rely on the parent passing a key). `key` avoids an extra render, and it won't wipe what the user typed if a fresh copy of the same client arrives (this matters once Realtime is added in 5.4).
+
+### 5. Truthiness Gotchas
+```js
+Boolean(null)  // false   ← why `editingClient ? ... : ...` works
+Boolean('')    // false   ← why `data.phone || null` turns '' into null
+Boolean({})    // TRUE    ← an empty object is still true!
+```
+**The bug:** `{errors && <p>...</p>}` always rendered, because `errors` is `{}` even when there are no errors. Check the specific field instead: `{errors.name && ...}`.
+
+### 6. Rules of Hooks
+React matches hooks (`useState`, `useEffect`, `useCallback`...) **by call order**, so they must run the same number of times, in the same order, on every render. That means they can **never** come after an early `return` or inside an `if`. Plain handler functions don't have this rule, but keeping all handlers above the early returns means they stay safe if one is later turned into a hook.
+
+---
+
+## 😵 Pain Points: Revisit These
+
+### `.map()`, `.find()` and spread (`...`)
+These are fundamental, and `.map` especially is everywhere in React.
+
+| | The function answers... | Returns |
+|---|---|---|
+| `.map(fn)` | "What should this item **become**?" | a **new array**, same length |
+| `.find(fn)` | "Is this **the one**?" (true/false) | the **first matching item**, or `undefined` |
+| `.filter(fn)` | "Should this item **stay**?" (true/false) | a **new array** of the items that passed |
+
+**My mistake:** I wrote `.find()` with a function that *returned the new object*, as I would with `.map()`. `.find` needs a yes/no test (`c => c.id === id`). Building the new object is a separate step afterwards.
+
+**Object spread:** `{ ...a, ...b }` copies `a`, then `b`. Where both have the same key, `b` wins. Keys only `a` has survive.
+```ts
+{ ...task, ...updated }  // database's new values + the `client` field only this page adds
+```
+**Array spread:** `[created, ...tasks]` is a new array with `created` followed by every existing task.
+
+**The one-liner, written out the long way (both do the same thing):**
+```ts
+// setTasks(tasks.map(task => task.id === id ? { ...task, ...updated } : task))
+const newTasks = []
+for (const task of tasks) {
+    if (task.id === id) newTasks.push({ ...task, ...updated })
+    else newTasks.push(task)
+}
+setTasks(newTasks)
+```
+**Why a new array?** React decides whether to redraw by checking whether you gave it a *different* array. Changing the old array in place looks like "nothing changed."
+
+### Why TypeScript is so precise
+**Types describe what data looks like.** TypeScript checks every place where data moves between variables, functions and props, and makes sure what you pass matches what was expected.
+
+**How to read an error:** "Type **X** is not assignable to type **Y**" means *you're giving X where Y was expected.* Either the value is wrong, or the expected type is wrong. Work out which.
+
+**Errors TypeScript caught in this ticket (all real bugs):**
+- `clientId.name`: I was storing the ID string, not the client object
+- `addClient(data: Client)`: the form gives 4 fields, not a whole Client
+- `'client' is missing in type 'Task'`: a new task needed its client name added before going into the list
+
+**A bug TypeScript *couldn't* catch:** the phone-clearing bug, because the `Client` type claimed `phone?: string` when Postgres really returns `null`. **An inaccurate type is worse than a strict one.**
+
+**Ways of switching TypeScript's checks off (each one hides a bug instead of fixing it):**
+
+| Escape hatch | What it really says |
+|---|---|
+| `as SomeType` | "Stop checking. Trust me." (It doesn't convert anything.) |
+| `value!` | "This is definitely not null." |
+| `\|\| ''` | "If it's missing, quietly use something that isn't real." |
+| `any` | "Don't check this at all." |
+
+**Better:** narrow with an `if`. After `if (!client) throw ...`, TypeScript *knows* `client` exists, so there's no need for `?.`, `!` or `|| ''`.
+
+**AI autocomplete (Cursor Tab) warning:** these tools are good at making errors *disappear*, often by adding `as` and `|| ''`. When a suggestion contains one of those, stop and ask *why* the error happened.
 
 ---

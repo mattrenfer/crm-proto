@@ -2,32 +2,37 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { MOCK_TASKS } from '@/lib/mockData'
-import { MOCK_CLIENTS } from '@/lib/mockData'
 import type { Client, Task } from '@/lib/supabase'
 import { getTasks, getClients, createTask, deleteTask, updateTask } from '@/lib/data'
 import toast from 'react-hot-toast'
+import TaskForm from '@/components/TaskForm'
+import { TaskFormData, TaskWithClientFormData } from '@/lib/schemas'
 
 
 interface TaskWithClient extends Task {
     client: Pick<Client, 'id' | 'name'>
 }
 
+
 export default function TasksPage() {
     const [tasks, setTasks] = useState<TaskWithClient[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
+    const [clients, setClients] = useState<Client[] | null>(null)
+    const [showTaskForm, setShowTaskForm] = useState(false);
+    const [editingTask, setEditingTask] = useState<Task | null>(null)
 
     // Check if environment variables are set up
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    // const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    // const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(
-        supabaseUrl &&
-        supabaseKey &&
-        !supabaseUrl.includes('your_supabase') &&
-        !supabaseKey.includes('your_supabase')
-    )
+    // const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(
+    //     supabaseUrl &&
+    //     supabaseKey &&
+    //     !supabaseUrl.includes('your_supabase') &&
+    //     !supabaseKey.includes('your_supabase')
+    // )
 
     useEffect(() => {
         loadTasks()
@@ -41,6 +46,7 @@ export default function TasksPage() {
 
             // Fetch all clients to join with tasks
             const clientsData = await getClients()
+            setClients(clientsData)
 
             // Create lookup map for efficient client joins
             const clientsMap = new Map(clientsData.map(c => [c.id, c]))
@@ -58,11 +64,58 @@ export default function TasksPage() {
                 .filter((task): task is TaskWithClient => task !== null)
 
             setTasks(tasksWithClients)
-            setIsSupabaseConfigured(true)
+            // setIsSupabaseConfigured(true)
         } catch (error) {
             console.error('Failed to load tasks:', error)
             toast.error('Failed to load tasks. Please try again.')
-            setIsSupabaseConfigured(false)
+            // setIsSupabaseConfigured(false)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const addTask = async (data: TaskWithClientFormData) => {
+        try {
+            setLoading(true)
+            const created = await createTask(data.client_id || '', {
+                client_id: data.client_id,
+                title: data.title,
+                description: data.description,
+                status: data.status,
+                priority: data.priority,
+                due_date: data.due_date
+            })
+
+            const createdWithClient = clients?.find((c: Client) => {
+                return c.id === data.client_id
+            })
+
+            setTasks([{ ...created, client: { id: createdWithClient?.id || '', name: createdWithClient?.name || '' } }, ...tasks])
+            setShowTaskForm(false)
+            toast.success('Task added successfully!')
+        } catch (err) {
+            console.error('Error adding task:', err)
+            setError('Failed to add task. Please try again.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const updateTaskData = async (data: TaskFormData) => {
+        try {
+            setLoading(true)
+            const updated = await updateTask(editingTask!.id, data)
+            setTasks(tasks.map(task =>
+                task.id === editingTask!.id ? { ...task, ...updated } : task
+            ))
+            setShowTaskForm(false)
+            setEditingTask(null)
+            toast.success('Task updated successfully!')
+        }
+        catch (err) {
+            console.error('Failed to update task:', err)
+            setError('Failed to update task. Please try again.')
+            toast.error('Failed to update task. Please try again.')
         } finally {
             setLoading(false)
         }
@@ -146,6 +199,30 @@ export default function TasksPage() {
         completed: tasks.filter(t => t.status === 'completed').length,
     }
 
+    const handleAddTask = () => {
+        setShowTaskForm(true)
+    }
+
+    const handleSaveTask = (data: TaskWithClientFormData) => {
+        if (editingTask) {
+            updateTaskData(data)
+        }
+        else {
+            addTask(data)
+        }
+        handleCloseTaskForm()
+    }
+
+    const handleCloseTaskForm = () => {
+        setShowTaskForm(false)
+        setEditingTask(null)
+    }
+
+    const handleEditTask = (task: Task) => {
+        setShowTaskForm(true)
+        setEditingTask(task)
+    }
+
     return (
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div className="px-4 py-6 sm:px-0">
@@ -153,10 +230,19 @@ export default function TasksPage() {
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                         Tasks
                     </h1>
+                    <button onClick={handleAddTask} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                        Add Task
+                    </button>
                 </div>
 
+                {showTaskForm &&
+                    // <TaskForm task={editingTask ? task : null} onSubmit={handleSaveTask} onCancel={handleCloseTaskForm} />
+                    <TaskForm task={editingTask} clients={clients} onSubmit={handleSaveTask} onCancel={handleCloseTaskForm} />
+                }
+
                 {/* Configuration Status */}
-                <div className={`mb-6 p-4 rounded-lg ${isSupabaseConfigured
+                {/* <div className={`mb-6 p-4 rounded-lg ${isSupabaseConfigured
                     ? 'bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700'
                     : 'bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700'
                     }`}>
@@ -169,7 +255,7 @@ export default function TasksPage() {
                             {isSupabaseConfigured ? 'Database Connected' : 'Using Mock Data - Configure Supabase to persist changes'}
                         </span>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -363,6 +449,12 @@ export default function TasksPage() {
                                                 Reopen
                                             </button>
                                         )}
+                                        <button
+                                            onClick={() => handleEditTask(task)}
+                                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                                        >
+                                            Edit
+                                        </button>
                                         <button
                                             onClick={() => handleDeleteTask(task.id)}
                                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm"

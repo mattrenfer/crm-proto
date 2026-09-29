@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { getClientById, getTasksByClientId, createTask, deleteTask, updateTask, getNotesByClientId, createNote, deleteNote } from '@/lib/data'
+import { getClientById, getTasksByClientId, createTask, deleteTask, updateTask, getNotesByClientId, createNote, deleteNote, updateClient, updateNote } from '@/lib/data'
 import type { Client, Task, Note } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { NoteFormData, noteSchema, TaskFormData, taskSchema } from '@/lib/schemas'
+import { NoteFormData, noteSchema, TaskFormData, ClientFormData } from '@/lib/schemas'
+import ClientForm from '@/components/ClientForm'
+import TaskForm from '@/components/TaskForm'
 
 export default function ClientDetailPage() {
     const params = useParams()
@@ -22,13 +24,11 @@ export default function ClientDetailPage() {
     const [activeTab, setActiveTab] = useState<'tasks' | 'notes'>('tasks')
     const [showTaskForm, setShowTaskForm] = useState(false)
     const [showNoteForm, setShowNoteForm] = useState(false)
+    const [showClientForm, setShowClientForm] = useState(false)
+    const [editingTask, setEditingTask] = useState<Task | null>(null)
+    const [editingNote, setEditingNote] = useState<Note | null>(null)
 
-    const {
-        register: registerTask,
-        handleSubmit: handleSubmitTask,
-        formState: { errors: taskErrors },
-        reset: resetTaskForm
-    } = useForm<TaskFormData>({ resolver: zodResolver(taskSchema) })
+
 
     const {
         register: registerNote,
@@ -65,6 +65,26 @@ export default function ClientDetailPage() {
         }
     }
 
+    const updateClientData = async (id: string, data: ClientFormData) => {
+        try {
+            setLoading(true)
+            const updated = await updateClient(id, {
+                name: data.name,
+                email: data.email,
+                phone: data.phone || null,
+                company: data.company || null
+            })
+            setClient(updated)
+            setShowClientForm(false)
+            toast.success('Client updated successfully!')
+        } catch (err) {
+            console.error('Failed to update client:', err)
+            toast.error('Failed to update client. Please try again.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const addTask = async (data: TaskFormData) => {
         try {
             setLoading(true)
@@ -77,11 +97,28 @@ export default function ClientDetailPage() {
             })
             setTasks([created, ...tasks])
             setShowTaskForm(false)
-            resetTaskForm()
             toast.success('Task added successfully!')
         } catch (err) {
             console.error('Error adding task:', err)
             setError('Failed to add task. Please try again.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const updateTaskData = async (data: TaskFormData) => {
+        try {
+            setLoading(true)
+            const updated = await updateTask(editingTask!.id, data)
+            setTasks(tasks.map(task => task.id === editingTask!.id ? updated : task))
+            setShowTaskForm(false)
+            setEditingTask(null)
+            toast.success('Task updated successfully!')
+        }
+        catch (err) {
+            console.error('Failed to update task:', err)
+            setError('Failed to update task. Please try again.')
+            toast.error('Failed to update task. Please try again.')
         } finally {
             setLoading(false)
         }
@@ -135,6 +172,24 @@ export default function ClientDetailPage() {
         }
     }
 
+    const updateNoteData = async (data: NoteFormData) => {
+        try {
+            setLoading(true)
+            const updated = await updateNote(editingNote!.id, data.content)
+            setNotes(notes.map(note => note.id === editingNote!.id ? updated : note))
+            setShowNoteForm(false)
+            setEditingNote(null)
+            resetNoteForm()
+            toast.success('Note updated successfully!')
+        } catch (err) {
+            console.error('Failed to update note:', err)
+            setError('Failed to update note. Please try again.')
+            toast.error('Failed to update note. Please try again.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const handleDeleteNote = async (noteId: string) => {
         if (!confirm('Are you sure you want to delete this note?')) return;
         try {
@@ -152,7 +207,6 @@ export default function ClientDetailPage() {
             setLoading(false)
         }
     }
-
 
     if (loading) {
         return (
@@ -202,6 +256,48 @@ export default function ClientDetailPage() {
         )
     }
 
+    const handleEditClient = () => {
+        setShowClientForm(true)
+    }
+
+    const handleCloseForm = () => {
+        setShowClientForm(false)
+    }
+
+    const handleSaveClient = (data: ClientFormData) => {
+        updateClientData(client.id, data)
+    }
+
+    const handleEditTask = (task: Task) => {
+        setEditingTask(task)
+        setShowTaskForm(true)
+    }
+
+    const handleSaveTask = (data: TaskFormData) => {
+        if (editingTask) {
+            updateTaskData(data)
+        }
+        else {
+            addTask(data)
+        }
+        handleCloseTaskForm()
+    }
+
+    const handleCloseTaskForm = () => {
+        setShowTaskForm(false)
+        setEditingTask(null)
+    }
+
+    const handleEditNote = (note: Note) => {
+        setEditingNote(note)
+        setShowNoteForm(true)
+    }
+
+    const handleCloseNoteForm = () => {
+        setEditingNote(null)
+        setShowNoteForm(false)
+    }
+
     return (
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div className="px-4 py-6 sm:px-0">
@@ -213,35 +309,49 @@ export default function ClientDetailPage() {
                     >
                         ← Back to Clients
                     </Link>
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                            {client.name}
-                        </h1>
-                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
-                                <p className="text-gray-900 dark:text-white">{client.email}</p>
+                    {showClientForm && (
+                        <ClientForm client={client} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
+                    )}
+                    {!showClientForm && (
+                        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                            <div className="flex justify-between items-center">
+                                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                                    {client.name}
+                                </h1>
+                                <div>
+                                    <button
+                                        onClick={handleEditClient}
+                                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                    >Edit Client</button></div>
                             </div>
-                            {client.phone && (
+
+                            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</p>
-                                    <p className="text-gray-900 dark:text-white">{client.phone}</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
+                                    <p className="text-gray-900 dark:text-white">{client.email}</p>
                                 </div>
-                            )}
-                            {client.company && (
+                                {client.phone && (
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</p>
+                                        <p className="text-gray-900 dark:text-white">{client.phone}</p>
+                                    </div>
+                                )}
+                                {client.company && (
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Company</p>
+                                        <p className="text-gray-900 dark:text-white">{client.company}</p>
+                                    </div>
+                                )}
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Company</p>
-                                    <p className="text-gray-900 dark:text-white">{client.company}</p>
+                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Client Since</p>
+                                    <p className="text-gray-900 dark:text-white">
+                                        {new Date(client.created_at).toLocaleDateString()}
+                                    </p>
                                 </div>
-                            )}
-                            <div>
-                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Client Since</p>
-                                <p className="text-gray-900 dark:text-white">
-                                    {new Date(client.created_at).toLocaleDateString()}
-                                </p>
                             </div>
                         </div>
-                    </div>
+                    )}
+
                 </div>
 
                 {/* Tabs */}
@@ -284,112 +394,8 @@ export default function ClientDetailPage() {
                         </div>
 
                         {/* Add Task Form */}
-                        {showTaskForm && (
-                            <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                                    Add New Task
-                                </h3>
-                                <form onSubmit={handleSubmitTask(addTask)} className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Title *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            {...registerTask('title')}
-                                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                        />
-                                        {taskErrors &&
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                                {taskErrors.title?.message}
-                                            </p>
-                                        }
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Description
-                                        </label>
-                                        <textarea
-                                            {...registerTask('description')}
-                                            rows={3}
-                                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                        />
-                                        {taskErrors &&
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                                {taskErrors.description?.message}
-                                            </p>
-                                        }
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                Status
-                                            </label>
-                                            <select
-                                                {...registerTask('status')}
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            >
-                                                <option value="pending">Pending</option>
-                                                <option value="in_progress">In Progress</option>
-                                                <option value="completed">Completed</option>
-                                            </select>
-                                            {taskErrors &&
-                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                                    {taskErrors.status?.message}
-                                                </p>
-                                            }
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                Priority
-                                            </label>
-                                            <select
-                                                {...registerTask('priority')}
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            >
-                                                <option value="low">Low</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="high">High</option>
-                                            </select>
-                                            {taskErrors &&
-                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                                    {taskErrors.priority?.message}
-                                                </p>
-                                            }
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                Due Date
-                                            </label>
-                                            <input
-                                                type="date"
-                                                {...registerTask('due_date')}
-                                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            />
-                                            {taskErrors &&
-                                                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                                    {taskErrors.due_date?.message}
-                                                </p>
-                                            }
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-end space-x-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowTaskForm(false)}
-                                            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
-                                        >
-                                            Add Task
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                        {(showTaskForm || editingTask) && (
+                            <TaskForm task={editingTask} onSubmit={handleSaveTask} onCancel={handleCloseTaskForm} clients={null} clientId={clientId} />
                         )}
 
                         {/* Tasks List */}
@@ -451,11 +457,17 @@ export default function ClientDetailPage() {
                                                 {task.status === 'completed' && (
                                                     <button
                                                         onClick={() => updateTaskStatus(task.id, 'pending')}
-                                                        className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 text-sm"
+                                                        className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
                                                     >
                                                         Reopen
                                                     </button>
                                                 )}
+                                                <button
+                                                    onClick={() => handleEditTask(task)}
+                                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                                >
+                                                    Edit
+                                                </button>
                                                 <button
                                                     onClick={() => handleDeleteTask(task.id)}
                                                     className="text-red-600 hover:text-red-900 dark:text-red-400"
@@ -485,18 +497,19 @@ export default function ClientDetailPage() {
                         </div>
 
                         {/* Add Note Form */}
-                        {showNoteForm && (
+                        {(showNoteForm || editingNote) && (
                             <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                                    Add New Note
+                                    {editingNote ? 'Edit Note' : 'Add New Note'}
                                 </h3>
-                                <form onSubmit={handleSubmitNote(addNote)} className="space-y-4">
+                                <form onSubmit={editingNote ? handleSubmitNote(updateNoteData) : handleSubmitNote(addNote)} className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Note Content *
                                         </label>
                                         <textarea
                                             {...registerNote('content')}
+                                            defaultValue={editingNote?.content}
                                             rows={4}
                                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             placeholder="Enter your note here..."
@@ -510,7 +523,7 @@ export default function ClientDetailPage() {
                                     <div className="flex justify-end space-x-3">
                                         <button
                                             type="button"
-                                            onClick={() => setShowNoteForm(false)}
+                                            onClick={handleCloseNoteForm}
                                             className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
                                         >
                                             Cancel
@@ -519,7 +532,7 @@ export default function ClientDetailPage() {
                                             type="submit"
                                             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
                                         >
-                                            Add Note
+                                            {editingNote ? 'Update Note' : 'Add Note'}
                                         </button>
                                     </div>
                                 </form>
@@ -545,6 +558,7 @@ export default function ClientDetailPage() {
 
                                         </div>
                                         <div className="flex items-center space-x-2">
+                                            <button onClick={() => handleEditNote(note)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm">Edit</button>
                                             <button onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
                                                 Delete
                                             </button>

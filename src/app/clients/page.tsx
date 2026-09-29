@@ -91,6 +91,14 @@ export default function ClientsPage() {
         setEditingClient(null)
     }
 
+    const handleSaveClient = (data: ClientFormData) => {
+        if (editingClient) {
+            updateClientData(editingClient.id, data)
+        } else {
+            addClient(data)
+        }
+    }
+
 
     const handleDeleteClient = async (id: string) => {
         if (!confirm('Are you sure you want to delete this client? This will also delete all associated tasks and notes.')) return
@@ -152,7 +160,7 @@ export default function ClientsPage() {
                 {showClientForm && (
                     <ClientForm
                         client={editingClient}
-                        onSubmit={(data: ClientFormData) => editingClient ? updateClientData(editingClient.id, data) : addClient(data)}
+                        onSubmit={handleSaveClient}
                         onCancel={handleCloseForm}
                     />
                 )}

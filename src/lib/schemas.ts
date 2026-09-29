@@ -17,7 +17,13 @@ export const taskSchema = z.object({
     due_date: z.string().optional(),
 });
 
+export const taskWithClientSchema = taskSchema.extend({
+    client_id: z.string().min(1, 'Choose a client'),
+});
+
 export type TaskFormData = z.infer<typeof taskSchema>;
+
+export type TaskWithClientFormData = z.infer<typeof taskWithClientSchema>;
 
 export const noteSchema = z.object({
     content: z.string().min(1, 'Note content is required'),
