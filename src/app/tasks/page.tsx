@@ -13,7 +13,6 @@ interface TaskWithClient extends Task {
     client: Pick<Client, 'id' | 'name'>
 }
 
-
 export default function TasksPage() {
     const [tasks, setTasks] = useState<TaskWithClient[]>([])
     const [loading, setLoading] = useState(true)
@@ -22,17 +21,6 @@ export default function TasksPage() {
     const [clients, setClients] = useState<Client[] | null>(null)
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null)
-
-    // Check if environment variables are set up
-    // const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    // const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-    // const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(
-    //     supabaseUrl &&
-    //     supabaseKey &&
-    //     !supabaseUrl.includes('your_supabase') &&
-    //     !supabaseKey.includes('your_supabase')
-    // )
 
     useEffect(() => {
         loadTasks()
@@ -64,11 +52,10 @@ export default function TasksPage() {
                 .filter((task): task is TaskWithClient => task !== null)
 
             setTasks(tasksWithClients)
-            // setIsSupabaseConfigured(true)
         } catch (error) {
             console.error('Failed to load tasks:', error)
+            setError('Failed to load tasks. Please try again.')
             toast.error('Failed to load tasks. Please try again.')
-            // setIsSupabaseConfigured(false)
         } finally {
             setLoading(false)
         }
@@ -95,7 +82,7 @@ export default function TasksPage() {
             toast.success('Task added successfully!')
         } catch (err) {
             console.error('Error adding task:', err)
-            setError('Failed to add task. Please try again.')
+            toast.error('Failed to add task. Please try again.')
         } finally {
             setLoading(false)
         }
@@ -114,7 +101,6 @@ export default function TasksPage() {
         }
         catch (err) {
             console.error('Failed to update task:', err)
-            setError('Failed to update task. Please try again.')
             toast.error('Failed to update task. Please try again.')
         } finally {
             setLoading(false)
@@ -135,10 +121,12 @@ export default function TasksPage() {
                 in_progress: 'In Progress',
                 completed: 'Completed'
             }
+
             toast.success(`Task marked as ${statusLabels[newStatus]}`)
 
         } catch (error) {
             console.error('Error updating task:', error)
+            toast.error('Failed to update task status. Please try again.')
         }
     }
 
@@ -237,25 +225,8 @@ export default function TasksPage() {
                 </div>
 
                 {showTaskForm &&
-                    // <TaskForm task={editingTask ? task : null} onSubmit={handleSaveTask} onCancel={handleCloseTaskForm} />
                     <TaskForm task={editingTask} clients={clients} onSubmit={handleSaveTask} onCancel={handleCloseTaskForm} />
                 }
-
-                {/* Configuration Status */}
-                {/* <div className={`mb-6 p-4 rounded-lg ${isSupabaseConfigured
-                    ? 'bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700'
-                    : 'bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700'
-                    }`}>
-                    <div className="flex items-center">
-                        <div className={`w-3 h-3 rounded-full mr-3 ${isSupabaseConfigured ? 'bg-green-500' : 'bg-blue-500'}`}></div>
-                        <span className={`font-medium ${isSupabaseConfigured
-                            ? 'text-green-800 dark:text-green-200'
-                            : 'text-blue-800 dark:text-blue-200'
-                            }`}>
-                            {isSupabaseConfigured ? 'Database Connected' : 'Using Mock Data - Configure Supabase to persist changes'}
-                        </span>
-                    </div>
-                </div> */}
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

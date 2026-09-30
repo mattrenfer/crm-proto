@@ -31,7 +31,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <div><Toaster /></div>
+          <div><Toaster
+            toastOptions={{
+              style: {
+                background: 'var(--background)',
+                color: 'var(--foreground)',
+                border: '1px solid rgb(128 128 128 / 0.3)',
+              },
+            }}
+          /></div>
           <Navigation />
           <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
             {children}

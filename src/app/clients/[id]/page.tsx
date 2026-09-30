@@ -100,7 +100,7 @@ export default function ClientDetailPage() {
             toast.success('Task added successfully!')
         } catch (err) {
             console.error('Error adding task:', err)
-            setError('Failed to add task. Please try again.')
+            toast.error('Failed to add task. Please try again.')
         } finally {
             setLoading(false)
         }
@@ -117,7 +117,6 @@ export default function ClientDetailPage() {
         }
         catch (err) {
             console.error('Failed to update task:', err)
-            setError('Failed to update task. Please try again.')
             toast.error('Failed to update task. Please try again.')
         } finally {
             setLoading(false)
@@ -133,7 +132,6 @@ export default function ClientDetailPage() {
         }
         catch (err) {
             console.error('Error deleting task:', err)
-            setError('Failed to delete task. Please try again.')
             toast.error('Failed to delete task. Please try again.')
         } finally {
             setLoading(false)
@@ -148,7 +146,6 @@ export default function ClientDetailPage() {
             toast.success('Task status updated successfully!')
         } catch (err) {
             console.error('Error updating task status:', err)
-            setError('Failed to update task status. Please try again.')
             toast.error('Failed to update task status. Please try again.')
         } finally {
             setLoading(false)
@@ -165,7 +162,6 @@ export default function ClientDetailPage() {
             toast.success('Note added successfully!')
         } catch (err) {
             console.error('Error adding note:', err)
-            setError('Failed to add note. Please try again.')
             toast.error('Failed to add note. Please try again.')
         } finally {
             setLoading(false)
@@ -183,7 +179,6 @@ export default function ClientDetailPage() {
             toast.success('Note updated successfully!')
         } catch (err) {
             console.error('Failed to update note:', err)
-            setError('Failed to update note. Please try again.')
             toast.error('Failed to update note. Please try again.')
         } finally {
             setLoading(false)
@@ -200,7 +195,6 @@ export default function ClientDetailPage() {
         }
         catch (err) {
             console.error('Error deleting note:', err)
-            setError('Failed to delete note. Please try again.')
             toast.error('Failed to delete note. Please try again.')
         }
         finally {
