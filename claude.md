@@ -1,7 +1,54 @@
-# Claude Code Context - CRM Project
+# CLAUDE.md
 
-**Author**: Matthew Russell Renfer
-**Last Updated**: November 17, 2025
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+**Project**: Simple CRM (learning project) — **Author**: Matthew Russell Renfer
+
+This is a learning project: the author wants to understand each pattern, not just receive code. Explain the "why" behind changes, and record ticket learnings in `LEARNING_NOTES.md` / `.claude/ticket-*.md` as prior tickets did.
+
+---
+
+## Commands
+
+```bash
+npm run dev     # dev server with Turbopack at http://localhost:3000
+npm run build   # production build (also runs type checking)
+npm run lint    # next lint (next/core-web-vitals + next/typescript)
+```
+
+There is no test suite yet (planned for Phase 3 — see Testing Strategy below). Verify changes manually in the browser.
+
+Requires `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (template: `.env.local.example`).
+
+## Architecture
+
+Next.js 15 App Router + Supabase (Postgres + Auth via `@supabase/ssr`). Path alias `@/*` → `src/*`.
+
+### Three Supabase clients — pick by execution context
+- `src/lib/supabase/client.ts` — browser client, for `'use client'` components and all auth writes (sign in/up/out).
+- `src/lib/supabase/server.ts` — async server client (awaits `cookies()`), for Server Components / Server Actions / route handlers. Cannot write cookies from Server Components (errors are swallowed on purpose).
+- `src/lib/supabase/middleware.ts` — returns `{ supabase, response }`; middleware **must return that `response`** (not `NextResponse.next()`) or refreshed tokens are lost.
+- `src/lib/supabase.ts` is legacy: it holds the shared `Client` / `Task` / `Note` TypeScript types (imported everywhere) plus an old non-SSR client that should not be used for new code.
+- `src/lib/auth.ts` imports the server client, so it can't be imported from Client Components; client pages call `@/lib/supabase/client` directly instead.
+
+### Two parallel data layers
+- `src/lib/data.ts` — browser-client CRUD for Client Components (used by clients, client detail, and tasks pages). Create functions look up the current user and set `user_id` on insert.
+- `src/lib/data-server.ts` — server-client read functions for Server Components (currently only the dashboard, `src/app/page.tsx`).
+- Read functions exist in both files with duplicated implementations; keep them in sync when changing queries. `getClientById` returns `null` on PostgREST code `PGRST116` (no rows).
+- Most pages are Client Components that fetch in `useEffect`; only the dashboard is an async Server Component.
+
+### Auth & route protection
+- `src/middleware.ts` runs on every non-static request: unauthenticated users → `/login`; authenticated users on `/login` or `/signup` → `/`. Routes under `/dev/*` (e.g. `/dev/auth-test`) skip auth in development and redirect to `/` in production.
+- `src/contexts/AuthContext.tsx` provides `useAuth()` (session state for the UI, e.g. `Navigation`), mounted via `src/components/Providers.tsx` in the root layout alongside the `react-hot-toast` `<Toaster />`.
+
+### Data isolation (RLS)
+- Every table (`clients`, `tasks`, `notes`) has a `user_id`, and RLS policies enforce `auth.uid() = user_id`. Queries do not filter by user explicitly — RLS does it. Inserts must include `user_id` or they will be rejected.
+- `tasks` and `notes` reference `clients` with `ON DELETE CASCADE`.
+- **`database/schema.sql` is stale**: it predates `user_id` and still has permissive "allow all" policies. The RLS changes were applied in the Supabase dashboard and are documented in `.claude/ticket-2.6-completion.md`. Migrations are deferred to Ticket 4.2.
+
+### Forms
+- Zod schemas + inferred form types live in `src/lib/schemas.ts`, used with `react-hook-form` + `@hookform/resolvers/zod`. Task `status` / `priority` enums there must match the `Task` type in `src/lib/supabase.ts` and the DB check constraints.
+- Operations report success/failure with `react-hot-toast`.
 
 ---
 
@@ -25,26 +72,18 @@ Launch a production-ready CRM application end-to-end while deeply learning Next.
 
 ---
 
-## Current State (as of Nov 17, 2025)
+## Current State
 
-### What's Built ✅
-- Complete UI/UX with mock data for all core features
-- Client management (list, add, delete, detail view)
-- Task management (list, filter by status, add, update status, delete)
-- Notes management (add, view by client)
-- Dashboard with statistics
-- Responsive design with dark mode
-- Well-designed PostgreSQL schema (3 tables: clients, tasks, notes)
-- TypeScript interfaces and type safety
+Per git history: Phase 1 (Supabase CRUD) and Phase 2 (auth, session context, protected routes, RLS — tickets 2.1–2.6) are complete, and Ticket 3.1 (form validation) is done. Toasts (`react-hot-toast`) are already wired in.
+
+**Current focus: Ticket 3.7 (#30), edit clients/tasks/notes.** 3.2 (#15) and 3.3 (#16) are paused until 3.7 is done; their status and findings are recorded in comments on those issues.
 
 ### What's Missing ❌
-- **Critical**: Supabase database integration (currently all mock data)
-- **Critical**: Authentication system
-- **Important**: Form validation and error handling
-- **Important**: Loading states and user feedback
-- API routes for server-side operations
+- Loading skeletons, confirmation dialogs, error boundaries / 404 pages
+- Migrations (`schema.sql` is out of date — see Architecture)
 - Testing suite
 - Production deployment
+- Leftover: `src/lib/mockData.ts` is still imported (unused) by `src/app/tasks/page.tsx`
 
 ### Code Quality
 - **Status**: Good foundation
@@ -269,6 +308,17 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 - [ ] Test production build locally
 - [ ] Optimize bundle size
 - **Learning**: Build optimization, environment management
+
+#### Ticket 3.7: Edit Clients, Tasks & Notes (#30)
+**Size**: M (4-5 hours) — added 2026-09-23; gap in the original plan, blocks shipping
+- [ ] Implement `updateClient()` and `updateNote()` in `data.ts`
+- [ ] Edit client form on client detail page, pre-filled with current values
+- [ ] Edit task form (all fields), reusing existing `updateTask()`
+- [ ] Edit note content
+- [ ] Reuse existing Zod schemas for validation
+- [ ] Success/error toasts for each edit
+- [ ] Verify RLS blocks editing other users' rows; `updated_at` trigger fires
+- **Learning**: Supabase `.update()`, pre-filling forms with React Hook Form, edit-mode UI pattern
 
 ---
 
