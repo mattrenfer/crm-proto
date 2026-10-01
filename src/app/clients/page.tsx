@@ -14,6 +14,7 @@ export default function ClientsPage() {
     const [error, setError] = useState<string | null>(null)
     const [showClientForm, setShowClientForm] = useState(false)
     const [editingClient, setEditingClient] = useState<Client | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
 
     useEffect(() => {
@@ -36,7 +37,6 @@ export default function ClientsPage() {
 
     const addClient = async (data: ClientFormData) => {
         try {
-            setLoading(true)
             const created = await createClient({
                 name: data.name,
                 email: data.email,
@@ -49,14 +49,11 @@ export default function ClientsPage() {
         } catch (err) {
             console.error('Failed to add client:', err)
             toast.error('Failed to add client. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const updateClientData = async (id: string, data: ClientFormData) => {
         try {
-            setLoading(true)
             const updated = await updateClient(id, {
                 name: data.name,
                 email: data.email,
@@ -70,8 +67,6 @@ export default function ClientsPage() {
         } catch (err) {
             console.error('Failed to update client:', err)
             toast.error('Failed to update client. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -93,17 +88,17 @@ export default function ClientsPage() {
 
     const handleSaveClient = (data: ClientFormData) => {
         if (editingClient) {
-            updateClientData(editingClient.id, data)
+            return updateClientData(editingClient.id, data)
         } else {
-            addClient(data)
+            return addClient(data)
         }
     }
 
 
     const handleDeleteClient = async (id: string) => {
+        setDeletingId(id)
         if (!confirm('Are you sure you want to delete this client? This will also delete all associated tasks and notes.')) return
         try {
-            setLoading(true)
             await deleteClient(id)
             setClients(clients.filter((client) => client.id !== id))
             toast.success('Client deleted successfully!')
@@ -111,7 +106,7 @@ export default function ClientsPage() {
             console.error('Failed to delete client:', err)
             toast.error('Failed to delete client. Please try again.')
         } finally {
-            setLoading(false)
+            setDeletingId(null)
         }
     }
 
@@ -212,8 +207,9 @@ export default function ClientsPage() {
                                                 <button
                                                     onClick={() => handleDeleteClient(client.id)}
                                                     className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                                    disabled={deletingId === client.id}
                                                 >
-                                                    Delete
+                                                    {deletingId === client.id ? 'Deleting...' : 'Delete'}
                                                 </button>
                                             </div>
                                         </div>

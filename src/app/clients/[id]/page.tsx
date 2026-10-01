@@ -27,6 +27,7 @@ export default function ClientDetailPage() {
     const [showClientForm, setShowClientForm] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
     const [editingNote, setEditingNote] = useState<Note | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
 
 
@@ -67,7 +68,6 @@ export default function ClientDetailPage() {
 
     const updateClientData = async (id: string, data: ClientFormData) => {
         try {
-            setLoading(true)
             const updated = await updateClient(id, {
                 name: data.name,
                 email: data.email,
@@ -80,14 +80,11 @@ export default function ClientDetailPage() {
         } catch (err) {
             console.error('Failed to update client:', err)
             toast.error('Failed to update client. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const addTask = async (data: TaskFormData) => {
         try {
-            setLoading(true)
             const created = await createTask(clientId, {
                 title: data.title,
                 description: data.description,
@@ -101,14 +98,11 @@ export default function ClientDetailPage() {
         } catch (err) {
             console.error('Error adding task:', err)
             toast.error('Failed to add task. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const updateTaskData = async (data: TaskFormData) => {
         try {
-            setLoading(true)
             const updated = await updateTask(editingTask!.id, data)
             setTasks(tasks.map(task => task.id === editingTask!.id ? updated : task))
             setShowTaskForm(false)
@@ -118,14 +112,13 @@ export default function ClientDetailPage() {
         catch (err) {
             console.error('Failed to update task:', err)
             toast.error('Failed to update task. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const handleDeleteTask = async (taskId: string) => {
+        if (!confirm('Are you sure you want to delete this task?')) return;
+        setDeletingId(taskId)
         try {
-            setLoading(true)
             await deleteTask(taskId)
             setTasks(tasks.filter(task => task.id !== taskId))
             toast.success('Task deleted successfully!')
@@ -134,27 +127,23 @@ export default function ClientDetailPage() {
             console.error('Error deleting task:', err)
             toast.error('Failed to delete task. Please try again.')
         } finally {
-            setLoading(false)
+            setDeletingId(null)
         }
     }
 
     const updateTaskStatus = async (taskId: string, status: Task['status']) => {
         try {
-            setLoading(true)
             const updated = await updateTask(taskId, { status: status })
             setTasks(tasks.map(task => task.id === taskId ? updated : task))
             toast.success('Task status updated successfully!')
         } catch (err) {
             console.error('Error updating task status:', err)
             toast.error('Failed to update task status. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const addNote = async (data: NoteFormData) => {
         try {
-            setLoading(true)
             const created = await createNote(clientId, data.content)
             setNotes([created, ...notes])
             setShowNoteForm(false)
@@ -163,14 +152,11 @@ export default function ClientDetailPage() {
         } catch (err) {
             console.error('Error adding note:', err)
             toast.error('Failed to add note. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const updateNoteData = async (data: NoteFormData) => {
         try {
-            setLoading(true)
             const updated = await updateNote(editingNote!.id, data.content)
             setNotes(notes.map(note => note.id === editingNote!.id ? updated : note))
             setShowNoteForm(false)
@@ -180,15 +166,13 @@ export default function ClientDetailPage() {
         } catch (err) {
             console.error('Failed to update note:', err)
             toast.error('Failed to update note. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const handleDeleteNote = async (noteId: string) => {
         if (!confirm('Are you sure you want to delete this note?')) return;
+        setDeletingId(noteId)
         try {
-            setLoading(true)
             await deleteNote(noteId)
             setNotes(notes.filter(note => note.id !== noteId))
             toast.success('Note deleted successfully!')
@@ -196,9 +180,8 @@ export default function ClientDetailPage() {
         catch (err) {
             console.error('Error deleting note:', err)
             toast.error('Failed to delete note. Please try again.')
-        }
-        finally {
-            setLoading(false)
+        } finally {
+            setDeletingId(null)
         }
     }
 
@@ -258,8 +241,8 @@ export default function ClientDetailPage() {
         setShowClientForm(false)
     }
 
-    const handleSaveClient = (data: ClientFormData) => {
-        updateClientData(client.id, data)
+    const handleSaveClient = async (data: ClientFormData) => {
+        await updateClientData(client.id, data)
     }
 
     const handleEditTask = (task: Task) => {
@@ -465,8 +448,9 @@ export default function ClientDetailPage() {
                                                 <button
                                                     onClick={() => handleDeleteTask(task.id)}
                                                     className="text-red-600 hover:text-red-900 dark:text-red-400"
+                                                    disabled={deletingId === task.id}
                                                 >
-                                                    Delete
+                                                    {deletingId === task.id ? 'Deleting...' : 'Delete'}
                                                 </button>
                                             </div>
                                         </div>
@@ -553,8 +537,8 @@ export default function ClientDetailPage() {
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <button onClick={() => handleEditNote(note)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm">Edit</button>
-                                            <button onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
-                                                Delete
+                                            <button disabled={deletingId === note.id} onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
+                                                {deletingId === note.id ? 'Deleting...' : 'Delete'}
                                             </button>
                                         </div>
                                     </div>
