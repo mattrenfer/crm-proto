@@ -25,7 +25,9 @@
 
 ### Phase 3: Polish & Production Readiness
 - [Ticket 3.1: Form Validation Library](#-ticket-31-form-validation-library)
-- [Ticket 3.7: Edit Clients, Tasks & Notes](#-ticket-37-edit-clients-tasks--notes) (in progress)
+- [Ticket 3.7: Edit Clients, Tasks & Notes](#-ticket-37-edit-clients-tasks--notes)
+- [Ticket 3.3: Toast Notifications System](#-ticket-33-toast-notifications-system)
+- [Ticket 3.2: Loading States & Skeletons](#-ticket-32-loading-states--skeletons)
 
 ---
 
@@ -3731,7 +3733,7 @@ With form validation complete (Phase 3, Ticket 3.1), next up:
 # 📝 Ticket 3.7: Edit Clients, Tasks & Notes
 
 **Started:** September 23, 2026
-**Status:** 🚧 In progress
+**Status:** ✅ Complete (September 29, 2026; PR #32)
 **GitHub Issue:** #30
 **Difficulty:** ⭐⭐⭐ (3/5)
 
@@ -3869,5 +3871,129 @@ setTasks(newTasks)
 **Better:** narrow with an `if`. After `if (!client) throw ...`, TypeScript *knows* `client` exists, so there's no need for `?.`, `!` or `|| ''`.
 
 **AI autocomplete (Cursor Tab) warning:** these tools are good at making errors *disappear*, often by adding `as` and `|| ''`. When a suggestion contains one of those, stop and ask *why* the error happened.
+
+---
+
+---
+---
+
+# 🔔 Ticket 3.3: Toast Notifications System
+
+**Date Completed:** September 30, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #16 (PR #33)
+**Difficulty:** ⭐⭐ (2/5)
+
+## The Rule This Ticket Applied
+> **Every action ends with exactly one message: success or error. Failing an action must never take the page away.**
+
+## 🎯 Key Concepts
+
+### 1. Fatal vs Recoverable Errors
+| | The page couldn't load | An action failed |
+|---|---|---|
+| Example | Opening a client, and the fetch fails | Deleting a note, and the request fails |
+| Is the page usable? | **No**, there's nothing to show | **Yes**, everything is still there |
+| Right response | Full-page error + "Try Again" | A toast; the page stays as it was |
+
+**The bug:** the client detail page used one `error` state for both. `if (error) return <ErrorScreen />` treated every error as fatal, so one failed note delete wiped the whole page. **Fix:** `setError` only in the load function; actions use `toast.error`.
+
+### 2. Silent Failures Are the Worst Failures
+A `catch` that only does `console.error` means the user **thinks it worked.** `console.error` is for the developer; users never see it.
+
+### 3. Theming a Third-Party Component with CSS Variables
+`react-hot-toast` sets inline colours, so it ignored dark mode. Pointing it at the variables in `globals.css` makes it follow the theme:
+```tsx
+<Toaster toastOptions={{ style: {
+    background: 'var(--background)',
+    color: 'var(--foreground)',
+    border: '1px solid rgb(128 128 128 / 0.3)',   // so it doesn't blend into the page
+} }} />
+```
+**How dark mode works here:** there's no toggle. `@media (prefers-color-scheme: dark)` in `globals.css` changes the variables based on the **OS setting**, and Tailwind's `dark:` classes follow the same setting. Test both modes in DevTools → Rendering → "Emulate CSS media feature prefers-color-scheme."
+
+**Silent CSS bugs:** `'var(--foreground'` (missing `)`) and unknown Tailwind classes produce **no error**. The browser just ignores them.
+
+### 4. Deciding *Not* to Build Something (YAGNI)
+The ticket asked for a toast wrapper component. We skipped it: each call is already one line, and styling lives in one place. A wrapper is only worth it when it removes repetition or keeps a decision in one place.
+
+### Verification
+DevTools → Network → **Offline**, then trigger actions on each page: an error toast appears and the page stays in place.
+
+---
+---
+
+# ⏳ Ticket 3.2: Loading States & Skeletons
+
+**Date Completed:** October 2, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #15
+**Difficulty:** ⭐⭐⭐ (3/5)
+
+## What We Built
+- **`loading` is only for the first fetch.** Actions no longer replace the page, so there's no flash, and **a failed save keeps what the user typed.**
+- **"Saving..."** on all forms via React Hook Form's `isSubmitting`
+- **Per-row "Deleting..."** with the button disabled (`deletingId`)
+- **Skeletons** shaped like each page, plus a **`loading.tsx`** for every route
+
+## 🎯 Key Concepts
+
+### 1. One Flag, Two Jobs (Again)
+Same lesson as `error` in 3.3, this time with `loading`:
+- **Page loading** ("no data yet"): replacing the page with a skeleton is right.
+- **Saving** ("data exists, a change is being sent"): replacing the page is wrong. It **removes any open form, destroying what was typed.**
+
+**Removing a component from the page destroys its state.** That's useful when you want a reset (a new `key`), and a bug when it happens by accident (an early return during a save).
+
+### 2. Returning the Promise So the Caller Knows When You're Done
+`handleSubmit(onSubmit)` sets `isSubmitting = true`, **awaits whatever `onSubmit` returns**, then sets it back to false. If your handler returns nothing, there's nothing to wait for.
+
+```tsx
+// ❌ calls it, discards the promise → isSubmitting flips back immediately
+const save = (data) => { updateClientData(id, data) }
+
+// ✅ A: return the promise
+const save = (data) => { return updateClientData(id, data) }
+
+// ✅ B: async + await (an async function always returns a promise that finishes when its body does)
+const save = async (data) => { await updateClientData(id, data) }
+
+// ❌ C: async with NO await. Types say Promise<void>, but it resolves immediately
+const save = async (data) => { updateClientData(id, data) }
+```
+**Arrow function gotcha:** `(x) => x * 2` returns automatically; `(x) => { x * 2 }` returns `undefined`.
+
+**Calling ≠ returning:** a function without `return` gives back `undefined`, whatever it called inside.
+
+**Typing `onSubmit: (data) => Promise<void>`** made TypeScript find the same missing-`return` bug on a page I hadn't touched yet. **But types can't catch option C:** TypeScript checks the *shape* of what you return, not *when* it finishes.
+
+### 3. Store *Which*, Not Just *Whether*
+```tsx
+{deletingId ? 'Deleting...' : 'Delete'}            // ❌ any non-null ID is truthy → every row
+{deletingId === task.id ? 'Deleting...' : 'Delete'} // ✅ only this row
+```
+Always reset in `finally` (`setDeletingId(null)`), or the state gets stuck after the first delete. Name it `deletingId`, not `isDeleting`: an `is...` name suggests a boolean.
+
+### 4. Unreachable Code
+Code after a `return` in every branch never runs. Removing the dead `handleCloseTaskForm()` also exposed that it *used to* run, closing the form before the save had finished.
+
+### 5. Server Components Can't Use Hooks
+The dashboard (`src/app/page.tsx`) is an **async Server Component**. It runs once on the server and produces HTML. Hooks like `useState` only exist in Client Components (`'use client'`), where there's a "later" for state to change in.
+
+### 6. `loading.tsx` = Next.js's Suspense Boundary
+- Next shows `loading.tsx` while the page in the same folder is waiting (server data or navigation), then swaps in the real page.
+- **It applies to every route *beneath* it.** A single `src/app/loading.tsx` would show the *dashboard* skeleton while navigating to `/clients`. **Fix:** one `loading.tsx` per route, each reusing that page's skeleton component.
+- The client pages fetch in `useEffect`, so Suspense doesn't apply to *their* data. They keep a manual `if (loading) return <Skeleton />`. Moving to server fetching (Server Actions) would change that, but that's future work.
+
+### 7. Good Skeletons
+- **A skeleton can't depend on the data it's waiting for:** `clients.map(...)` while `clients` is `[]` renders nothing. Use `Array.from({ length: 5 }, (_, i) => ...)`.
+- **Copy the page's containers and spacing,** and match block heights to the text's **line height** (`text-3xl` → 36px → `h-9`), so content fills in rather than jumping.
+- Expect small shifts where the data varies (optional fields, missing descriptions).
+
+### 8. Editor vs Project TypeScript
+A red underline on `import "./globals.css"` appeared after the editor updated: its built-in TypeScript was newer and checks side-effect imports, while the project's TS 5.8 (and the build) didn't. **Fix:** "TypeScript: Select TypeScript Version" → **Use Workspace Version.** The editor and the build should always agree.
+
+### Verification
+DevTools → Network → **3G**: skeletons on first load and navigation, "Saving..."/"Deleting..." on actions, no page flash, and **Offline + a failed save keeps the typed values.**
 
 ---
