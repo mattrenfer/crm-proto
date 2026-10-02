@@ -186,14 +186,13 @@ export default function TasksPage() {
         setShowTaskForm(true)
     }
 
-    const handleSaveTask = (data: TaskWithClientFormData) => {
+    const handleSaveTask = async (data: TaskWithClientFormData) => {
         if (editingTask) {
-            updateTaskData(data)
+            return updateTaskData(data)
         }
         else {
-            addTask(data)
+            return addTask(data)
         }
-        handleCloseTaskForm()
     }
 
     const handleCloseTaskForm = () => {

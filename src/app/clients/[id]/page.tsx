@@ -34,7 +34,7 @@ export default function ClientDetailPage() {
     const {
         register: registerNote,
         handleSubmit: handleSubmitNote,
-        formState: { errors: noteErrors },
+        formState: { errors: noteErrors, isSubmitting: isSubmittingNote },
         reset: resetNoteForm
     } = useForm<NoteFormData>({ resolver: zodResolver(noteSchema) })
 
@@ -250,14 +250,13 @@ export default function ClientDetailPage() {
         setShowTaskForm(true)
     }
 
-    const handleSaveTask = (data: TaskFormData) => {
+    const handleSaveTask = async (data: TaskFormData) => {
         if (editingTask) {
-            updateTaskData(data)
+            return updateTaskData(data)
         }
         else {
-            addTask(data)
+            return addTask(data)
         }
-        handleCloseTaskForm()
     }
 
     const handleCloseTaskForm = () => {
@@ -501,6 +500,7 @@ export default function ClientDetailPage() {
                                     <div className="flex justify-end space-x-3">
                                         <button
                                             type="button"
+                                            disabled={isSubmittingNote}
                                             onClick={handleCloseNoteForm}
                                             className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
                                         >
@@ -508,9 +508,10 @@ export default function ClientDetailPage() {
                                         </button>
                                         <button
                                             type="submit"
+                                            disabled={isSubmittingNote}
                                             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
                                         >
-                                            {editingNote ? 'Update Note' : 'Add Note'}
+                                            {isSubmittingNote ? 'Saving...' : editingNote ? 'Update Note' : 'Add Note'}
                                         </button>
                                     </div>
                                 </form>
