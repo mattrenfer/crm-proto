@@ -6,6 +6,7 @@ import type { Client, Task } from '@/lib/supabase'
 import { getTasks, getClients, createTask, deleteTask, updateTask } from '@/lib/data'
 import toast from 'react-hot-toast'
 import TaskForm from '@/components/TaskForm'
+import TaskListSkeleton from '@/components/TaskListSkeleton'
 import { TaskFormData, TaskWithClientFormData } from '@/lib/schemas'
 
 
@@ -21,6 +22,7 @@ export default function TasksPage() {
     const [clients, setClients] = useState<Client[] | null>(null)
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
     useEffect(() => {
         loadTasks()
@@ -63,7 +65,6 @@ export default function TasksPage() {
 
     const addTask = async (data: TaskWithClientFormData) => {
         try {
-            setLoading(true)
             const created = await createTask(data.client_id || '', {
                 client_id: data.client_id,
                 title: data.title,
@@ -83,14 +84,11 @@ export default function TasksPage() {
         } catch (err) {
             console.error('Error adding task:', err)
             toast.error('Failed to add task. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const updateTaskData = async (data: TaskFormData) => {
         try {
-            setLoading(true)
             const updated = await updateTask(editingTask!.id, data)
             setTasks(tasks.map(task =>
                 task.id === editingTask!.id ? { ...task, ...updated } : task
@@ -102,8 +100,6 @@ export default function TasksPage() {
         catch (err) {
             console.error('Failed to update task:', err)
             toast.error('Failed to update task. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -132,7 +128,7 @@ export default function TasksPage() {
 
     const handleDeleteTask = async (taskId: string) => {
         if (!confirm('Are you sure you want to delete this task?')) return
-        setLoading(true)
+        setDeletingId(taskId);
         try {
             await deleteTask(taskId)
             setTasks(tasks.filter(task => task.id !== taskId))
@@ -141,7 +137,7 @@ export default function TasksPage() {
             console.error('Failed to delete task:', err)
             toast.error('Failed to delete task. Please try again.')
         } finally {
-            setLoading(false)
+            setDeletingId(null)
         }
     }
 
@@ -173,11 +169,7 @@ export default function TasksPage() {
     }
 
     if (loading) {
-        return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center">Loading tasks...</div>
-            </div>
-        )
+        return <TaskListSkeleton />
     }
 
     const taskCounts = {
@@ -191,14 +183,13 @@ export default function TasksPage() {
         setShowTaskForm(true)
     }
 
-    const handleSaveTask = (data: TaskWithClientFormData) => {
+    const handleSaveTask = async (data: TaskWithClientFormData) => {
         if (editingTask) {
-            updateTaskData(data)
+            return updateTaskData(data)
         }
         else {
-            addTask(data)
+            return addTask(data)
         }
-        handleCloseTaskForm()
     }
 
     const handleCloseTaskForm = () => {
@@ -429,8 +420,9 @@ export default function TasksPage() {
                                         <button
                                             onClick={() => handleDeleteTask(task.id)}
                                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                            disabled={deletingId === task.id}
                                         >
-                                            Delete
+                                            {deletingId === task.id ? 'Deleting...' : 'Delete'}
                                         </button>
                                     </div>
                                 </div>

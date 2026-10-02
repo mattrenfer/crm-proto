@@ -8,12 +8,12 @@ import { Task } from '@/lib/supabase'
 import { useEffect } from 'react'
 import { Client } from '@/lib/supabase'
 
-export default function TaskForm({ task, clients, onSubmit, onCancel, clientId }: { task: Task | null, clients: Client[] | null, onSubmit: (data: TaskWithClientFormData) => void, onCancel: () => void, clientId?: string }) {
+export default function TaskForm({ task, clients, onSubmit, onCancel, clientId }: { task: Task | null, clients: Client[] | null, onSubmit: (data: TaskWithClientFormData) => Promise<void>, onCancel: () => void, clientId?: string }) {
 
     const {
         register: registerTask,
         handleSubmit: handleSubmitTask,
-        formState: { errors: taskErrors },
+        formState: { errors: taskErrors, isSubmitting: isSubmittingTask },
         reset: resetTaskForm
     } = useForm<TaskWithClientFormData>({ resolver: zodResolver(taskWithClientSchema) })
     useEffect(() => {
@@ -140,6 +140,7 @@ export default function TaskForm({ task, clients, onSubmit, onCancel, clientId }
                 <div className="flex justify-end space-x-3">
                     <button
                         type="button"
+                        disabled={isSubmittingTask}
                         onClick={() => onCancel()}
                         className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
                     >
@@ -147,9 +148,10 @@ export default function TaskForm({ task, clients, onSubmit, onCancel, clientId }
                     </button>
                     <button
                         type="submit"
+                        disabled={isSubmittingTask}
                         className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
                     >
-                        {task ? 'Update Task' : 'Add Task'}
+                        {isSubmittingTask ? 'Saving...' : task ? 'Update Task' : 'Add Task'}
                     </button>
                 </div>
             </form>

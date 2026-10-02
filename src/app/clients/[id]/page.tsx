@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { NoteFormData, noteSchema, TaskFormData, ClientFormData } from '@/lib/schemas'
 import ClientForm from '@/components/ClientForm'
 import TaskForm from '@/components/TaskForm'
+import ClientDetailSkeleton from '@/components/ClientDetailSkeleton'
 
 export default function ClientDetailPage() {
     const params = useParams()
@@ -27,13 +28,14 @@ export default function ClientDetailPage() {
     const [showClientForm, setShowClientForm] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
     const [editingNote, setEditingNote] = useState<Note | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
 
 
     const {
         register: registerNote,
         handleSubmit: handleSubmitNote,
-        formState: { errors: noteErrors },
+        formState: { errors: noteErrors, isSubmitting: isSubmittingNote },
         reset: resetNoteForm
     } = useForm<NoteFormData>({ resolver: zodResolver(noteSchema) })
 
@@ -67,7 +69,6 @@ export default function ClientDetailPage() {
 
     const updateClientData = async (id: string, data: ClientFormData) => {
         try {
-            setLoading(true)
             const updated = await updateClient(id, {
                 name: data.name,
                 email: data.email,
@@ -80,14 +81,11 @@ export default function ClientDetailPage() {
         } catch (err) {
             console.error('Failed to update client:', err)
             toast.error('Failed to update client. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const addTask = async (data: TaskFormData) => {
         try {
-            setLoading(true)
             const created = await createTask(clientId, {
                 title: data.title,
                 description: data.description,
@@ -101,14 +99,11 @@ export default function ClientDetailPage() {
         } catch (err) {
             console.error('Error adding task:', err)
             toast.error('Failed to add task. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const updateTaskData = async (data: TaskFormData) => {
         try {
-            setLoading(true)
             const updated = await updateTask(editingTask!.id, data)
             setTasks(tasks.map(task => task.id === editingTask!.id ? updated : task))
             setShowTaskForm(false)
@@ -118,14 +113,13 @@ export default function ClientDetailPage() {
         catch (err) {
             console.error('Failed to update task:', err)
             toast.error('Failed to update task. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const handleDeleteTask = async (taskId: string) => {
+        if (!confirm('Are you sure you want to delete this task?')) return;
+        setDeletingId(taskId)
         try {
-            setLoading(true)
             await deleteTask(taskId)
             setTasks(tasks.filter(task => task.id !== taskId))
             toast.success('Task deleted successfully!')
@@ -134,27 +128,23 @@ export default function ClientDetailPage() {
             console.error('Error deleting task:', err)
             toast.error('Failed to delete task. Please try again.')
         } finally {
-            setLoading(false)
+            setDeletingId(null)
         }
     }
 
     const updateTaskStatus = async (taskId: string, status: Task['status']) => {
         try {
-            setLoading(true)
             const updated = await updateTask(taskId, { status: status })
             setTasks(tasks.map(task => task.id === taskId ? updated : task))
             toast.success('Task status updated successfully!')
         } catch (err) {
             console.error('Error updating task status:', err)
             toast.error('Failed to update task status. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const addNote = async (data: NoteFormData) => {
         try {
-            setLoading(true)
             const created = await createNote(clientId, data.content)
             setNotes([created, ...notes])
             setShowNoteForm(false)
@@ -163,14 +153,11 @@ export default function ClientDetailPage() {
         } catch (err) {
             console.error('Error adding note:', err)
             toast.error('Failed to add note. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const updateNoteData = async (data: NoteFormData) => {
         try {
-            setLoading(true)
             const updated = await updateNote(editingNote!.id, data.content)
             setNotes(notes.map(note => note.id === editingNote!.id ? updated : note))
             setShowNoteForm(false)
@@ -180,15 +167,13 @@ export default function ClientDetailPage() {
         } catch (err) {
             console.error('Failed to update note:', err)
             toast.error('Failed to update note. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const handleDeleteNote = async (noteId: string) => {
         if (!confirm('Are you sure you want to delete this note?')) return;
+        setDeletingId(noteId)
         try {
-            setLoading(true)
             await deleteNote(noteId)
             setNotes(notes.filter(note => note.id !== noteId))
             toast.success('Note deleted successfully!')
@@ -196,20 +181,13 @@ export default function ClientDetailPage() {
         catch (err) {
             console.error('Error deleting note:', err)
             toast.error('Failed to delete note. Please try again.')
-        }
-        finally {
-            setLoading(false)
+        } finally {
+            setDeletingId(null)
         }
     }
 
     if (loading) {
-        return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <div className="text-gray-500 dark:text-gray-400">Loading client details...</div>
-                </div>
-            </div>
-        )
+        return <ClientDetailSkeleton />
     }
 
     if (error) {
@@ -258,8 +236,8 @@ export default function ClientDetailPage() {
         setShowClientForm(false)
     }
 
-    const handleSaveClient = (data: ClientFormData) => {
-        updateClientData(client.id, data)
+    const handleSaveClient = async (data: ClientFormData) => {
+        await updateClientData(client.id, data)
     }
 
     const handleEditTask = (task: Task) => {
@@ -267,14 +245,13 @@ export default function ClientDetailPage() {
         setShowTaskForm(true)
     }
 
-    const handleSaveTask = (data: TaskFormData) => {
+    const handleSaveTask = async (data: TaskFormData) => {
         if (editingTask) {
-            updateTaskData(data)
+            return updateTaskData(data)
         }
         else {
-            addTask(data)
+            return addTask(data)
         }
-        handleCloseTaskForm()
     }
 
     const handleCloseTaskForm = () => {
@@ -465,8 +442,9 @@ export default function ClientDetailPage() {
                                                 <button
                                                     onClick={() => handleDeleteTask(task.id)}
                                                     className="text-red-600 hover:text-red-900 dark:text-red-400"
+                                                    disabled={deletingId === task.id}
                                                 >
-                                                    Delete
+                                                    {deletingId === task.id ? 'Deleting...' : 'Delete'}
                                                 </button>
                                             </div>
                                         </div>
@@ -517,6 +495,7 @@ export default function ClientDetailPage() {
                                     <div className="flex justify-end space-x-3">
                                         <button
                                             type="button"
+                                            disabled={isSubmittingNote}
                                             onClick={handleCloseNoteForm}
                                             className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
                                         >
@@ -524,9 +503,10 @@ export default function ClientDetailPage() {
                                         </button>
                                         <button
                                             type="submit"
+                                            disabled={isSubmittingNote}
                                             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
                                         >
-                                            {editingNote ? 'Update Note' : 'Add Note'}
+                                            {isSubmittingNote ? 'Saving...' : editingNote ? 'Update Note' : 'Add Note'}
                                         </button>
                                     </div>
                                 </form>
@@ -553,8 +533,8 @@ export default function ClientDetailPage() {
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <button onClick={() => handleEditNote(note)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm">Edit</button>
-                                            <button onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
-                                                Delete
+                                            <button disabled={deletingId === note.id} onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
+                                                {deletingId === note.id ? 'Deleting...' : 'Delete'}
                                             </button>
                                         </div>
                                     </div>

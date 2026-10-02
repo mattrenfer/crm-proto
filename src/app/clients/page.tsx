@@ -7,6 +7,7 @@ import type { Client } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import ClientForm from '@/components/ClientForm'
 import { ClientFormData } from '@/lib/schemas'
+import ClientListSkeleton from '@/components/ClientListSkeleton'
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
@@ -14,6 +15,7 @@ export default function ClientsPage() {
     const [error, setError] = useState<string | null>(null)
     const [showClientForm, setShowClientForm] = useState(false)
     const [editingClient, setEditingClient] = useState<Client | null>(null)
+    const [deletingId, setDeletingId] = useState<string | null>(null)
 
 
     useEffect(() => {
@@ -36,7 +38,6 @@ export default function ClientsPage() {
 
     const addClient = async (data: ClientFormData) => {
         try {
-            setLoading(true)
             const created = await createClient({
                 name: data.name,
                 email: data.email,
@@ -49,14 +50,11 @@ export default function ClientsPage() {
         } catch (err) {
             console.error('Failed to add client:', err)
             toast.error('Failed to add client. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
     const updateClientData = async (id: string, data: ClientFormData) => {
         try {
-            setLoading(true)
             const updated = await updateClient(id, {
                 name: data.name,
                 email: data.email,
@@ -70,8 +68,6 @@ export default function ClientsPage() {
         } catch (err) {
             console.error('Failed to update client:', err)
             toast.error('Failed to update client. Please try again.')
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -93,17 +89,17 @@ export default function ClientsPage() {
 
     const handleSaveClient = (data: ClientFormData) => {
         if (editingClient) {
-            updateClientData(editingClient.id, data)
+            return updateClientData(editingClient.id, data)
         } else {
-            addClient(data)
+            return addClient(data)
         }
     }
 
 
     const handleDeleteClient = async (id: string) => {
+        setDeletingId(id)
         if (!confirm('Are you sure you want to delete this client? This will also delete all associated tasks and notes.')) return
         try {
-            setLoading(true)
             await deleteClient(id)
             setClients(clients.filter((client) => client.id !== id))
             toast.success('Client deleted successfully!')
@@ -111,18 +107,12 @@ export default function ClientsPage() {
             console.error('Failed to delete client:', err)
             toast.error('Failed to delete client. Please try again.')
         } finally {
-            setLoading(false)
+            setDeletingId(null)
         }
     }
 
     if (loading) {
-        return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <div className="text-gray-500 dark:text-gray-400">Loading clients...</div>
-                </div>
-            </div>
-        )
+        return <ClientListSkeleton />
     }
 
     if (error) {
@@ -212,8 +202,9 @@ export default function ClientsPage() {
                                                 <button
                                                     onClick={() => handleDeleteClient(client.id)}
                                                     className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                                    disabled={deletingId === client.id}
                                                 >
-                                                    Delete
+                                                    {deletingId === client.id ? 'Deleting...' : 'Delete'}
                                                 </button>
                                             </div>
                                         </div>
