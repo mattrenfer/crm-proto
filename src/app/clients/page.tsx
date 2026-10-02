@@ -7,6 +7,7 @@ import type { Client } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import ClientForm from '@/components/ClientForm'
 import { ClientFormData } from '@/lib/schemas'
+import ClientListSkeleton from '@/components/ClientListSkeleton'
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
@@ -111,13 +112,7 @@ export default function ClientsPage() {
     }
 
     if (loading) {
-        return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <div className="text-gray-500 dark:text-gray-400">Loading clients...</div>
-                </div>
-            </div>
-        )
+        return <ClientListSkeleton />
     }
 
     if (error) {

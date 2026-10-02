@@ -6,6 +6,7 @@ import type { Client, Task } from '@/lib/supabase'
 import { getTasks, getClients, createTask, deleteTask, updateTask } from '@/lib/data'
 import toast from 'react-hot-toast'
 import TaskForm from '@/components/TaskForm'
+import TaskListSkeleton from '@/components/TaskListSkeleton'
 import { TaskFormData, TaskWithClientFormData } from '@/lib/schemas'
 
 
@@ -168,11 +169,7 @@ export default function TasksPage() {
     }
 
     if (loading) {
-        return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center">Loading tasks...</div>
-            </div>
-        )
+        return <TaskListSkeleton />
     }
 
     const taskCounts = {

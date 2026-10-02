@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { NoteFormData, noteSchema, TaskFormData, ClientFormData } from '@/lib/schemas'
 import ClientForm from '@/components/ClientForm'
 import TaskForm from '@/components/TaskForm'
+import ClientDetailSkeleton from '@/components/ClientDetailSkeleton'
 
 export default function ClientDetailPage() {
     const params = useParams()
@@ -186,13 +187,7 @@ export default function ClientDetailPage() {
     }
 
     if (loading) {
-        return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <div className="text-gray-500 dark:text-gray-400">Loading client details...</div>
-                </div>
-            </div>
-        )
+        return <ClientDetailSkeleton />
     }
 
     if (error) {
