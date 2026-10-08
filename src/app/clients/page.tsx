@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import ClientForm from '@/components/ClientForm'
 import { ClientFormData } from '@/lib/schemas'
 import ClientListSkeleton from '@/components/ClientListSkeleton'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
@@ -15,6 +16,7 @@ export default function ClientsPage() {
     const [error, setError] = useState<string | null>(null)
     const [showClientForm, setShowClientForm] = useState(false)
     const [editingClient, setEditingClient] = useState<Client | null>(null)
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
 
@@ -95,10 +97,17 @@ export default function ClientsPage() {
         }
     }
 
+    const handleOnConfirm = () => {
+        if (pendingDeleteId === null) return
+        handleDeleteClient(pendingDeleteId)
+    }
+
+    const handleShowDeleteModal = (id: string) => {
+        setPendingDeleteId(id)
+    }
 
     const handleDeleteClient = async (id: string) => {
         setDeletingId(id)
-        if (!confirm('Are you sure you want to delete this client? This will also delete all associated tasks and notes.')) return
         try {
             await deleteClient(id)
             setClients(clients.filter((client) => client.id !== id))
@@ -107,8 +116,13 @@ export default function ClientsPage() {
             console.error('Failed to delete client:', err)
             toast.error('Failed to delete client. Please try again.')
         } finally {
+            setPendingDeleteId(null)
             setDeletingId(null)
         }
+    }
+
+    const handleCancelDelete = () => {
+        setPendingDeleteId(null)
     }
 
     if (loading) {
@@ -131,8 +145,11 @@ export default function ClientsPage() {
         )
     }
 
+
     return (
+
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <ConfirmDialog open={pendingDeleteId !== null} isDeleting={deletingId !== null} onConfirm={handleOnConfirm} onCancel={handleCancelDelete} confirmLabel="Are you sure you want to delete?" confirmDescription="This action cannot be undone. This will delete the client and all associated data." />
             <div className="px-4 py-6 sm:px-0">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -200,7 +217,7 @@ export default function ClientsPage() {
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteClient(client.id)}
+                                                    onClick={() => handleShowDeleteModal(client.id)}
                                                     className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                                                     disabled={deletingId === client.id}
                                                 >
