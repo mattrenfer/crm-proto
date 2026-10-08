@@ -1,17 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import { getClientById, getTasksByClientId, createTask, deleteTask, updateTask, getNotesByClientId, createNote, deleteNote, updateClient, updateNote } from '@/lib/data'
-import type { Client, Task, Note } from '@/lib/supabase'
-import toast from 'react-hot-toast'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { NoteFormData, noteSchema, TaskFormData, ClientFormData } from '@/lib/schemas'
-import ClientForm from '@/components/ClientForm'
-import TaskForm from '@/components/TaskForm'
 import ClientDetailSkeleton from '@/components/ClientDetailSkeleton'
+import ClientForm from '@/components/ClientForm'
+import ConfirmDialog from '@/components/ConfirmDialog'
+import TaskForm from '@/components/TaskForm'
+import { createNote, createTask, deleteNote, deleteTask, getClientById, getNotesByClientId, getTasksByClientId, updateClient, updateNote, updateTask } from '@/lib/data'
+import { ClientFormData, NoteFormData, noteSchema, TaskFormData } from '@/lib/schemas'
+import type { Client, Note, Task } from '@/lib/supabase'
+import { zodResolver } from '@hookform/resolvers/zod'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import toast from 'react-hot-toast'
 
 export default function ClientDetailPage() {
     const params = useParams()
@@ -28,6 +29,8 @@ export default function ClientDetailPage() {
     const [showClientForm, setShowClientForm] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
     const [editingNote, setEditingNote] = useState<Note | null>(null)
+    const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
+    const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
 
@@ -117,7 +120,7 @@ export default function ClientDetailPage() {
     }
 
     const handleDeleteTask = async (taskId: string) => {
-        if (!confirm('Are you sure you want to delete this task?')) return;
+        setPendingDeleteTaskId(taskId)
         setDeletingId(taskId)
         try {
             await deleteTask(taskId)
@@ -128,6 +131,7 @@ export default function ClientDetailPage() {
             console.error('Error deleting task:', err)
             toast.error('Failed to delete task. Please try again.')
         } finally {
+            setPendingDeleteTaskId(null)
             setDeletingId(null)
         }
     }
@@ -171,7 +175,7 @@ export default function ClientDetailPage() {
     }
 
     const handleDeleteNote = async (noteId: string) => {
-        if (!confirm('Are you sure you want to delete this note?')) return;
+        setPendingDeleteNoteId(noteId)
         setDeletingId(noteId)
         try {
             await deleteNote(noteId)
@@ -182,6 +186,7 @@ export default function ClientDetailPage() {
             console.error('Error deleting note:', err)
             toast.error('Failed to delete note. Please try again.')
         } finally {
+            setPendingDeleteNoteId(null)
             setDeletingId(null)
         }
     }
@@ -264,13 +269,41 @@ export default function ClientDetailPage() {
         setShowNoteForm(true)
     }
 
+    const handleOnTaskConfirm = () => {
+        if (pendingDeleteTaskId === null) return
+
+        handleDeleteTask(pendingDeleteTaskId)
+    }
+
+
+    const handleOnNoteConfirm = () => {
+        if (pendingDeleteNoteId === null) return
+
+        handleDeleteNote(pendingDeleteNoteId)
+    }
+
     const handleCloseNoteForm = () => {
         setEditingNote(null)
         setShowNoteForm(false)
     }
 
+    const handleShowDeleteTaskModal = (id: string) => {
+        setPendingDeleteTaskId(id)
+    }
+
+    const handleShowDeleteNoteModal = (id: string) => {
+        setPendingDeleteNoteId(id)
+    }
+
+    const handleCancelDelete = () => {
+        setPendingDeleteTaskId(null)
+        setPendingDeleteNoteId(null)
+    }
+
     return (
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <ConfirmDialog open={pendingDeleteTaskId !== null} isDeleting={deletingId !== null} onConfirm={handleOnTaskConfirm} onCancel={handleCancelDelete} confirmLabel="Are you sure you want to delete this task?" />
+            <ConfirmDialog open={pendingDeleteNoteId !== null} isDeleting={deletingId !== null} onConfirm={handleOnNoteConfirm} onCancel={handleCancelDelete} confirmLabel="Are you sure you want to delete this note?" />
             <div className="px-4 py-6 sm:px-0">
                 {/* Header */}
                 <div className="mb-6">
@@ -440,7 +473,7 @@ export default function ClientDetailPage() {
                                                     Edit
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteTask(task.id)}
+                                                    onClick={() => handleShowDeleteTaskModal(task.id)}
                                                     className="text-red-600 hover:text-red-900 dark:text-red-400"
                                                     disabled={deletingId === task.id}
                                                 >
@@ -533,7 +566,7 @@ export default function ClientDetailPage() {
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <button onClick={() => handleEditNote(note)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm">Edit</button>
-                                            <button disabled={deletingId === note.id} onClick={() => handleDeleteNote(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
+                                            <button disabled={deletingId === note.id} onClick={() => handleShowDeleteNoteModal(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
                                                 {deletingId === note.id ? 'Deleting...' : 'Delete'}
                                             </button>
                                         </div>

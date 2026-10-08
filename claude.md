@@ -76,10 +76,10 @@ Launch a production-ready CRM application end-to-end while deeply learning Next.
 
 Per git history: Phase 1 (Supabase CRUD) and Phase 2 (auth, session context, protected routes, RLS — tickets 2.1–2.6) are complete, and Ticket 3.1 (form validation) is done. Toasts (`react-hot-toast`) are already wired in.
 
-Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts) and 3.2 (#15, loading states and skeletons) are done. **Next: 3.4 (#17, confirmation dialogs), then 3.5 (#18) and 3.6 (#19).** Sprint 5 runs through Oct 4, 2026; Phase 4 is Sprint 6 (Oct 5–11).
+Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons) and 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`) are done. **Next: 3.5 (#18), then 3.6 (#19).** Sprint 6 (Oct 5–11, 2026) finishes Phase 3 (#17–#19); Phase 4 is Sprint 7 (Oct 12–18).
 
 ### What's Missing ❌
-- Confirmation dialogs, error boundaries / 404 pages
+- Error boundaries / 404 pages
 - Migrations (`schema.sql` is out of date — see Architecture)
 - Testing suite
 - Production deployment

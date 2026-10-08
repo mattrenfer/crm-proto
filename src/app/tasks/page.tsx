@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import TaskForm from '@/components/TaskForm'
 import TaskListSkeleton from '@/components/TaskListSkeleton'
 import { TaskFormData, TaskWithClientFormData } from '@/lib/schemas'
+import ConfirmDialog from '@/components/ConfirmDialog'
 
 
 interface TaskWithClient extends Task {
@@ -22,6 +23,7 @@ export default function TasksPage() {
     const [clients, setClients] = useState<Client[] | null>(null)
     const [showTaskForm, setShowTaskForm] = useState(false);
     const [editingTask, setEditingTask] = useState<Task | null>(null)
+    const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
     useEffect(() => {
@@ -127,8 +129,8 @@ export default function TasksPage() {
     }
 
     const handleDeleteTask = async (taskId: string) => {
-        if (!confirm('Are you sure you want to delete this task?')) return
-        setDeletingId(taskId);
+        setPendingDeleteTaskId(taskId)
+        setDeletingId(taskId)
         try {
             await deleteTask(taskId)
             setTasks(tasks.filter(task => task.id !== taskId))
@@ -137,6 +139,7 @@ export default function TasksPage() {
             console.error('Failed to delete task:', err)
             toast.error('Failed to delete task. Please try again.')
         } finally {
+            setPendingDeleteTaskId(null)
             setDeletingId(null)
         }
     }
@@ -202,8 +205,24 @@ export default function TasksPage() {
         setEditingTask(task)
     }
 
+
+    const handleShowDeleteTaskModal = (id: string) => {
+        setPendingDeleteTaskId(id)
+    }
+
+    const handleOnTaskConfirm = () => {
+        if (pendingDeleteTaskId === null) return
+
+        handleDeleteTask(pendingDeleteTaskId)
+    }
+
+    const handleCancelDelete = () => {
+        setPendingDeleteTaskId(null)
+    }
+
     return (
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            <ConfirmDialog open={pendingDeleteTaskId !== null} isDeleting={deletingId !== null} onConfirm={handleOnTaskConfirm} onCancel={handleCancelDelete} confirmLabel="Are you sure you want to delete this task?" />
             <div className="px-4 py-6 sm:px-0">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -418,7 +437,7 @@ export default function TasksPage() {
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDeleteTask(task.id)}
+                                            onClick={() => handleShowDeleteTaskModal(task.id)}
                                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm"
                                             disabled={deletingId === task.id}
                                         >
