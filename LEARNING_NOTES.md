@@ -28,6 +28,10 @@
 - [Ticket 3.7: Edit Clients, Tasks & Notes](#-ticket-37-edit-clients-tasks--notes)
 - [Ticket 3.3: Toast Notifications System](#-ticket-33-toast-notifications-system)
 - [Ticket 3.2: Loading States & Skeletons](#-ticket-32-loading-states--skeletons)
+- [Ticket 3.4: Confirmation Dialogs](#-ticket-34-confirmation-dialogs)
+
+### Reference
+- [Editor Shortcuts & Tooling](#-editor-shortcuts--tooling-vs-code--cursor-windows)
 
 ---
 
@@ -3995,5 +3999,160 @@ A red underline on `import "./globals.css"` appeared after the editor updated: i
 
 ### Verification
 DevTools → Network → **3G**: skeletons on first load and navigation, "Saving..."/"Deleting..." on actions, no page flash, and **Offline + a failed save keeps the typed values.**
+
+---
+
+---
+---
+
+# 🛑 Ticket 3.4: Confirmation Dialogs
+
+**Started:** October 2, 2026
+**Date Completed:** October 8, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #17
+**Difficulty:** ⭐⭐⭐⭐ (4/5). The first ticket with no existing pattern to copy.
+
+## Why Replace `confirm()`?
+The browser's `confirm()` can't be styled (it ignores the design and dark mode), freezes the page, and only shows plain text. The goal: a dialog that looks like part of the app, while keeping what `confirm()` does well (keyboard support, focus, screen readers).
+
+## 🎯 Key Concepts
+
+### 1. The Native `<dialog>` Element
+| How it's opened | Kind | Result |
+|---|---|---|
+| `<dialog open>` / `.show()` | non-modal | the rest of the page still works |
+| **`.showModal()`** | **modal** | on top of everything, rest of the page blocked |
+
+`showModal()` gives you for free: the **top layer** (no z-index fights), a styleable **`::backdrop`**, **the rest of the page made inert** (no clicks, Tab, or screen readers), **focus moved into the dialog** and returned afterwards, and **Esc to close**.
+- Calling `showModal()` on an already-open dialog **throws**, so check `dialog.open` first.
+- `.close()` closes it. The `close` event fires *however* it closed (your `close()` or the user's Esc).
+
+### 2. `useRef` vs `useState`
+> **If the screen should change when the value changes → state. If you just need to keep hold of something between renders (a DOM element, a timer ID) → ref.**
+
+`useRef` gives you a **box**; React puts the element in **`.current`** after rendering. **Re-renders don't destroy elements**; React updates them in place. Only *unmounting* does (conditional rendering, a new `key`, an early return).
+
+### 3. Effects Connect React State to Browser APIs You Call Directly
+`<dialog>` isn't opened by a prop; you call a method on it. So the component:
+- gets `open` from the parent (state lives there),
+- holds the element in a **ref**,
+- uses an **effect** on `[open]` to call `showModal()` / `close()` so the element matches.
+
+```tsx
+useEffect(() => {
+    const modal = dialogRef.current
+    if (modal === null) return                       // narrowing: handle null once
+    if (open && !modal.open) modal.showModal()
+    else if (!open && modal.open) modal.close()
+}, [open])
+```
+
+### 4. State Has to Sync in Both Directions
+- **Page → dialog:** state changes → effect → `close()`. ✅
+- **Dialog → page:** the **browser** closes it on Esc. Your effect isn't involved, so the page still thinks it's open, and the dialog **never reopens.**
+
+**Fix:** listen for the element's event: `<dialog onClose={onCancel}>`. Esc and Cancel now take the same path.
+> **When the browser controls something (a `<dialog>`, `<details>`, a video), it can change state without React knowing. Listen for its events.**
+
+### 5. Two Moments, Two States, Both IDs
+| State | Moment | Used for |
+|---|---|---|
+| `pendingDeleteId` | "which client is the user being asked about?" | the dialog's `open` |
+| `deletingId` | "which client is being deleted right now?" | the row's "Deleting..." and the dialog's busy state |
+
+**What went wrong first:** one `deletingId` for both meant the row said "Deleting..." before confirming and got stuck after Esc. A boolean `confirmDialogOpen` *copying* the pending ID meant two states that could disagree, so the dialog didn't close after confirming.
+
+### 6. Derived Values: Store the Minimum, Work Out the Rest
+A comparison asks the state a question and returns a fresh `true`/`false` every render. The state itself stays an ID.
+
+| Derived value | From | Question |
+|---|---|---|
+| `open={pendingDeleteId !== null}` | pending ID | someone waiting for confirmation? |
+| `isDeleting={deletingId !== null}` | deleting ID | anything being deleted? |
+| `deletingId === client.id` | deleting ID | *this* row being deleted? |
+| `filteredTasks` | `tasks` + `filter` | which tasks match the tab? |
+
+**Before adding state, ask whether you can work it out from state you already have.**
+
+**Give a component the least it needs:** the dialog gets a boolean (`isDeleting`), not the ID. It doesn't care *which* item, so it works for clients, tasks and notes alike.
+
+### 7. Ternaries Pick Values; `if` Does Things
+`cond ? modal.showModal() : null` works, but lint flags it (`no-unused-expressions`). The `: null` was a made-up value nobody used. Use a ternary to **choose a value**, and `if / else if` to **do something**.
+
+### 8. Tailwind + `<dialog>` Gotchas
+- **Top-left instead of centred:** browsers centre a modal with `margin: auto`; Tailwind's base styles reset `* { margin: 0 }`. **Fix:** `m-auto`. (Debug with DevTools → **Computed** → `margin` to see which rule won.)
+- **Use `open:flex`, not `flex`:** plain `flex` overrides the "hidden when closed" style, so the dialog would always show.
+- **`backdrop:bg-black/50`** styles the dimmed page behind it.
+
+### 9. Reading TypeScript Errors
+- *"Property 'open' does not exist on type 'RefObject<...>'"* → you're calling methods on the **box**, not `.current`.
+- *"Property 'onClose' does not exist on type '...Props'"* → you're passing a prop the component doesn't accept.
+- *"Type 'string | null' is not assignable to type 'boolean'"* → you passed the ID where a yes/no was needed; ask it a question (`!== null`).
+- **Type `.` to explore:** `dialogRef.` → `current` → `.current.` → `showModal`, `close`, `open`. Autocomplete shows you the shape of any object.
+
+### 10. Accessible Names with ARIA
+```tsx
+const titleId = useId()          // unique per instance: the detail page renders TWO dialogs
+<dialog aria-labelledby={titleId} aria-describedby={descriptionId}>
+    <h2 id={titleId}>{confirmLabel}</h2>
+    <p id={descriptionId}>{confirmDescription}</p>
+```
+- `aria-labelledby` points **at another element's `id`**. Both ends have to exist. Pointing at an ID no element has **fails silently** (no error, no warning).
+- **Verify it:** DevTools → Elements → select the `<dialog>` → **Accessibility** tab → **Name** should read the title. That's what a screen reader announces.
+- Hard-coded IDs (`id="dialog-title"`) would clash when a page renders two dialogs; `useId()` makes each one unique.
+- One `h1` per page, so a dialog title is an `h2`.
+
+## ⏱ Reflection
+This ticket took much longer than its 2h estimate: it was the first one with no existing pattern, it introduced several new concepts (refs, effects connected to browser APIs, two-way sync, derived values), and the coaching was deliberately question-based. Most of the time went into **state design**, not the dialog itself.
+
+---
+
+---
+---
+
+# 🛠 Editor Shortcuts & Tooling (VS Code / Cursor, Windows)
+
+A reference section, not tied to one ticket. Cursor uses VS Code's keys except **Ctrl+K** (its AI shortcut), so Ctrl+K chords are left out. **Learn 2–3 at a time**; start with Ctrl+P, Ctrl+. and F12 / Alt+←.
+
+## Code-Aware Tools (they understand TypeScript, not just text)
+| Keys | What it does | Why it beats the alternative |
+|---|---|---|
+| **F2** | **Rename Symbol**: renames a variable everywhere it's used, across files | Find-and-replace also matches text in strings and comments. Renaming `deleting` that way turned `'Deleting...'` into `'deletingId...'` |
+| **F12** / **Ctrl+click** | Go to definition | jump from `deleteClient(...)` in a page to `data.ts` |
+| **Alt+←** | Go back to where you were | return after F12 |
+| **Shift+F12** | Find all references | see what uses something before changing it |
+| **Ctrl+.** | **Quick Fix**, especially **adding missing imports** | type `<ConfirmDialog`, press Ctrl+., pick "Add import" |
+| **Shift+Alt+O** | Organize imports (sorts them, **removes unused ones**) | clears "is defined but never used" lint warnings |
+| **`.` then read the list** | Autocomplete shows what an object has | how I found `dialogRef.current.showModal()` |
+| **Hover** | Shows the type of anything | most confusion is assuming the wrong shape (an ID string vs a client object) |
+
+## Getting Around
+| Keys | What it does |
+|---|---|
+| **Ctrl+P** | Open a file by typing part of its name (`ConfDi` → `ConfirmDialog.tsx`) |
+| **Ctrl+Shift+O** | Jump to a function or variable in the current file |
+| **Ctrl+G** | Go to line (use the line number from `page.tsx(152,60)`) |
+| **F8** | Next error or warning in the file |
+| **Ctrl+Shift+M** | Problems panel: every error, clickable |
+| **Ctrl+`** | Toggle the terminal |
+
+## Editing
+| Keys | What it does |
+|---|---|
+| **Alt+↑ / Alt+↓** | Move the line up or down |
+| **Shift+Alt+↓** | Duplicate the line |
+| **Ctrl+Shift+K** | Delete the line |
+| **Ctrl+/** | Toggle a comment |
+| **Ctrl+D** | Select the next match (repeat to add more), then edit them all at once. **Text-based**, so use F2 for renaming variables |
+| **Alt+click** | Add a cursor |
+| **Ctrl+Space** / **Ctrl+Shift+Space** | Show suggestions / show the parameters of the function you're calling |
+
+## Workflow Habits
+- **Continuous type checking:** run `npx tsc --noEmit --watch` in a second terminal. It re-checks the whole project on every save, including files that aren't open.
+- **Editor and project TypeScript should match:** "TypeScript: Select TypeScript Version" → **Use Workspace Version** (see Ticket 3.2).
+- **Format on save without shared rules creates noise in diffs.** The editor reformatted `globals.css` to its own style. Fix: a project `.prettierrc` (planned for #19), or turn off format on save until then.
+- **Read the Computed tab** (DevTools → Inspect → Computed) to see *which* CSS rule won when layout looks wrong.
+- **Read the Network tab's Payload** to see what was actually sent to the server.
 
 ---
