@@ -175,6 +175,22 @@ export default function TasksPage() {
         return <TaskListSkeleton />
     }
 
+    if (error) {
+        return (
+            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <div className="text-center py-12">
+                    <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
+                    <button
+                        onClick={loadTasks}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
     const taskCounts = {
         all: tasks.length,
         pending: tasks.filter(t => t.status === 'pending').length,
@@ -204,7 +220,6 @@ export default function TasksPage() {
         setShowTaskForm(true)
         setEditingTask(task)
     }
-
 
     const handleShowDeleteTaskModal = (id: string) => {
         setPendingDeleteTaskId(id)
