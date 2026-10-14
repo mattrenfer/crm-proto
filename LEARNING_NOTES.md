@@ -29,6 +29,7 @@
 - [Ticket 3.3: Toast Notifications System](#-ticket-33-toast-notifications-system)
 - [Ticket 3.2: Loading States & Skeletons](#-ticket-32-loading-states--skeletons)
 - [Ticket 3.4: Confirmation Dialogs](#-ticket-34-confirmation-dialogs)
+- [Ticket 3.5: Error Boundaries & 404 Pages](#-ticket-35-error-boundaries--404-pages)
 
 ### Reference
 - [Editor Shortcuts & Tooling](#-editor-shortcuts--tooling-vs-code--cursor-windows)
@@ -4105,6 +4106,100 @@ const titleId = useId()          // unique per instance: the detail page renders
 
 ## ⏱ Reflection
 This ticket took much longer than its 2h estimate: it was the first one with no existing pattern, it introduced several new concepts (refs, effects connected to browser APIs, two-way sync, derived values), and the coaching was deliberately question-based. Most of the time went into **state design**, not the dialog itself.
+
+---
+
+---
+---
+
+# 🚨 Ticket 3.5: Error Boundaries & 404 Pages
+
+**Started:** October 9, 2026
+**Date Completed:** October 14, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #18
+**Difficulty:** ⭐⭐⭐ (3/5)
+
+## 🎯 Key Concepts
+
+### 1. Three Kinds of Failure
+| Kind of failure | Example | Handled by |
+|---|---|---|
+| **Rendering fails** | dashboard data fails on the server, or a bug while drawing a page | `error.tsx` (and `global-error.tsx` for the root layout) |
+| **A client page's first load fails** | `/clients` fetch fails inside `useEffect` | the page's own `if (error)` screen |
+| **An action fails** | add / edit / delete fails | a **toast**; the page stays (Ticket 3.3) |
+
+**Why the client pages need their own screens:** error boundaries only catch errors thrown **while React is rendering.** A fetch in `useEffect` runs *after* rendering, asynchronously, so an uncaught error there is never seen by the boundary. The page would be stuck on its skeleton with no message.
+
+*(Possible later simplification: catch in the effect, store it in state, then `if (error) throw new Error(error)` during render, so `error.tsx` handles it. Kept the page screens for now.)*
+
+### 2. The Special Files
+| File | Shows when | `'use client'`? |
+|---|---|---|
+| `loading.tsx` | the page is waiting (Ticket 3.2) | no |
+| **`error.tsx`** | something **throws while rendering** a page beneath it | **yes**: error boundaries run in the browser, and Try Again needs `onClick` |
+| **`global-error.tsx`** | the **root layout itself** fails (replaces it, so it must render its own `<html>` / `<body>`) | **yes** |
+| **`not-found.tsx`** | a URL matches no route | **no**: just a message and a link, so a Server Component sends no JS |
+
+> **Rule:** if it's an error boundary, or responds to anything in the browser (clicks, typing, state, effects), it's a Client Component.
+
+### 3. `reset()` vs `router.refresh()`
+A Server Component page loads in two steps: **(1)** the server runs it and sends a *result*; **(2)** the browser displays that result.
+- **`reset()` only repeats step 2.** If the server's result *was* the error, the browser re-displays the same error, like re-reading the same letter.
+- **`router.refresh()` repeats step 1:** it asks the server for a fresh result.
+
+```tsx
+const handleTryAgain = () => {
+    startTransition(() => {     // apply both as one update
+        router.refresh()        // fetch again on the server
+        reset()                 // display the fresh result instead of the error page
+    })
+}
+```
+| Where the error happened | "Try again" needs |
+|---|---|
+| In the browser (Client Component) | `reset()` |
+| On the server (Server Component) | `router.refresh()` + `reset()` |
+
+**Testing lesson:** my first test was skewed. Saving the file to remove the `throw` made Next.js send fresh output, so `reset()` *seemed* to work. Simulating a temporary failure (`if (Math.random() < 0.5) throw ...`) without editing any files showed that it didn't.
+
+### 4. Don't Show `error.message` to Users
+- It can leak internals (table names, SQL errors), which is called **information disclosure**, and it's jargon the user can't act on.
+- In production, Next.js already **replaces Server Component error messages** with a generic one, and adds a **`digest`**: a reference code that matches the full error in the server logs.
+- **Pattern:** a friendly message you wrote + the `digest` as a small "reference" (only if it exists) + `console.error(error)` in a **`useEffect`**, so *you* still see it.
+- The page-level screens are fine: their `error` is **text you set yourself** (`setError('Failed to load tasks...')`); the raw error only goes to the console.
+
+### 5. Side Effects Go in Effects
+`console.error(error)` directly in the component body runs on **every render** (twice in development). Rendering should only describe the UI; logging and error reporting (Sentry in 4.3) go in `useEffect(() => ..., [error])`, so they run once per error.
+
+### 6. Links Go Somewhere; Buttons Do Something
+`<button onClick={() => router.push('/clients')}>` works, but `<Link href="/clients">` is correct: it can be opened in a new tab, it's announced as a link, and Next.js prefetches it. "Try Again" *does something*, so it's a button.
+
+### 7. Testing Error Pages
+- **Development shows Next.js's red overlay *on top of* your error page.** Close it to see yours.
+- **`global-error.tsx` mostly matters in production:** test with `npm run build` → `npm start` (stop `npm run dev` first; they share `.next`).
+- **Trigger a layout error only in the browser,** or the build fails while pre-rendering pages: `if (typeof window !== 'undefined') throw new Error('global test')` inside `Navigation`.
+- `global-error.tsx` replaces the layout that imports `globals.css`, so it may appear **unstyled** unless it imports the CSS itself.
+
+## 🔐 Security: An App vs a Website
+A CRM stores **other people's personal data**, behind logins, in a shared multi-user database. That's far more to protect than an informational website has.
+
+> **Anything in the browser is public and can be changed.** Security has to be enforced on the **server and in the database**, never by trusting the frontend.
+
+| Already handled | Why |
+|---|---|
+| Row Level Security (2.6) | the real protection; even direct API calls with the public key only see your own rows |
+| Middleware auth (2.5) | keeps logged-out users away from pages |
+| Friendly error messages (3.5) | avoids information disclosure |
+| Zod validation (3.1) | **helps users, but isn't security** (runs in the browser, so it can be bypassed) |
+
+| Before launch | Ticket |
+|---|---|
+| `schema.sql` lacks the RLS policies; a fresh database built from it would expose all data | #21 |
+| Only the **anon** key in `NEXT_PUBLIC_*`; the **service role** key bypasses RLS and must never reach the browser | #19 |
+| Turn email confirmation back **on** in Supabase Auth | #20 |
+
+Reference: the **OWASP Top 10** (the standard list of common web app risks).
 
 ---
 
