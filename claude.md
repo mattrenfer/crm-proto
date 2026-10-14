@@ -76,10 +76,9 @@ Launch a production-ready CRM application end-to-end while deeply learning Next.
 
 Per git history: Phase 1 (Supabase CRUD) and Phase 2 (auth, session context, protected routes, RLS — tickets 2.1–2.6) are complete, and Ticket 3.1 (form validation) is done. Toasts (`react-hot-toast`) are already wired in.
 
-Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons) and 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`) are done. **Next: 3.5 (#18), then 3.6 (#19).** Sprint 6 (Oct 5–11, 2026) finishes Phase 3 (#17–#19); Phase 4 is Sprint 7 (Oct 12–18).
+Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`) and 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) are done. **Next: 3.6 (#19).** This is interview prep with no external deadline; sprint dates are self-set targets. Sprint 7 (Oct 12–18, 2026): #19, then Phase 4's deploy (#20), migrations (#21) and E2E tests (#36, Ticket 4.5). Sprint 8 (Oct 19–25): monitoring (#22) and docs (#23).
 
 ### What's Missing ❌
-- Error boundaries / 404 pages
 - Migrations (`schema.sql` is out of date — see Architecture)
 - Testing suite
 - Production deployment
@@ -358,6 +357,17 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 - [ ] Create backup/restore procedures
 - [ ] Document known issues and future features
 - **Learning**: Technical writing, documentation practices
+
+#### Ticket 4.5: End-to-End Testing (#36)
+**Size**: M (3-4 hours) — added 2026-10-14; the Testing Strategy planned tests for Phase 3 but they were never ticketed
+- [ ] Install and configure Playwright
+- [ ] Dedicated test user and test data cleanup
+- [ ] E2E: auth (login/logout, redirect when logged out)
+- [ ] E2E: client add/edit/delete (incl. confirmation dialog), task and note CRUD
+- [ ] E2E: RLS — a second user can't see another user's client
+- [ ] `npm run test:e2e`; run in CI on pull requests (with 4.1)
+- **Learning**: E2E testing, test data management, CI integration
+- Out of scope for now: mocked unit tests for `data.ts` (thin Supabase wrappers)
 
 ---
 
