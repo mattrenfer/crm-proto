@@ -35,7 +35,7 @@ export default function TaskForm({
                 description: task.description,
                 status: task.status,
                 priority: task.priority,
-                due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '',
+                due_date: task.due_date ?? '',
             })
         } else {
             resetTaskForm({
@@ -136,7 +136,7 @@ export default function TaskForm({
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
                         <input
-                            defaultValue={task?.due_date ? new Date(task.due_date).toISOString().split('T')[0] : ''}
+                            defaultValue={task?.due_date ?? ''}
                             type="date"
                             {...registerTask('due_date')}
                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"

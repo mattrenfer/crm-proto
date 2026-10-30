@@ -7,6 +7,11 @@ function getSupabase() {
     return createBrowserClient()
 }
 
+// Accept only a real date or null. Not an empty form field coming as ''
+function emptyToNull(value: string | null | undefined) {
+    return value ? value : null
+}
+
 /**
  * Dashboard Data Access Functions
  */
@@ -181,7 +186,7 @@ export async function createTask(clientId: string, taskData: Partial<Task>): Pro
 
         const { data, error } = await supabase
             .from('tasks')
-            .insert({ client_id: clientId, ...taskData, user_id: user.id })
+            .insert({ client_id: clientId, ...taskData, due_date: emptyToNull(taskData.due_date), user_id: user.id })
             .select()
             .single()
 
@@ -198,8 +203,16 @@ export async function createTask(clientId: string, taskData: Partial<Task>): Pro
 
 export async function updateTask(id: string, taskData: Partial<Task>): Promise<Task> {
     const supabase = getSupabase()
+
+    // Only convert due_date if this update includes it. A status-only update ({ status })
+    // must not turn a missing due_date into null, or it would erase the task's due date.
+    const updates = { ...taskData }
+    if (updates.due_date !== undefined) {
+        updates.due_date = emptyToNull(updates.due_date)
+    }
+
     try {
-        const { data, error } = await supabase.from('tasks').update(taskData).eq('id', id).select().single()
+        const { data, error } = await supabase.from('tasks').update(updates).eq('id', id).select().single()
 
         if (error) {
             console.error('Error updating task:', error)

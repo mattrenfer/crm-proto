@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import type { Client, Task } from '@/lib/supabase'
 import { getTasks, getClients, createTask, deleteTask, updateTask } from '@/lib/data'
+import { formatDate } from '@/lib/dates'
 import toast from 'react-hot-toast'
 import TaskForm from '@/components/TaskForm'
 import TaskListSkeleton from '@/components/TaskListSkeleton'
@@ -419,9 +420,7 @@ export default function TasksPage() {
                                                     {task.client.name}
                                                 </Link>
                                             </span>
-                                            {task.due_date && (
-                                                <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
-                                            )}
+                                            {task.due_date && <span>Due: {formatDate(task.due_date)}</span>}
                                             <span>Created: {new Date(task.created_at).toLocaleDateString()}</span>
                                         </div>
                                     </div>
