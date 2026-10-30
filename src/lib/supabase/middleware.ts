@@ -48,45 +48,41 @@ import { type NextRequest, NextResponse } from 'next/server'
  * ```
  */
 export function createClient(request: NextRequest) {
-  // Create a response object to pass through
-  // This will collect any cookie changes (like token refresh)
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
-
-  const supabase = createServerClient(
-    env.supabaseUrl,
-    env.supabaseAnonKey,
-    {
-      cookies: {
-        // Read cookies from the incoming request
-        getAll() {
-          return request.cookies.getAll()
+    // Create a response object to pass through
+    // This will collect any cookie changes (like token refresh)
+    let response = NextResponse.next({
+        request: {
+            headers: request.headers,
         },
-        // Write cookies to the outgoing response
-        setAll(cookiesToSet) {
-          // Update the response object with new cookies
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
+    })
 
-          // ALSO create a new response to return
-          // This ensures the cookies are properly set
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
+    const supabase = createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
+        cookies: {
+            // Read cookies from the incoming request
+            getAll() {
+                return request.cookies.getAll()
             },
-          })
+            // Write cookies to the outgoing response
+            setAll(cookiesToSet) {
+                // Update the response object with new cookies
+                cookiesToSet.forEach(({ name, value, options }) => {
+                    response.cookies.set(name, value, options)
+                })
 
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
+                // ALSO create a new response to return
+                // This ensures the cookies are properly set
+                response = NextResponse.next({
+                    request: {
+                        headers: request.headers,
+                    },
+                })
+
+                cookiesToSet.forEach(({ name, value, options }) => {
+                    response.cookies.set(name, value, options)
+                })
+            },
         },
-      },
-    }
-  )
+    })
 
-  return { supabase, response }
+    return { supabase, response }
 }

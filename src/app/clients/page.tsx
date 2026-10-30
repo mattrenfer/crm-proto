@@ -19,7 +19,6 @@ export default function ClientsPage() {
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
-
     useEffect(() => {
         loadClients()
     }, [])
@@ -44,7 +43,7 @@ export default function ClientsPage() {
                 name: data.name,
                 email: data.email,
                 phone: data.phone || null,
-                company: data.company || null
+                company: data.company || null,
             })
             setClients([created, ...clients])
             setShowClientForm(false)
@@ -61,9 +60,9 @@ export default function ClientsPage() {
                 name: data.name,
                 email: data.email,
                 phone: data.phone || null,
-                company: data.company || null
+                company: data.company || null,
             })
-            setClients(clients.map(client => client.id === id ? updated : client))
+            setClients(clients.map((client) => (client.id === id ? updated : client)))
             setEditingClient(null)
             setShowClientForm(false)
             toast.success('Client updated successfully!')
@@ -72,7 +71,6 @@ export default function ClientsPage() {
             toast.error('Failed to update client. Please try again.')
         }
     }
-
 
     const handleAddClient = () => {
         setShowClientForm(true)
@@ -145,16 +143,19 @@ export default function ClientsPage() {
         )
     }
 
-
     return (
-
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <ConfirmDialog open={pendingDeleteId !== null} isDeleting={deletingId !== null} onConfirm={handleOnConfirm} onCancel={handleCancelDelete} confirmLabel="Are you sure you want to delete?" confirmDescription="This action cannot be undone. This will delete the client and all associated data." />
+            <ConfirmDialog
+                open={pendingDeleteId !== null}
+                isDeleting={deletingId !== null}
+                onConfirm={handleOnConfirm}
+                onCancel={handleCancelDelete}
+                confirmLabel="Are you sure you want to delete?"
+                confirmDescription="This action cannot be undone. This will delete the client and all associated data."
+            />
             <div className="px-4 py-6 sm:px-0">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                        Clients
-                    </h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Clients</h1>
                     <button
                         onClick={handleAddClient}
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -165,11 +166,7 @@ export default function ClientsPage() {
 
                 {/* Client Form */}
                 {showClientForm && (
-                    <ClientForm
-                        client={editingClient}
-                        onSubmit={handleSaveClient}
-                        onCancel={handleCloseForm}
-                    />
+                    <ClientForm client={editingClient} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
                 )}
 
                 {/* Clients List */}
@@ -189,9 +186,7 @@ export default function ClientsPage() {
                                             <div className="flex items-center">
                                                 <div>
                                                     <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                                        <Link href={`/clients/${client.id}`}>
-                                                            {client.name}
-                                                        </Link>
+                                                        <Link href={`/clients/${client.id}`}>{client.name}</Link>
                                                     </p>
                                                     <p className="text-sm text-gray-500 dark:text-gray-400">
                                                         {client.email}

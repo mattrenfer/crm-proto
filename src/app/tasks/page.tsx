@@ -10,7 +10,6 @@ import TaskListSkeleton from '@/components/TaskListSkeleton'
 import { TaskFormData, TaskWithClientFormData } from '@/lib/schemas'
 import ConfirmDialog from '@/components/ConfirmDialog'
 
-
 interface TaskWithClient extends Task {
     client: Pick<Client, 'id' | 'name'>
 }
@@ -21,7 +20,7 @@ export default function TasksPage() {
     const [error, setError] = useState<string | null>(null)
     const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed'>('all')
     const [clients, setClients] = useState<Client[] | null>(null)
-    const [showTaskForm, setShowTaskForm] = useState(false);
+    const [showTaskForm, setShowTaskForm] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
     const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -41,11 +40,11 @@ export default function TasksPage() {
             setClients(clientsData)
 
             // Create lookup map for efficient client joins
-            const clientsMap = new Map(clientsData.map(c => [c.id, c]))
+            const clientsMap = new Map(clientsData.map((c) => [c.id, c]))
 
             // Join tasks with their client data
             const tasksWithClients = tasksData
-                .map(task => {
+                .map((task) => {
                     const client = clientsMap.get(task.client_id)
                     if (!client) return null
                     return {
@@ -73,14 +72,17 @@ export default function TasksPage() {
                 description: data.description,
                 status: data.status,
                 priority: data.priority,
-                due_date: data.due_date
+                due_date: data.due_date,
             })
 
             const createdWithClient = clients?.find((c: Client) => {
                 return c.id === data.client_id
             })
 
-            setTasks([{ ...created, client: { id: createdWithClient?.id || '', name: createdWithClient?.name || '' } }, ...tasks])
+            setTasks([
+                { ...created, client: { id: createdWithClient?.id || '', name: createdWithClient?.name || '' } },
+                ...tasks,
+            ])
             setShowTaskForm(false)
             toast.success('Task added successfully!')
         } catch (err) {
@@ -92,14 +94,11 @@ export default function TasksPage() {
     const updateTaskData = async (data: TaskFormData) => {
         try {
             const updated = await updateTask(editingTask!.id, data)
-            setTasks(tasks.map(task =>
-                task.id === editingTask!.id ? { ...task, ...updated } : task
-            ))
+            setTasks(tasks.map((task) => (task.id === editingTask!.id ? { ...task, ...updated } : task)))
             setShowTaskForm(false)
             setEditingTask(null)
             toast.success('Task updated successfully!')
-        }
-        catch (err) {
+        } catch (err) {
             console.error('Failed to update task:', err)
             toast.error('Failed to update task. Please try again.')
         }
@@ -109,19 +108,16 @@ export default function TasksPage() {
         try {
             const updated = await updateTask(taskId, { status: newStatus })
 
-            setTasks(tasks.map(task =>
-                task.id === taskId ? { ...task, ...updated } : task
-            ))
+            setTasks(tasks.map((task) => (task.id === taskId ? { ...task, ...updated } : task)))
 
             // Success feedback
             const statusLabels = {
                 pending: 'Pending',
                 in_progress: 'In Progress',
-                completed: 'Completed'
+                completed: 'Completed',
             }
 
             toast.success(`Task marked as ${statusLabels[newStatus]}`)
-
         } catch (error) {
             console.error('Error updating task:', error)
             toast.error('Failed to update task status. Please try again.')
@@ -133,7 +129,7 @@ export default function TasksPage() {
         setDeletingId(taskId)
         try {
             await deleteTask(taskId)
-            setTasks(tasks.filter(task => task.id !== taskId))
+            setTasks(tasks.filter((task) => task.id !== taskId))
             toast.success('Task deleted successfully!')
         } catch (err) {
             console.error('Failed to delete task:', err)
@@ -144,7 +140,7 @@ export default function TasksPage() {
         }
     }
 
-    const filteredTasks = tasks.filter(task => {
+    const filteredTasks = tasks.filter((task) => {
         if (filter === 'all') return true
         return task.status === filter
     })
@@ -193,9 +189,9 @@ export default function TasksPage() {
 
     const taskCounts = {
         all: tasks.length,
-        pending: tasks.filter(t => t.status === 'pending').length,
-        in_progress: tasks.filter(t => t.status === 'in_progress').length,
-        completed: tasks.filter(t => t.status === 'completed').length,
+        pending: tasks.filter((t) => t.status === 'pending').length,
+        in_progress: tasks.filter((t) => t.status === 'in_progress').length,
+        completed: tasks.filter((t) => t.status === 'completed').length,
     }
 
     const handleAddTask = () => {
@@ -205,8 +201,7 @@ export default function TasksPage() {
     const handleSaveTask = async (data: TaskWithClientFormData) => {
         if (editingTask) {
             return updateTaskData(data)
-        }
-        else {
+        } else {
             return addTask(data)
         }
     }
@@ -237,21 +232,32 @@ export default function TasksPage() {
 
     return (
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <ConfirmDialog open={pendingDeleteTaskId !== null} isDeleting={deletingId !== null} onConfirm={handleOnTaskConfirm} onCancel={handleCancelDelete} confirmLabel="Are you sure you want to delete this task?" />
+            <ConfirmDialog
+                open={pendingDeleteTaskId !== null}
+                isDeleting={deletingId !== null}
+                onConfirm={handleOnTaskConfirm}
+                onCancel={handleCancelDelete}
+                confirmLabel="Are you sure you want to delete this task?"
+            />
             <div className="px-4 py-6 sm:px-0">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                        Tasks
-                    </h1>
-                    <button onClick={handleAddTask} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tasks</h1>
+                    <button
+                        onClick={handleAddTask}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                         Add Task
                     </button>
                 </div>
 
-                {showTaskForm &&
-                    <TaskForm task={editingTask} clients={clients} onSubmit={handleSaveTask} onCancel={handleCloseTaskForm} />
-                }
+                {showTaskForm && (
+                    <TaskForm
+                        task={editingTask}
+                        clients={clients}
+                        onSubmit={handleSaveTask}
+                        onCancel={handleCloseTaskForm}
+                    />
+                )}
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -357,10 +363,11 @@ export default function TasksPage() {
                                 <button
                                     key={tab.key}
                                     onClick={() => setFilter(tab.key as typeof filter)}
-                                    className={`py-2 px-1 border-b-2 font-medium text-sm ${filter === tab.key
-                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-                                        }`}
+                                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                        filter === tab.key
+                                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+                                    }`}
                                 >
                                     {tab.label} ({tab.count})
                                 </button>
@@ -386,23 +393,26 @@ export default function TasksPage() {
                                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                                                 {task.title}
                                             </h3>
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(task.status)}`}>
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(task.status)}`}
+                                            >
                                                 {task.status.replace('_', ' ')}
                                             </span>
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeClass(task.priority)}`}>
+                                            <span
+                                                className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeClass(task.priority)}`}
+                                            >
                                                 {task.priority} priority
                                             </span>
                                         </div>
 
                                         {task.description && (
-                                            <p className="text-gray-600 dark:text-gray-300 mb-3">
-                                                {task.description}
-                                            </p>
+                                            <p className="text-gray-600 dark:text-gray-300 mb-3">{task.description}</p>
                                         )}
 
                                         <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                                             <span>
-                                                Client: <Link
+                                                Client:{' '}
+                                                <Link
                                                     href={`/clients/${task.client.id}`}
                                                     className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                                                 >
@@ -410,13 +420,9 @@ export default function TasksPage() {
                                                 </Link>
                                             </span>
                                             {task.due_date && (
-                                                <span>
-                                                    Due: {new Date(task.due_date).toLocaleDateString()}
-                                                </span>
+                                                <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
                                             )}
-                                            <span>
-                                                Created: {new Date(task.created_at).toLocaleDateString()}
-                                            </span>
+                                            <span>Created: {new Date(task.created_at).toLocaleDateString()}</span>
                                         </div>
                                     </div>
 

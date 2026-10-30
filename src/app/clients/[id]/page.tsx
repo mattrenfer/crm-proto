@@ -4,7 +4,18 @@ import ClientDetailSkeleton from '@/components/ClientDetailSkeleton'
 import ClientForm from '@/components/ClientForm'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import TaskForm from '@/components/TaskForm'
-import { createNote, createTask, deleteNote, deleteTask, getClientById, getNotesByClientId, getTasksByClientId, updateClient, updateNote, updateTask } from '@/lib/data'
+import {
+    createNote,
+    createTask,
+    deleteNote,
+    deleteTask,
+    getClientById,
+    getNotesByClientId,
+    getTasksByClientId,
+    updateClient,
+    updateNote,
+    updateTask,
+} from '@/lib/data'
 import { ClientFormData, NoteFormData, noteSchema, TaskFormData } from '@/lib/schemas'
 import type { Client, Note, Task } from '@/lib/supabase'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,13 +44,11 @@ export default function ClientDetailPage() {
     const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
-
-
     const {
         register: registerNote,
         handleSubmit: handleSubmitNote,
         formState: { errors: noteErrors, isSubmitting: isSubmittingNote },
-        reset: resetNoteForm
+        reset: resetNoteForm,
     } = useForm<NoteFormData>({ resolver: zodResolver(noteSchema) })
 
     const fetchClientData = useCallback(async () => {
@@ -50,7 +59,7 @@ export default function ClientDetailPage() {
             const [clientData, tasksData, notesData] = await Promise.all([
                 getClientById(clientId),
                 getTasksByClientId(clientId),
-                getNotesByClientId(clientId)
+                getNotesByClientId(clientId),
             ])
 
             setClient(clientData)
@@ -76,7 +85,7 @@ export default function ClientDetailPage() {
                 name: data.name,
                 email: data.email,
                 phone: data.phone || null,
-                company: data.company || null
+                company: data.company || null,
             })
             setClient(updated)
             setShowClientForm(false)
@@ -94,7 +103,7 @@ export default function ClientDetailPage() {
                 description: data.description,
                 status: data.status,
                 priority: data.priority,
-                due_date: data.due_date
+                due_date: data.due_date,
             })
             setTasks([created, ...tasks])
             setShowTaskForm(false)
@@ -108,12 +117,11 @@ export default function ClientDetailPage() {
     const updateTaskData = async (data: TaskFormData) => {
         try {
             const updated = await updateTask(editingTask!.id, data)
-            setTasks(tasks.map(task => task.id === editingTask!.id ? updated : task))
+            setTasks(tasks.map((task) => (task.id === editingTask!.id ? updated : task)))
             setShowTaskForm(false)
             setEditingTask(null)
             toast.success('Task updated successfully!')
-        }
-        catch (err) {
+        } catch (err) {
             console.error('Failed to update task:', err)
             toast.error('Failed to update task. Please try again.')
         }
@@ -124,10 +132,9 @@ export default function ClientDetailPage() {
         setDeletingId(taskId)
         try {
             await deleteTask(taskId)
-            setTasks(tasks.filter(task => task.id !== taskId))
+            setTasks(tasks.filter((task) => task.id !== taskId))
             toast.success('Task deleted successfully!')
-        }
-        catch (err) {
+        } catch (err) {
             console.error('Error deleting task:', err)
             toast.error('Failed to delete task. Please try again.')
         } finally {
@@ -139,7 +146,7 @@ export default function ClientDetailPage() {
     const updateTaskStatus = async (taskId: string, status: Task['status']) => {
         try {
             const updated = await updateTask(taskId, { status: status })
-            setTasks(tasks.map(task => task.id === taskId ? updated : task))
+            setTasks(tasks.map((task) => (task.id === taskId ? updated : task)))
             toast.success('Task status updated successfully!')
         } catch (err) {
             console.error('Error updating task status:', err)
@@ -163,7 +170,7 @@ export default function ClientDetailPage() {
     const updateNoteData = async (data: NoteFormData) => {
         try {
             const updated = await updateNote(editingNote!.id, data.content)
-            setNotes(notes.map(note => note.id === editingNote!.id ? updated : note))
+            setNotes(notes.map((note) => (note.id === editingNote!.id ? updated : note)))
             setShowNoteForm(false)
             setEditingNote(null)
             resetNoteForm()
@@ -179,10 +186,9 @@ export default function ClientDetailPage() {
         setDeletingId(noteId)
         try {
             await deleteNote(noteId)
-            setNotes(notes.filter(note => note.id !== noteId))
+            setNotes(notes.filter((note) => note.id !== noteId))
             toast.success('Note deleted successfully!')
-        }
-        catch (err) {
+        } catch (err) {
             console.error('Error deleting note:', err)
             toast.error('Failed to delete note. Please try again.')
         } finally {
@@ -253,8 +259,7 @@ export default function ClientDetailPage() {
     const handleSaveTask = async (data: TaskFormData) => {
         if (editingTask) {
             return updateTaskData(data)
-        }
-        else {
+        } else {
             return addTask(data)
         }
     }
@@ -274,7 +279,6 @@ export default function ClientDetailPage() {
 
         handleDeleteTask(pendingDeleteTaskId)
     }
-
 
     const handleOnNoteConfirm = () => {
         if (pendingDeleteNoteId === null) return
@@ -302,8 +306,20 @@ export default function ClientDetailPage() {
 
     return (
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <ConfirmDialog open={pendingDeleteTaskId !== null} isDeleting={deletingId !== null} onConfirm={handleOnTaskConfirm} onCancel={handleCancelDelete} confirmLabel="Are you sure you want to delete this task?" />
-            <ConfirmDialog open={pendingDeleteNoteId !== null} isDeleting={deletingId !== null} onConfirm={handleOnNoteConfirm} onCancel={handleCancelDelete} confirmLabel="Are you sure you want to delete this note?" />
+            <ConfirmDialog
+                open={pendingDeleteTaskId !== null}
+                isDeleting={deletingId !== null}
+                onConfirm={handleOnTaskConfirm}
+                onCancel={handleCancelDelete}
+                confirmLabel="Are you sure you want to delete this task?"
+            />
+            <ConfirmDialog
+                open={pendingDeleteNoteId !== null}
+                isDeleting={deletingId !== null}
+                onConfirm={handleOnNoteConfirm}
+                onCancel={handleCancelDelete}
+                confirmLabel="Are you sure you want to delete this note?"
+            />
             <div className="px-4 py-6 sm:px-0">
                 {/* Header */}
                 <div className="mb-6">
@@ -319,14 +335,15 @@ export default function ClientDetailPage() {
                     {!showClientForm && (
                         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                             <div className="flex justify-between items-center">
-                                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                                    {client.name}
-                                </h1>
+                                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{client.name}</h1>
                                 <div>
                                     <button
                                         onClick={handleEditClient}
                                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                    >Edit Client</button></div>
+                                    >
+                                        Edit Client
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -355,7 +372,6 @@ export default function ClientDetailPage() {
                             </div>
                         </div>
                     )}
-
                 </div>
 
                 {/* Tabs */}
@@ -364,19 +380,21 @@ export default function ClientDetailPage() {
                         <nav className="-mb-px flex space-x-8">
                             <button
                                 onClick={() => setActiveTab('tasks')}
-                                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'tasks'
-                                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-                                    }`}
+                                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'tasks'
+                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+                                }`}
                             >
                                 Tasks ({tasks.length})
                             </button>
                             <button
                                 onClick={() => setActiveTab('notes')}
-                                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'notes'
-                                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-                                    }`}
+                                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                                    activeTab === 'notes'
+                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+                                }`}
                             >
                                 Notes ({notes.length})
                             </button>
@@ -399,7 +417,13 @@ export default function ClientDetailPage() {
 
                         {/* Add Task Form */}
                         {(showTaskForm || editingTask) && (
-                            <TaskForm task={editingTask} onSubmit={handleSaveTask} onCancel={handleCloseTaskForm} clients={null} clientId={clientId} />
+                            <TaskForm
+                                task={editingTask}
+                                onSubmit={handleSaveTask}
+                                onCancel={handleCloseTaskForm}
+                                clients={null}
+                                clientId={clientId}
+                            />
                         )}
 
                         {/* Tasks List */}
@@ -422,16 +446,26 @@ export default function ClientDetailPage() {
                                                     </p>
                                                 )}
                                                 <div className="mt-2 flex items-center space-x-4 text-sm">
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${task.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                                                        task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                                                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                                                        }`}>
+                                                    <span
+                                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                            task.status === 'completed'
+                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                                : task.status === 'in_progress'
+                                                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                                                        }`}
+                                                    >
                                                         {task.status.replace('_', ' ')}
                                                     </span>
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${task.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                                                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                                                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                                                        }`}>
+                                                    <span
+                                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                            task.priority === 'high'
+                                                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                                                : task.priority === 'medium'
+                                                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                                                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                                                        }`}
+                                                    >
                                                         {task.priority} priority
                                                     </span>
                                                     {task.due_date && (
@@ -507,7 +541,12 @@ export default function ClientDetailPage() {
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                                     {editingNote ? 'Edit Note' : 'Add New Note'}
                                 </h3>
-                                <form onSubmit={editingNote ? handleSubmitNote(updateNoteData) : handleSubmitNote(addNote)} className="space-y-4">
+                                <form
+                                    onSubmit={
+                                        editingNote ? handleSubmitNote(updateNoteData) : handleSubmitNote(addNote)
+                                    }
+                                    className="space-y-4"
+                                >
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                             Note Content *
@@ -519,11 +558,11 @@ export default function ClientDetailPage() {
                                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                             placeholder="Enter your note here..."
                                         />
-                                        {noteErrors && noteErrors.content &&
+                                        {noteErrors && noteErrors.content && (
                                             <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                                                 {noteErrors.content?.message}
                                             </p>
-                                        }
+                                        )}
                                     </div>
                                     <div className="flex justify-end space-x-3">
                                         <button
@@ -562,11 +601,19 @@ export default function ClientDetailPage() {
                                             <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                                                 {new Date(note.created_at).toLocaleString()}
                                             </div>
-
                                         </div>
                                         <div className="flex items-center space-x-2">
-                                            <button onClick={() => handleEditNote(note)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm">Edit</button>
-                                            <button disabled={deletingId === note.id} onClick={() => handleShowDeleteNoteModal(note.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm">
+                                            <button
+                                                onClick={() => handleEditNote(note)}
+                                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                disabled={deletingId === note.id}
+                                                onClick={() => handleShowDeleteNoteModal(note.id)}
+                                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                            >
                                                 {deletingId === note.id ? 'Deleting...' : 'Delete'}
                                             </button>
                                         </div>

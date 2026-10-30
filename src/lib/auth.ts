@@ -35,11 +35,11 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
  * ```
  */
 export async function signUp(email: string, password: string) {
-  const supabase = createBrowserClient()
-  return await supabase.auth.signUp({
-    email,
-    password,
-  })
+    const supabase = createBrowserClient()
+    return await supabase.auth.signUp({
+        email,
+        password,
+    })
 }
 
 /**
@@ -68,11 +68,11 @@ export async function signUp(email: string, password: string) {
  * ```
  */
 export async function signIn(email: string, password: string) {
-  const supabase = createBrowserClient()
-  return await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+    const supabase = createBrowserClient()
+    return await supabase.auth.signInWithPassword({
+        email,
+        password,
+    })
 }
 
 /**
@@ -100,8 +100,8 @@ export async function signIn(email: string, password: string) {
  * ```
  */
 export async function signOut() {
-  const supabase = createBrowserClient()
-  return await supabase.auth.signOut()
+    const supabase = createBrowserClient()
+    return await supabase.auth.signOut()
 }
 
 /**
@@ -129,8 +129,8 @@ export async function signOut() {
  * ```
  */
 export async function getSession() {
-  const supabase = await createServerClient()
-  return await supabase.auth.getSession()
+    const supabase = await createServerClient()
+    return await supabase.auth.getSession()
 }
 
 /**
@@ -159,6 +159,6 @@ export async function getSession() {
  * ```
  */
 export async function getUser() {
-  const supabase = await createServerClient()
-  return await supabase.auth.getUser()
+    const supabase = await createServerClient()
+    return await supabase.auth.getUser()
 }

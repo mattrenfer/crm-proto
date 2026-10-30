@@ -33,13 +33,18 @@ function isSecretKey(key: string) {
 }
 
 const envSchema = z.object({
-    NEXT_PUBLIC_SUPABASE_URL: z
-        .url(`NEXT_PUBLIC_SUPABASE_URL is missing or not a valid URL. ${SETUP_HINT}`),
+    NEXT_PUBLIC_SUPABASE_URL: z.url(`NEXT_PUBLIC_SUPABASE_URL is missing or not a valid URL. ${SETUP_HINT}`),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z
         .string(`NEXT_PUBLIC_SUPABASE_ANON_KEY is missing. ${SETUP_HINT}`)
         .min(1, `NEXT_PUBLIC_SUPABASE_ANON_KEY is empty. ${SETUP_HINT}`)
-        .refine(key => !key.startsWith('your_'), `NEXT_PUBLIC_SUPABASE_ANON_KEY still has the template placeholder. ${SETUP_HINT}`)
-        .refine(key => !isSecretKey(key), 'NEXT_PUBLIC_SUPABASE_ANON_KEY is a service role / secret key. It bypasses Row Level Security and must never be public. Use the anon (publishable) key instead.'),
+        .refine(
+            (key) => !key.startsWith('your_'),
+            `NEXT_PUBLIC_SUPABASE_ANON_KEY still has the template placeholder. ${SETUP_HINT}`,
+        )
+        .refine(
+            (key) => !isSecretKey(key),
+            'NEXT_PUBLIC_SUPABASE_ANON_KEY is a service role / secret key. It bypasses Row Level Security and must never be public. Use the anon (publishable) key instead.',
+        ),
 })
 
 const result = envSchema.safeParse({
@@ -48,7 +53,7 @@ const result = envSchema.safeParse({
 })
 
 if (!result.success) {
-    const messages = result.error.issues.map(issue => `  - ${issue.message}`).join('\n')
+    const messages = result.error.issues.map((issue) => `  - ${issue.message}`).join('\n')
     throw new Error(`Invalid environment configuration:\n${messages}`)
 }
 

@@ -33,7 +33,9 @@ export default function SignUpPage() {
     useEffect(() => {
         const checkUser = async () => {
             const supabase = createClient()
-            const { data: { session } } = await supabase.auth.getSession()
+            const {
+                data: { session },
+            } = await supabase.auth.getSession()
 
             if (session) {
                 // Already logged in, redirect to home
@@ -79,9 +81,7 @@ export default function SignUpPage() {
             <div className="max-w-md w-full space-y-8">
                 {/* Header */}
                 <div>
-                    <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-                        Sign Up
-                    </h1>
+                    <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Sign Up</h1>
                     <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
                         Or{' '}
                         <Link
@@ -98,7 +98,10 @@ export default function SignUpPage() {
                     <form className="space-y-6" onSubmit={handleSubmitSignup(handleSubmit)}>
                         {/* Error Display */}
                         {error && (
-                            <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                            <div
+                                role="alert"
+                                className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400 px-4 py-3 rounded-lg text-sm"
+                            >
                                 {error}
                             </div>
                         )}
@@ -121,11 +124,11 @@ export default function SignUpPage() {
                                 className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 placeholder="you@example.com"
                             />
-                            {signupErrors &&
+                            {signupErrors && (
                                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                                     {signupErrors.email?.message}
                                 </p>
-                            }
+                            )}
                         </div>
 
                         {/* Password Input */}
@@ -145,11 +148,11 @@ export default function SignUpPage() {
                                 className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 placeholder="••••••••"
                             />
-                            {signupErrors &&
+                            {signupErrors && (
                                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                                     {signupErrors.password?.message}
                                 </p>
-                            }
+                            )}
                         </div>
 
                         {/* ConfirmPassword Input */}
@@ -170,11 +173,11 @@ export default function SignUpPage() {
                                 className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 placeholder="••••••••"
                             />
-                            {signupErrors &&
+                            {signupErrors && (
                                 <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                                     {signupErrors.confirmPassword?.message}
                                 </p>
-                            }
+                            )}
                         </div>
 
                         {/* Submit Button */}

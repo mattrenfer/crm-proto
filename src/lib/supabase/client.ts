@@ -29,8 +29,5 @@ import { env } from '@/lib/env'
  * ```
  */
 export function createClient() {
-  return createBrowserClient(
-    env.supabaseUrl,
-    env.supabaseAnonKey
-  )
+    return createBrowserClient(env.supabaseUrl, env.supabaseAnonKey)
 }

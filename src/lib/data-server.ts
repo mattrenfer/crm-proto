@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server';
-import type { Client, Task, Note } from './supabase';
+import { createClient } from '@/lib/supabase/server'
+import type { Client, Task, Note } from './supabase'
 
 // This data layer is for SERVER COMPONENTS ONLY
 // For Client Components, use data.ts instead
@@ -10,18 +10,14 @@ import type { Client, Task, Note } from './supabase';
 
 export async function getDashboardStats() {
     try {
-        const [clients, tasks] = await Promise.all([getClients(), getTasks()]);
-        const totalClients = clients.length;
-        const activeTasks = tasks.filter(
-            task => task.status === 'pending' || task.status === 'in_progress',
-        ).length;
-        const pendingTasks = tasks.filter(
-            task => task.status === 'pending',
-        ).length;
-        return { totalClients, activeTasks, pendingTasks };
+        const [clients, tasks] = await Promise.all([getClients(), getTasks()])
+        const totalClients = clients.length
+        const activeTasks = tasks.filter((task) => task.status === 'pending' || task.status === 'in_progress').length
+        const pendingTasks = tasks.filter((task) => task.status === 'pending').length
+        return { totalClients, activeTasks, pendingTasks }
     } catch (error) {
-        console.error('Unexpected error in getDashboardStats:', error);
-        throw error;
+        console.error('Unexpected error in getDashboardStats:', error)
+        throw error
     }
 }
 
@@ -30,47 +26,40 @@ export async function getDashboardStats() {
  */
 
 export async function getClients(): Promise<Client[]> {
-    const supabase = await createClient();
+    const supabase = await createClient()
     try {
-        const { data, error } = await supabase
-            .from('clients')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false })
 
         if (error) {
-            console.error('Error fetching clients:', error);
-            throw new Error(`Failed to fetch clients: ${error.message}`);
+            console.error('Error fetching clients:', error)
+            throw new Error(`Failed to fetch clients: ${error.message}`)
         }
 
-        return data || [];
+        return data || []
     } catch (error) {
-        console.error('Unexpected error in getClients:', error);
-        throw error;
+        console.error('Unexpected error in getClients:', error)
+        throw error
     }
 }
 
 export async function getClientById(id: string): Promise<Client | null> {
-    const supabase = await createClient();
+    const supabase = await createClient()
     try {
-        const { data, error } = await supabase
-            .from('clients')
-            .select('*')
-            .eq('id', id)
-            .single();
+        const { data, error } = await supabase.from('clients').select('*').eq('id', id).single()
 
         if (error) {
             if (error.code === 'PGRST116') {
                 // No rows returned
-                return null;
+                return null
             }
-            console.error('Error fetching client:', error);
-            throw new Error(`Failed to fetch client: ${error.message}`);
+            console.error('Error fetching client:', error)
+            throw new Error(`Failed to fetch client: ${error.message}`)
         }
 
-        return data;
+        return data
     } catch (error) {
-        console.error('Unexpected error in getClientById:', error);
-        throw error;
+        console.error('Unexpected error in getClientById:', error)
+        throw error
     }
 }
 
@@ -79,43 +68,40 @@ export async function getClientById(id: string): Promise<Client | null> {
  */
 
 export async function getTasks(): Promise<Task[]> {
-    const supabase = await createClient();
+    const supabase = await createClient()
     try {
-        const { data, error } = await supabase
-            .from('tasks')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('tasks').select('*').order('created_at', { ascending: false })
 
         if (error) {
-            console.error('Error fetching tasks:', error);
-            throw new Error(`Failed to fetch tasks: ${error.message}`);
+            console.error('Error fetching tasks:', error)
+            throw new Error(`Failed to fetch tasks: ${error.message}`)
         }
 
-        return data || [];
+        return data || []
     } catch (error) {
-        console.error('Unexpected error in getTasks:', error);
-        throw error;
+        console.error('Unexpected error in getTasks:', error)
+        throw error
     }
 }
 
 export async function getTasksByClientId(clientId: string): Promise<Task[]> {
-    const supabase = await createClient();
+    const supabase = await createClient()
     try {
         const { data, error } = await supabase
             .from('tasks')
             .select('*')
             .eq('client_id', clientId)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
 
         if (error) {
-            console.error('Error fetching tasks for client:', error);
-            throw new Error(`Failed to fetch tasks: ${error.message}`);
+            console.error('Error fetching tasks for client:', error)
+            throw new Error(`Failed to fetch tasks: ${error.message}`)
         }
 
-        return data || [];
+        return data || []
     } catch (error) {
-        console.error('Unexpected error in getTasksByClientId:', error);
-        throw error;
+        console.error('Unexpected error in getTasksByClientId:', error)
+        throw error
     }
 }
 
@@ -124,22 +110,22 @@ export async function getTasksByClientId(clientId: string): Promise<Task[]> {
  */
 
 export async function getNotesByClientId(clientId: string): Promise<Note[]> {
-    const supabase = await createClient();
+    const supabase = await createClient()
     try {
         const { data, error } = await supabase
             .from('notes')
             .select('*')
             .eq('client_id', clientId)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
 
         if (error) {
-            console.error('Error fetching notes for client:', error);
-            throw new Error(`Failed to fetch notes: ${error.message}`);
+            console.error('Error fetching notes for client:', error)
+            throw new Error(`Failed to fetch notes: ${error.message}`)
         }
 
-        return data || [];
+        return data || []
     } catch (error) {
-        console.error('Unexpected error in getNotesByClientId:', error);
-        throw error;
+        console.error('Unexpected error in getNotesByClientId:', error)
+        throw error
     }
 }

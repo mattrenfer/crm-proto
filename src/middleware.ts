@@ -1,47 +1,45 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/middleware';
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
     // This function runs on EVERY request
 
-    const { supabase, response } = createClient(request);
+    const { supabase, response } = createClient(request)
 
     const {
         data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser()
 
-    const pathname = request.nextUrl.pathname;
+    const pathname = request.nextUrl.pathname
 
-    const publicRoutes = ['/login', '/signup'];
-    const isPublicRoute = publicRoutes.includes(pathname);
+    const publicRoutes = ['/login', '/signup']
+    const isPublicRoute = publicRoutes.includes(pathname)
 
     // Dev routes - accessible in development but blocked in production
-    const isDevRoute = pathname.startsWith('/dev');
+    const isDevRoute = pathname.startsWith('/dev')
 
     // Block dev routes in production
     if (isDevRoute && process.env.NODE_ENV === 'production') {
-        return NextResponse.redirect(new URL('/', request.url));
+        return NextResponse.redirect(new URL('/', request.url))
     }
 
     // Allow dev routes without auth in development
     if (isDevRoute && process.env.NODE_ENV !== 'production') {
-        return response;
+        return response
     }
 
     if (!isPublicRoute && !user) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        return NextResponse.redirect(new URL('/login', request.url))
     } else if (isPublicRoute && user) {
-        return NextResponse.redirect(new URL('/', request.url));
+        return NextResponse.redirect(new URL('/', request.url))
     }
 
-    return response;
+    return response
 }
 
 export const config = {
-    matcher: [
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    ],
-};
+    matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+}
 
 // Why this regex?
 // - Without this, middleware runs on EVERY request, including:
