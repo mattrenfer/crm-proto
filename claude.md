@@ -13,12 +13,17 @@ This is a learning project: the author wants to understand each pattern, not jus
 ```bash
 npm run dev     # dev server with Turbopack at http://localhost:3000
 npm run build   # production build (also runs type checking)
-npm run lint    # next lint (next/core-web-vitals + next/typescript)
+npm run lint    # next lint (next/core-web-vitals + next/typescript); keep at zero warnings
+npm run typecheck     # tsc --noEmit
+npm run format        # Prettier (no semicolons, single quotes, 4 spaces, 120 cols)
+npm run format:check  # verify formatting without writing
 ```
 
 There is no test suite yet (planned for Phase 3 — see Testing Strategy below). Verify changes manually in the browser.
 
-Requires `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (template: `.env.local.example`).
+Requires `.env.local` with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (template: `.env.local.example`). `src/lib/env.ts` validates them with Zod (imported by `next.config.ts`, so `dev`/`build` fail fast with a readable message) and refuses a service role / secret key. Read config via `env` from `@/lib/env`, never `process.env.X!`; keep the full `process.env.NEXT_PUBLIC_*` names written out in `env.ts` or Next.js won't inline them into browser code.
+
+The Prettier reformat commit is listed in `.git-blame-ignore-revs`.
 
 ## Architecture
 
@@ -28,7 +33,7 @@ Next.js 15 App Router + Supabase (Postgres + Auth via `@supabase/ssr`). Path ali
 - `src/lib/supabase/client.ts` — browser client, for `'use client'` components and all auth writes (sign in/up/out).
 - `src/lib/supabase/server.ts` — async server client (awaits `cookies()`), for Server Components / Server Actions / route handlers. Cannot write cookies from Server Components (errors are swallowed on purpose).
 - `src/lib/supabase/middleware.ts` — returns `{ supabase, response }`; middleware **must return that `response`** (not `NextResponse.next()`) or refreshed tokens are lost.
-- `src/lib/supabase.ts` is legacy: it holds the shared `Client` / `Task` / `Note` TypeScript types (imported everywhere) plus an old non-SSR client that should not be used for new code.
+- `src/lib/supabase.ts` holds only the shared `Client` / `Task` / `Note` TypeScript types (the legacy non-SSR client was removed in Ticket 3.6).
 - `src/lib/auth.ts` imports the server client, so it can't be imported from Client Components; client pages call `@/lib/supabase/client` directly instead.
 
 ### Two parallel data layers
@@ -76,13 +81,12 @@ Launch a production-ready CRM application end-to-end while deeply learning Next.
 
 Per git history: Phase 1 (Supabase CRUD) and Phase 2 (auth, session context, protected routes, RLS — tickets 2.1–2.6) are complete, and Ticket 3.1 (form validation) is done. Toasts (`react-hot-toast`) are already wired in.
 
-Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`) and 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) are done. **Next: 3.6 (#19).** This is interview prep with no external deadline; sprint dates are self-set targets. Sprint 7 (Oct 12–18, 2026): #19, then Phase 4's deploy (#20), migrations (#21) and E2E tests (#36, Ticket 4.5). Sprint 8 (Oct 19–25): monitoring (#22) and docs (#23).
+Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`), 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) and 3.6 (#19, env validation, Prettier, lint at zero) are done, completing Phase 3. **As of Oct 29, 2026 this is a two-week push to ship the app as a job-search portfolio piece:** next are the schema fixes and migrations with RLS (#21), the Vercel deploy (#20), a few Playwright tests in CI (#36), and the README / demo account / video (#23). Work mode for this phase: Claude drafts, the author reviews and explains it back; nothing ships the author can't explain. Lower priority, if time allows: monitoring beyond Vercel Analytics (#22) and unit tests (#38; at least its two test-first bug fixes).
 
 ### What's Missing ❌
 - Migrations (`schema.sql` is out of date — see Architecture)
 - Testing suite
 - Production deployment
-- Leftover: `src/lib/mockData.ts` is still imported (unused) by `src/app/tasks/page.tsx`
 
 ### Code Quality
 - **Status**: Good foundation
@@ -368,6 +372,14 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 - [ ] `npm run test:e2e`; run in CI on pull requests (with 4.1)
 - **Learning**: E2E testing, test data management, CI integration
 - Out of scope for now: mocked unit tests for `data.ts` (thin Supabase wrappers)
+
+#### Ticket 4.6: Unit Tests for Core Logic (#38)
+**Size**: S (1-2 hours) — added 2026-10-14
+- [ ] Vitest + `npm run test`
+- [ ] Zod schemas, empty-string → `null` conversion, tasks-with-client join (extract to a pure function)
+- [ ] Test-first bug fix: `/clients/abc` (invalid UUID) should show "Client Not Found", not a load error
+- [ ] Test-first bug fix: clearing a task due date sends `''` (needs `null`); check UTC date display
+- **Learning**: unit testing, test-first bug fixing, extracting pure functions
 
 ---
 

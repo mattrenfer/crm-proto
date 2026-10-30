@@ -30,8 +30,10 @@
 - [Ticket 3.2: Loading States & Skeletons](#-ticket-32-loading-states--skeletons)
 - [Ticket 3.4: Confirmation Dialogs](#-ticket-34-confirmation-dialogs)
 - [Ticket 3.5: Error Boundaries & 404 Pages](#-ticket-35-error-boundaries--404-pages)
+- [Ticket 3.6: Environment & Build Configuration](#-ticket-36-environment--build-configuration)
 
 ### Reference
+- [Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic) (correction to 1.3 / 1.4)
 - [Editor Shortcuts & Tooling](#-editor-shortcuts--tooling-vs-code--cursor-windows)
 
 ---
@@ -539,6 +541,8 @@ This is handled at the database level - your code doesn't need to worry about it
 
 ### 🎨 Pattern 3: First Optimistic UI Update
 
+> ⚠️ **Correction (Oct 2026):** this is **not** an optimistic update. The code still `await`s the server before changing the screen; what this ticket actually did was remove the *refetch*. It's a **server-confirmed** (pessimistic) update. See [Data Update Patterns](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic).
+
 #### Before: Pessimistic Updates (Slow)
 
 ```typescript
@@ -1032,6 +1036,8 @@ const { data } = await supabase
 ---
 
 ### 🎨 Pattern 4: Optimistic UI Updates
+
+> ⚠️ **Correction (Oct 2026):** this is **not** an optimistic update. The code still `await`s the server before changing the screen; what this ticket actually did was remove the *refetch*. It's a **server-confirmed** (pessimistic) update. See [Data Update Patterns](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic).
 
 #### What Is Optimistic UI?
 
@@ -4200,6 +4206,162 @@ A CRM stores **other people's personal data**, behind logins, in a shared multi-
 | Turn email confirmation back **on** in Supabase Auth | #20 |
 
 Reference: the **OWASP Top 10** (the standard list of common web app risks).
+
+---
+
+# 🔧 Ticket 3.6: Environment & Build Configuration
+
+**Started:** October 29, 2026
+**Date Completed:** October 30, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #19
+**Difficulty:** ⭐⭐ (2/5)
+
+**How this ticket was built:** this is the start of the final two-week push to ship the app as a portfolio piece. To save time, the work switched to "**Claude drafts, I review and explain it back**." The rule: nothing ships that I can't explain. The explain-back questions and my answers are below.
+
+## 🎯 What Changed, in Plain Terms
+| Group | Change | Why |
+|---|---|---|
+| **Config safety net** | `src/lib/env.ts` checks the Supabase settings once, at startup | Missing settings, template placeholders, or the wrong key stop the app with a message that says how to fix it |
+| | The three Supabase clients read from `env` instead of `process.env.X!` | The `!` meant "trust me, it's there." Now it's checked |
+| | `next.config.ts` imports `env.ts` | The check runs the moment `npm run dev` / `npm run build` starts (and on Vercel) |
+| | Legacy client in `src/lib/supabase.ts` removed (types kept) | It quietly used a fake `placeholder.supabase.co` address when settings were missing: **hiding** a problem instead of reporting it |
+| **Honest build output** | `export const dynamic = 'force-dynamic'` on the dashboard | See "Page config exports" below |
+| **Bugs the linter found** | Signup now shows its error | It set "Email already in use" but never displayed it. Users saw nothing |
+| | Effect dependency fixes (`TaskForm`, client detail) | An effect used a value without listing it, so React might not rerun it when that value changed (stale form data) |
+| **Cleanup** | Deleted `mockData.ts`; uninstalled `dotenv` | Unused code is something a reviewer asks about |
+| **Formatting** | Prettier + `npm run format` / `format:check` | One consistent style; see below |
+
+## 🔑 Key Concepts
+
+### 1. Two Kinds of Supabase Keys (the apartment building)
+**My first guess was wrong:** I thought this ticket was about hiding the keys. It isn't. **The anon key is meant to be public.**
+- **Anon key = the front door.** Anyone can enter the lobby. Every visitor's browser gets a copy, and that's fine.
+- **RLS = the lock on each apartment.** You can only open your own (your own rows). This is the real protection.
+- **Service role key = the manager's master key.** Opens every apartment and **ignores RLS.**
+- **`NEXT_PUBLIC_` = "send this to every visitor's browser."** Like posting it on the front of the building.
+
+The danger is putting the **master key where the front-door key goes.** No hacking needed: anyone can open dev tools, copy it, and read or change **everyone's** data. On the server it's safe because server code never reaches the browser; visitors only get the finished page.
+
+`env.ts` refuses a secret key: old-style keys are JWTs (decoded with `atob`, which works in the browser, Edge middleware and Node) with `"role": "service_role"`; new-style secret keys start with `sb_secret_`.
+
+### 2. "Three Supabase Clients" Means Three Connections, Not Three Tables
+Naming collision: here **client = the connection tool** code uses to talk to Supabase, not a CRM client. There are three because code runs in three places, and each handles login cookies differently:
+
+| File | Runs in |
+|---|---|
+| `supabase/client.ts` | the visitor's **browser** |
+| `supabase/server.ts` | the **server** (dashboard) |
+| `supabase/middleware.ts` | the **middleware** that runs before every page |
+
+All three need the same URL and key, so all three read them from `env.ts`.
+
+### 3. Fail Fast: Check Config at Build Time
+Without the check, the build **most likely succeeds**, because missing settings only crash when a page actually talks to Supabase (when someone visits). The broken app deploys and **users find out.** With the check, the build stops, nothing broken goes live, and the error says what to fix. A common real-world case: forgetting to enter the env vars in Vercel (#20).
+
+**Gotcha:** Next.js only copies `NEXT_PUBLIC_*` values into browser code when the full name is written out (`process.env.NEXT_PUBLIC_SUPABASE_URL`). Passing `process.env` itself to Zod gives an empty object in the browser. Verified by finding the Supabase URL inside 6 files in `.next/static`.
+
+### 4. Page Config Exports (`export const dynamic`)
+`export const dynamic = 'force-dynamic'` looks like an unused variable. **My code doesn't use it; Next.js does.** When building, Next.js opens each `page.tsx` and looks for exports with names it knows, just like it uses `export default` as the page. It must be **exported** or Next.js can't see it. (Like a label on a package: I write it, the delivery company reads it.)
+
+It says: *"Don't make this page ahead of time; make it fresh per visitor."* The dashboard differs per logged-in user (it reads cookies), so it can't be pre-made. Next.js had been working that out by trial and error at build time, which printed a scary-looking `Unexpected error in getDashboardStats: Dynamic server usage...` log. Now it's stated up front and the log is gone.
+
+### 5. Lint Warnings Can Be Bugs in Disguise
+`'error' is assigned a value but never used` actually meant **the signup page never showed its error message.** Lesson: read each warning and ask *what does this mean for the user?*, then fix it. **Keep lint at zero** so a new warning stands out; with 20 permanent warnings, nobody notices the 21st.
+
+### 6. Why `useCallback` Was Needed (and Declaration Order)
+**Short version:** it let the effect list everything it uses **without causing an infinite loop.** Nothing was visibly broken before; the code relied on a promise nobody was checking.
+
+**The dependency list.** `[clientId]` at the end of `useEffect` means "rerun this effect when these values change." The lint rule (`react-hooks/exhaustive-deps`) checks that the list includes **everything from the component the effect uses**. The effect used `clientId` *and* `fetchClientData`, but only listed `clientId`.
+
+**The catch: a plain function is new on every render.** Every render (a tab click, opening a form, typing) runs `const fetchClientData = async () => {...}` again and creates a **brand-new function**: same code, but a different object to React. Simply adding it to the list would loop:
+1. Render → effect runs → fetch starts
+2. Fetch calls `setClient(...)` → new render
+3. New render → new `fetchClientData` → React sees "changed" → effect reruns
+4. → another fetch → set state → render... **an infinite loop of Supabase requests**
+
+**What `useCallback` does.** `useCallback(async () => {...}, [clientId])` means *"give me the same function between renders; only make a new one when `clientId` changes."*
+- Tab clicks / typing → same function → effect doesn't rerun
+- Navigate to another client → `clientId` changes → new function → effect reruns (correct: load the new client)
+
+Same behavior as before, but the dependency list is now **complete and checked by the linter.**
+
+**Why not move the function inside the effect?** That's usually the simplest fix (a function inside the effect isn't a dependency). But the error screen's **Try Again** button also calls `fetchClientData`, so it has to live outside where the button can reach it. That's when to reach for `useCallback`. An `// eslint-disable` comment would just hide the warning, the opposite of the signup lesson.
+
+**Was it a real bug? Not today.** `fetchClientData` only depended on `clientId`, which was listed, so it worked. The risk was **later**: add a task filter that `fetchClientData` reads (say `statusFilter`), and the effect wouldn't rerun when the filter changed, quietly showing stale data. Now the linter checks the `useCallback` dependencies and would warn the moment that happened.
+
+**Trap caught while drafting: declaration order.** A dependency array is read **during render**, top to bottom. If the effect sits *above* `const fetchClientData = ...`, it reads the name before it exists and crashes with *"Cannot access 'fetchClientData' before initialization."* Before the change this was fine, because the name was only used *inside* the effect, which runs after rendering finishes. So the effect moved below the function.
+
+> **Interview version:** *"The effect called a function defined in the component, so the function had to be a dependency. A plain function is recreated every render, which would rerun the effect in a loop, so I wrapped it in `useCallback` with `[clientId]` to keep it stable unless the client changes. I couldn't move it inside the effect because the Try Again button also calls it."*
+
+### 7. Prettier Decisions
+- **No semicolons, single quotes, 4 spaces:** matches most of the code I'd already written.
+- **`printWidth: 120`:** measured the reformat at 80 / 100 / 120 characters: ~1,600 / ~1,300 / ~1,150 changed lines. 120 changed the least and suits long Tailwind class lists.
+- **Ignored:** Markdown (hand-formatted notes) and `package.json` / `package-lock.json` (npm manages them).
+- **Reformat in its own commit**, listed in **`.git-blame-ignore-revs`** so `git blame` shows who really wrote each line, not "Prettier reformat." GitHub reads the file automatically; locally: `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+
+## 🧪 How It Was Tested
+- Env check, 5 cases (`.env.local` moved aside temporarily): missing file, template placeholders, service role JWT, `sb_secret_` key → all rejected with clear messages; a normal anon-style key → accepted.
+- Production server (`npm run build` + `next start`): `/login` and `/signup` 200; `/` logged out → 307 to `/login` (middleware works with the new import).
+- `npm run lint` 0 warnings (was 3), `npm run typecheck` passes, `npm run format:check` passes, build clean.
+- Bundle sizes: first load 100–181 kB per route, so no optimization needed.
+
+## 🗣 How to Say It in an Interview
+1. **Build-time check:** *"I validate config at build time so a missing setting fails the deploy with a clear message, instead of shipping a broken app that users discover."*
+2. **Service role key:** *"The anon key is public by design, because RLS limits it to the logged-in user's own rows. The service role key bypasses RLS, so in a `NEXT_PUBLIC_` variable it's in every visitor's browser and anyone could read everyone's data. It only belongs in server-only code, and my env check refuses to start if it's in the wrong place."*
+3. **Lint warnings:** *"An 'unused variable' warning turned out to mean the signup page never showed its error. I keep lint at zero warnings so a new one gets noticed."*
+
+## 🔮 Later
+- `no-floating-promises` lint rule (catches un-awaited promises) needs type-aware linting setup; skipped for the two-week push.
+- Prettier format-on-save: install the Prettier VS Code extension and set it as the default formatter.
+- Run `npm run format:check` and `npm run lint` in CI (with #36).
+
+---
+
+# 🔁 Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic
+
+**Added:** October 14, 2026 (a correction). Tickets 1.3 and 1.4 called this codebase's updates "optimistic." **They aren't.** A mock interview question caught it: *"Your code does `const created = await createClient(data); setClients([created, ...clients])`. Is this an optimistic update?"* **No.**
+
+## The Three Patterns
+**1. Refetch** (before Ticket 1.3)
+```tsx
+await createClient(data)
+await loadClients()                     // fetch the whole list again
+```
+Wait for the server, then fetch everything again. Simple and always accurate, but two requests.
+
+**2. Server-confirmed / "update from the response"** (what this app actually does)
+```tsx
+const created = await createClient(data)    // wait for the server...
+setClients([created, ...clients])           // ...then add the row it returned
+```
+The screen changes **only after the server says yes**, using the saved row (with its real `id` and `created_at`). This is a **pessimistic** update. **What 1.3 actually gained: it removed the refetch, not the wait.**
+
+**3. Optimistic**
+```tsx
+const temp = { ...data, id: crypto.randomUUID(), pending: true }
+setClients([temp, ...clients])                                       // 1. update the screen first
+try {
+    const created = await createClient(data)                         // 2. then ask the server
+    setClients(cs => cs.map(c => c.id === temp.id ? created : c))    // 3. swap in the real row
+} catch {
+    setClients(cs => cs.filter(c => c.id !== temp.id))               // 4. roll back on failure
+    toast.error('Could not add client')
+}
+```
+The screen changes **before** the server answers, assuming success; afterwards you either confirm or roll back.
+
+## Why Server-Confirmed Is a Reasonable Choice Here
+Optimistic suits actions that are **fast, almost always succeed, and are easy to undo** (likes, checkboxes, **task status changes**). It's riskier when:
+- **the server creates data you need:** a new client's real `id` comes from the database, so a temporary row has a fake ID (clicking "View" on it would break);
+- **undoing it would confuse people:** a deleted client reappearing along with its cascade-deleted tasks and notes.
+
+Phase 3 made the waiting **visible** ("Saving...", "Deleting..."), which is the right companion to server-confirmed updates.
+
+**If adding one optimistic action:** task status changes are the natural candidate, using React 19's **`useOptimistic`** hook.
+
+## How to Say It in an Interview
+> *"It's server-confirmed, not optimistic: I wait for the insert, then add the row the database returns, which avoids refetching the list. I chose that because new records get their ID from the database and deletes cascade, so a rollback would be confusing. For quick, reversible actions like toggling a task's status, I'd use an optimistic update with rollback, for example with React 19's `useOptimistic`."*
 
 ---
 

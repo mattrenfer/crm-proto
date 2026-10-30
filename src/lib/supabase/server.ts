@@ -1,5 +1,6 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { env } from '@/lib/env'
 
 /**
  * Creates a Supabase client for use in Server Components and Server Actions.
@@ -36,28 +37,24 @@ import { cookies } from 'next/headers';
  */
 export async function createClient() {
     // Next.js 15: cookies() is now async and must be awaited
-    const cookieStore = await cookies();
+    const cookieStore = await cookies()
 
-    return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                // Tell Supabase how to read cookies in server context
-                getAll() {
-                    return cookieStore.getAll();
-                },
-                setAll(cookiesToSet) {
-                    try {
-                        cookiesToSet.forEach(({ name, value, options }) => {
-                            cookieStore.set(name, value, options);
-                        });
-                    } catch {
-                        // setAll can be called from Server Components, which can't write cookies
-                        // Ignore error - cookie writing will be handled by client-side auth
-                    }
-                },
+    return createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
+        cookies: {
+            // Tell Supabase how to read cookies in server context
+            getAll() {
+                return cookieStore.getAll()
+            },
+            setAll(cookiesToSet) {
+                try {
+                    cookiesToSet.forEach(({ name, value, options }) => {
+                        cookieStore.set(name, value, options)
+                    })
+                } catch {
+                    // setAll can be called from Server Components, which can't write cookies
+                    // Ignore error - cookie writing will be handled by client-side auth
+                }
             },
         },
-    );
+    })
 }

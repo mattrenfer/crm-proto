@@ -1,0 +1,12 @@
+# Notes and docs are hand-formatted
+*.md
+# Managed by npm
+package.json
+package-lock.json
+# Build output and tool folders
+.next
+node_modules
+.claude
+.qodo
+.vscode
+public
