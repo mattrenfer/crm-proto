@@ -32,6 +32,7 @@
 - [Ticket 3.5: Error Boundaries & 404 Pages](#-ticket-35-error-boundaries--404-pages)
 
 ### Reference
+- [Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic) (correction to 1.3 / 1.4)
 - [Editor Shortcuts & Tooling](#-editor-shortcuts--tooling-vs-code--cursor-windows)
 
 ---
@@ -539,6 +540,8 @@ This is handled at the database level - your code doesn't need to worry about it
 
 ### 🎨 Pattern 3: First Optimistic UI Update
 
+> ⚠️ **Correction (Oct 2026):** this is **not** an optimistic update. The code still `await`s the server before changing the screen; what this ticket actually did was remove the *refetch*. It's a **server-confirmed** (pessimistic) update. See [Data Update Patterns](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic).
+
 #### Before: Pessimistic Updates (Slow)
 
 ```typescript
@@ -1032,6 +1035,8 @@ const { data } = await supabase
 ---
 
 ### 🎨 Pattern 4: Optimistic UI Updates
+
+> ⚠️ **Correction (Oct 2026):** this is **not** an optimistic update. The code still `await`s the server before changing the screen; what this ticket actually did was remove the *refetch*. It's a **server-confirmed** (pessimistic) update. See [Data Update Patterns](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic).
 
 #### What Is Optimistic UI?
 
@@ -4200,6 +4205,56 @@ A CRM stores **other people's personal data**, behind logins, in a shared multi-
 | Turn email confirmation back **on** in Supabase Auth | #20 |
 
 Reference: the **OWASP Top 10** (the standard list of common web app risks).
+
+---
+
+---
+---
+
+# 🔁 Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic
+
+**Added:** October 14, 2026 (a correction). Tickets 1.3 and 1.4 called this codebase's updates "optimistic." **They aren't.** A mock interview question caught it: *"Your code does `const created = await createClient(data); setClients([created, ...clients])`. Is this an optimistic update?"* **No.**
+
+## The Three Patterns
+**1. Refetch** (before Ticket 1.3)
+```tsx
+await createClient(data)
+await loadClients()                     // fetch the whole list again
+```
+Wait for the server, then fetch everything again. Simple and always accurate, but two requests.
+
+**2. Server-confirmed / "update from the response"** (what this app actually does)
+```tsx
+const created = await createClient(data)    // wait for the server...
+setClients([created, ...clients])           // ...then add the row it returned
+```
+The screen changes **only after the server says yes**, using the saved row (with its real `id` and `created_at`). This is a **pessimistic** update. **What 1.3 actually gained: it removed the refetch, not the wait.**
+
+**3. Optimistic**
+```tsx
+const temp = { ...data, id: crypto.randomUUID(), pending: true }
+setClients([temp, ...clients])                                       // 1. update the screen first
+try {
+    const created = await createClient(data)                         // 2. then ask the server
+    setClients(cs => cs.map(c => c.id === temp.id ? created : c))    // 3. swap in the real row
+} catch {
+    setClients(cs => cs.filter(c => c.id !== temp.id))               // 4. roll back on failure
+    toast.error('Could not add client')
+}
+```
+The screen changes **before** the server answers, assuming success; afterwards you either confirm or roll back.
+
+## Why Server-Confirmed Is a Reasonable Choice Here
+Optimistic suits actions that are **fast, almost always succeed, and are easy to undo** (likes, checkboxes, **task status changes**). It's riskier when:
+- **the server creates data you need:** a new client's real `id` comes from the database, so a temporary row has a fake ID (clicking "View" on it would break);
+- **undoing it would confuse people:** a deleted client reappearing along with its cascade-deleted tasks and notes.
+
+Phase 3 made the waiting **visible** ("Saving...", "Deleting..."), which is the right companion to server-confirmed updates.
+
+**If adding one optimistic action:** task status changes are the natural candidate, using React 19's **`useOptimistic`** hook.
+
+## How to Say It in an Interview
+> *"It's server-confirmed, not optimistic: I wait for the insert, then add the row the database returns, which avoids refetching the list. I chose that because new records get their ID from the database and deletes cascade, so a rollback would be confusing. For quick, reversible actions like toggling a task's status, I'd use an optimistic update with rollback, for example with React 19's `useOptimistic`."*
 
 ---
 

@@ -76,7 +76,7 @@ Launch a production-ready CRM application end-to-end while deeply learning Next.
 
 Per git history: Phase 1 (Supabase CRUD) and Phase 2 (auth, session context, protected routes, RLS — tickets 2.1–2.6) are complete, and Ticket 3.1 (form validation) is done. Toasts (`react-hot-toast`) are already wired in.
 
-Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`) and 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) are done. **Next: 3.6 (#19).** This is interview prep with no external deadline; sprint dates are self-set targets. Sprint 7 (Oct 12–18, 2026): #19, then Phase 4's deploy (#20), migrations (#21) and E2E tests (#36, Ticket 4.5). Sprint 8 (Oct 19–25): monitoring (#22) and docs (#23).
+Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`) and 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) are done. **Next: 3.6 (#19).** This is interview prep with no external deadline; sprint dates are self-set targets. Sprint 7 (Oct 12–18, 2026): #19, then Phase 4's deploy (#20), migrations (#21) and E2E tests (#36, Ticket 4.5). Sprint 8 (Oct 19–25): monitoring (#22), docs (#23) and unit tests (#38, Ticket 4.6).
 
 ### What's Missing ❌
 - Migrations (`schema.sql` is out of date — see Architecture)
@@ -368,6 +368,14 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 - [ ] `npm run test:e2e`; run in CI on pull requests (with 4.1)
 - **Learning**: E2E testing, test data management, CI integration
 - Out of scope for now: mocked unit tests for `data.ts` (thin Supabase wrappers)
+
+#### Ticket 4.6: Unit Tests for Core Logic (#38)
+**Size**: S (1-2 hours) — added 2026-10-14
+- [ ] Vitest + `npm run test`
+- [ ] Zod schemas, empty-string → `null` conversion, tasks-with-client join (extract to a pure function)
+- [ ] Test-first bug fix: `/clients/abc` (invalid UUID) should show "Client Not Found", not a load error
+- [ ] Test-first bug fix: clearing a task due date sends `''` (needs `null`); check UTC date display
+- **Learning**: unit testing, test-first bug fixing, extracting pure functions
 
 ---
 
