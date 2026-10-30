@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getDashboardStats } from "../lib/data-server";
 
+// Stats depend on who is logged in (cookies), so render per request instead of trying to pre-render at build time
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const { totalClients, activeTasks, pendingTasks } = await getDashboardStats();
 

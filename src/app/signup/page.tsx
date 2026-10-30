@@ -96,6 +96,13 @@ export default function SignUpPage() {
                 {/* Form Card */}
                 <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow rounded-lg">
                     <form className="space-y-6" onSubmit={handleSubmitSignup(handleSubmit)}>
+                        {/* Error Display */}
+                        {error && (
+                            <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                                {error}
+                            </div>
+                        )}
+
                         {/* Email Input */}
                         <div>
                             <label

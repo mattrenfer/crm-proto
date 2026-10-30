@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { env } from '@/lib/env'
 import { type NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -56,8 +57,8 @@ export function createClient(request: NextRequest) {
   })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    env.supabaseUrl,
+    env.supabaseAnonKey,
     {
       cookies: {
         // Read cookies from the incoming request

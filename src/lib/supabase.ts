@@ -1,19 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
-
-// Check if Supabase is properly configured
-export const isSupabaseConfigured =
-    supabaseUrl !== 'https://placeholder.supabase.co' &&
-    supabaseAnonKey !== 'placeholder-key' &&
-    !supabaseUrl.includes('your_supabase') &&
-    !supabaseAnonKey.includes('your_supabase');
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
+// Shared database types (the legacy non-SSR client that lived here was removed in Ticket 3.6;
+// use @/lib/supabase/client or @/lib/supabase/server)
 // Database types
 export interface Client {
     id: string;

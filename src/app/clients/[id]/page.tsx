@@ -10,7 +10,7 @@ import type { Client, Note, Task } from '@/lib/supabase'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 
@@ -42,13 +42,7 @@ export default function ClientDetailPage() {
         reset: resetNoteForm
     } = useForm<NoteFormData>({ resolver: zodResolver(noteSchema) })
 
-    useEffect(() => {
-        if (clientId) {
-            fetchClientData()
-        }
-    }, [clientId])
-
-    const fetchClientData = async () => {
+    const fetchClientData = useCallback(async () => {
         try {
             setLoading(true)
             setError(null)
@@ -68,7 +62,13 @@ export default function ClientDetailPage() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [clientId])
+
+    useEffect(() => {
+        if (clientId) {
+            fetchClientData()
+        }
+    }, [clientId, fetchClientData])
 
     const updateClientData = async (id: string, data: ClientFormData) => {
         try {

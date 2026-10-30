@@ -23,7 +23,7 @@ export default function TaskForm({ task, clients, onSubmit, onCancel, clientId }
         else {
             resetTaskForm({ client_id: clientId ?? '', title: '', description: '', status: 'pending', priority: 'low', due_date: '' })
         }
-    }, [task, resetTaskForm])
+    }, [task, clientId, resetTaskForm])
 
     return (
         <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
