@@ -32,6 +32,9 @@
 - [Ticket 3.5: Error Boundaries & 404 Pages](#-ticket-35-error-boundaries--404-pages)
 - [Ticket 3.6: Environment & Build Configuration](#-ticket-36-environment--build-configuration)
 
+### Phase 4: Deployment & Launch
+- [Bug #31: Adding a Task Without a Due Date Fails](#-bug-31-adding-a-task-without-a-due-date-fails)
+
 ### Reference
 - [Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic) (correction to 1.3 / 1.4)
 - [Editor Shortcuts & Tooling](#-editor-shortcuts--tooling-vs-code--cursor-windows)
@@ -4318,6 +4321,74 @@ Same behavior as before, but the dependency list is now **complete and checked b
 
 ---
 
+# 🐞 Bug #31: Adding a Task Without a Due Date Fails
+
+**Date Completed:** October 30, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #31
+**Difficulty:** ⭐⭐ (2/5)
+
+## The Bug
+Adding a task with no due date showed "Failed to add task" and lost everything typed. Reproduced in the browser before fixing.
+
+**Root cause, traced form → database:**
+1. An empty `<input type="date">` has the value `''` (an empty string), not "nothing"
+2. Both task forms passed it along unchanged; `createTask` / `updateTask` sent it to Supabase
+3. The column is a Postgres **`DATE`**: it accepts a real date or `null`, but `''` isn't a date, so the whole insert was rejected (*"invalid input syntax for type date"*)
+
+## The Fix
+| File | Change | Why |
+|---|---|---|
+| `src/lib/data.ts` | `emptyToNull()` helper applied to `due_date` in `createTask` and `updateTask` | One place covers every form that calls these functions, now and later |
+| `src/lib/supabase.ts` | `due_date?: string` → `due_date?: string \| null` | The database really returns `null`; the type was wrong |
+| `src/lib/dates.ts` (new) | `formatDate()`, used on both pages | Shows the date in local time (see below) |
+| `TaskForm.tsx` | Pre-fill with `task.due_date ?? ''` | The database already sends `'YYYY-MM-DD'`, exactly what a date input wants |
+
+## 🔑 Key Concepts
+
+### 1. "It Runs" ≠ "The Types Are Right"
+My first version assigned `null` to a field typed `string | undefined`. It **worked in the browser** because the dev server strips types without checking them, but `npm run typecheck` failed, and **`npm run build` (the deploy) would have too.** Types are TypeScript's model of the data; when the model is wrong (the DB sends `null`, the type said it couldn't), TypeScript can't warn about real bugs. Fix the type to match reality.
+
+### 2. Review Caught a Regression: "Missing" ≠ "Empty"
+```ts
+taskData.due_date = emptyToNull(taskData.due_date)   // my first version
+```
+The status dropdown calls `updateTask(taskId, { status })` with **no `due_date` at all.** `emptyToNull(undefined)` returns `null`, so **every status change would have erased the task's due date.** My tests passed because none of them changed the status of a task that had a date.
+```ts
+const updates = { ...taskData }              // copy, don't change the caller's object
+if (updates.due_date !== undefined) {        // only convert if this update includes it
+    updates.due_date = emptyToNull(updates.due_date)
+}
+```
+For an **update**, "not included" means *leave it alone*; only `''` means *clear it*. (For a **create**, missing → `null` is fine.)
+
+**Lesson:** when changing a shared function, find **every caller** (`grep "updateTask("`) and test each kind of call.
+
+### 3. `??` (Nullish Coalescing)
+`a ?? b` = "use `a`, unless it's `null` or `undefined`, then use `b`."
+```ts
+task.due_date ?? ''    // '2026-11-03' → '2026-11-03';  null → ''  (a date input needs a string)
+```
+Stricter than `||`, which also replaces `0`, `false` and `''`.
+
+### 4. The Off-by-One-Day Date
+`new Date('2026-11-03')` reads a **date-only** string as **midnight UTC**. The browser then displays it in **my** time zone (hours behind UTC), where it's still the evening of **Nov 2**. All in the browser; the server isn't involved.
+```ts
+export function formatDate(date: string) {
+    const [year, month, day] = date.split('-').map(Number)        // [2026, 11, 3]
+    return new Date(year, month - 1, day).toLocaleDateString()     // local time; JS months start at 0
+}
+```
+Checked in Central time: old code → `11/2/2026`, `formatDate` → `11/3/2026`.
+
+## 🧪 Tested
+Add without a due date (both pages); add with a date and confirm the same date shows; edit to clear a date; edit to add one; **change status on a task with a due date (date stays)**. Typecheck, lint, Prettier pass. #38 will add unit tests for `emptyToNull` and `formatDate`.
+
+## 🗣 How to Say It in an Interview
+> *"Empty date inputs send an empty string, which Postgres rejects for a DATE column, so I normalize empty to null in the data layer, where every form goes through it. In review I caught that my first version also turned a missing field into null, which would have erased due dates on status-only updates, so it only converts the field when the update includes it. I also fixed an off-by-one-day display: date-only strings are parsed as UTC midnight, so I build the date in local time."*
+
+---
+
 # 🔁 Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic
 
 **Added:** October 14, 2026 (a correction). Tickets 1.3 and 1.4 called this codebase's updates "optimistic." **They aren't.** A mock interview question caught it: *"Your code does `const created = await createClient(data); setClients([created, ...clients])`. Is this an optimistic update?"* **No.**
@@ -4363,9 +4434,6 @@ Phase 3 made the waiting **visible** ("Saving...", "Deleting..."), which is the 
 ## How to Say It in an Interview
 > *"It's server-confirmed, not optimistic: I wait for the insert, then add the row the database returns, which avoids refetching the list. I chose that because new records get their ID from the database and deletes cascade, so a rollback would be confusing. For quick, reversible actions like toggling a task's status, I'd use an optimistic update with rollback, for example with React 19's `useOptimistic`."*
 
----
-
----
 ---
 
 # 🛠 Editor Shortcuts & Tooling (VS Code / Cursor, Windows)
