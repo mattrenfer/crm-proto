@@ -4269,10 +4269,30 @@ It says: *"Don't make this page ahead of time; make it fresh per visitor."* The 
 ### 5. Lint Warnings Can Be Bugs in Disguise
 `'error' is assigned a value but never used` actually meant **the signup page never showed its error message.** Lesson: read each warning and ask *what does this mean for the user?*, then fix it. **Keep lint at zero** so a new warning stands out; with 20 permanent warnings, nobody notices the 21st.
 
-### 6. `useCallback` and Declaration Order
-`fetchClientData` is called by the effect **and** by the error screen's Try Again button, so it couldn't simply move inside the effect. Wrapping it in `useCallback(..., [clientId])` gives a function that only changes when `clientId` does, so it can be listed as a dependency.
+### 6. Why `useCallback` Was Needed (and Declaration Order)
+**Short version:** it let the effect list everything it uses **without causing an infinite loop.** Nothing was visibly broken before; the code relied on a promise nobody was checking.
 
-**Trap caught while drafting:** a dependency array is read **during render**. If the effect sits *above* the `const fetchClientData = ...` line, rendering crashes with *"Cannot access 'fetchClientData' before initialization."* The effect had to move below the function.
+**The dependency list.** `[clientId]` at the end of `useEffect` means "rerun this effect when these values change." The lint rule (`react-hooks/exhaustive-deps`) checks that the list includes **everything from the component the effect uses**. The effect used `clientId` *and* `fetchClientData`, but only listed `clientId`.
+
+**The catch: a plain function is new on every render.** Every render (a tab click, opening a form, typing) runs `const fetchClientData = async () => {...}` again and creates a **brand-new function**: same code, but a different object to React. Simply adding it to the list would loop:
+1. Render → effect runs → fetch starts
+2. Fetch calls `setClient(...)` → new render
+3. New render → new `fetchClientData` → React sees "changed" → effect reruns
+4. → another fetch → set state → render... **an infinite loop of Supabase requests**
+
+**What `useCallback` does.** `useCallback(async () => {...}, [clientId])` means *"give me the same function between renders; only make a new one when `clientId` changes."*
+- Tab clicks / typing → same function → effect doesn't rerun
+- Navigate to another client → `clientId` changes → new function → effect reruns (correct: load the new client)
+
+Same behavior as before, but the dependency list is now **complete and checked by the linter.**
+
+**Why not move the function inside the effect?** That's usually the simplest fix (a function inside the effect isn't a dependency). But the error screen's **Try Again** button also calls `fetchClientData`, so it has to live outside where the button can reach it. That's when to reach for `useCallback`. An `// eslint-disable` comment would just hide the warning, the opposite of the signup lesson.
+
+**Was it a real bug? Not today.** `fetchClientData` only depended on `clientId`, which was listed, so it worked. The risk was **later**: add a task filter that `fetchClientData` reads (say `statusFilter`), and the effect wouldn't rerun when the filter changed, quietly showing stale data. Now the linter checks the `useCallback` dependencies and would warn the moment that happened.
+
+**Trap caught while drafting: declaration order.** A dependency array is read **during render**, top to bottom. If the effect sits *above* `const fetchClientData = ...`, it reads the name before it exists and crashes with *"Cannot access 'fetchClientData' before initialization."* Before the change this was fine, because the name was only used *inside* the effect, which runs after rendering finishes. So the effect moved below the function.
+
+> **Interview version:** *"The effect called a function defined in the component, so the function had to be a dependency. A plain function is recreated every render, which would rerun the effect in a loop, so I wrapped it in `useCallback` with `[clientId]` to keep it stable unless the client changes. I couldn't move it inside the effect because the Try Again button also calls it."*
 
 ### 7. Prettier Decisions
 - **No semicolons, single quotes, 4 spaces:** matches most of the code I'd already written.
