@@ -30,6 +30,7 @@
 - [Ticket 3.2: Loading States & Skeletons](#-ticket-32-loading-states--skeletons)
 - [Ticket 3.4: Confirmation Dialogs](#-ticket-34-confirmation-dialogs)
 - [Ticket 3.5: Error Boundaries & 404 Pages](#-ticket-35-error-boundaries--404-pages)
+- [Ticket 3.6: Environment & Build Configuration](#-ticket-36-environment--build-configuration)
 
 ### Reference
 - [Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic) (correction to 1.3 / 1.4)
@@ -4208,7 +4209,93 @@ Reference: the **OWASP Top 10** (the standard list of common web app risks).
 
 ---
 
----
+# 🔧 Ticket 3.6: Environment & Build Configuration
+
+**Started:** October 29, 2026
+**Date Completed:** October 30, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #19
+**Difficulty:** ⭐⭐ (2/5)
+
+**How this ticket was built:** this is the start of the final two-week push to ship the app as a portfolio piece. To save time, the work switched to "**Claude drafts, I review and explain it back**." The rule: nothing ships that I can't explain. The explain-back questions and my answers are below.
+
+## 🎯 What Changed, in Plain Terms
+| Group | Change | Why |
+|---|---|---|
+| **Config safety net** | `src/lib/env.ts` checks the Supabase settings once, at startup | Missing settings, template placeholders, or the wrong key stop the app with a message that says how to fix it |
+| | The three Supabase clients read from `env` instead of `process.env.X!` | The `!` meant "trust me, it's there." Now it's checked |
+| | `next.config.ts` imports `env.ts` | The check runs the moment `npm run dev` / `npm run build` starts (and on Vercel) |
+| | Legacy client in `src/lib/supabase.ts` removed (types kept) | It quietly used a fake `placeholder.supabase.co` address when settings were missing: **hiding** a problem instead of reporting it |
+| **Honest build output** | `export const dynamic = 'force-dynamic'` on the dashboard | See "Page config exports" below |
+| **Bugs the linter found** | Signup now shows its error | It set "Email already in use" but never displayed it. Users saw nothing |
+| | Effect dependency fixes (`TaskForm`, client detail) | An effect used a value without listing it, so React might not rerun it when that value changed (stale form data) |
+| **Cleanup** | Deleted `mockData.ts`; uninstalled `dotenv` | Unused code is something a reviewer asks about |
+| **Formatting** | Prettier + `npm run format` / `format:check` | One consistent style; see below |
+
+## 🔑 Key Concepts
+
+### 1. Two Kinds of Supabase Keys (the apartment building)
+**My first guess was wrong:** I thought this ticket was about hiding the keys. It isn't. **The anon key is meant to be public.**
+- **Anon key = the front door.** Anyone can enter the lobby. Every visitor's browser gets a copy, and that's fine.
+- **RLS = the lock on each apartment.** You can only open your own (your own rows). This is the real protection.
+- **Service role key = the manager's master key.** Opens every apartment and **ignores RLS.**
+- **`NEXT_PUBLIC_` = "send this to every visitor's browser."** Like posting it on the front of the building.
+
+The danger is putting the **master key where the front-door key goes.** No hacking needed: anyone can open dev tools, copy it, and read or change **everyone's** data. On the server it's safe because server code never reaches the browser; visitors only get the finished page.
+
+`env.ts` refuses a secret key: old-style keys are JWTs (decoded with `atob`, which works in the browser, Edge middleware and Node) with `"role": "service_role"`; new-style secret keys start with `sb_secret_`.
+
+### 2. "Three Supabase Clients" Means Three Connections, Not Three Tables
+Naming collision: here **client = the connection tool** code uses to talk to Supabase, not a CRM client. There are three because code runs in three places, and each handles login cookies differently:
+
+| File | Runs in |
+|---|---|
+| `supabase/client.ts` | the visitor's **browser** |
+| `supabase/server.ts` | the **server** (dashboard) |
+| `supabase/middleware.ts` | the **middleware** that runs before every page |
+
+All three need the same URL and key, so all three read them from `env.ts`.
+
+### 3. Fail Fast: Check Config at Build Time
+Without the check, the build **most likely succeeds**, because missing settings only crash when a page actually talks to Supabase (when someone visits). The broken app deploys and **users find out.** With the check, the build stops, nothing broken goes live, and the error says what to fix. A common real-world case: forgetting to enter the env vars in Vercel (#20).
+
+**Gotcha:** Next.js only copies `NEXT_PUBLIC_*` values into browser code when the full name is written out (`process.env.NEXT_PUBLIC_SUPABASE_URL`). Passing `process.env` itself to Zod gives an empty object in the browser. Verified by finding the Supabase URL inside 6 files in `.next/static`.
+
+### 4. Page Config Exports (`export const dynamic`)
+`export const dynamic = 'force-dynamic'` looks like an unused variable. **My code doesn't use it; Next.js does.** When building, Next.js opens each `page.tsx` and looks for exports with names it knows, just like it uses `export default` as the page. It must be **exported** or Next.js can't see it. (Like a label on a package: I write it, the delivery company reads it.)
+
+It says: *"Don't make this page ahead of time; make it fresh per visitor."* The dashboard differs per logged-in user (it reads cookies), so it can't be pre-made. Next.js had been working that out by trial and error at build time, which printed a scary-looking `Unexpected error in getDashboardStats: Dynamic server usage...` log. Now it's stated up front and the log is gone.
+
+### 5. Lint Warnings Can Be Bugs in Disguise
+`'error' is assigned a value but never used` actually meant **the signup page never showed its error message.** Lesson: read each warning and ask *what does this mean for the user?*, then fix it. **Keep lint at zero** so a new warning stands out; with 20 permanent warnings, nobody notices the 21st.
+
+### 6. `useCallback` and Declaration Order
+`fetchClientData` is called by the effect **and** by the error screen's Try Again button, so it couldn't simply move inside the effect. Wrapping it in `useCallback(..., [clientId])` gives a function that only changes when `clientId` does, so it can be listed as a dependency.
+
+**Trap caught while drafting:** a dependency array is read **during render**. If the effect sits *above* the `const fetchClientData = ...` line, rendering crashes with *"Cannot access 'fetchClientData' before initialization."* The effect had to move below the function.
+
+### 7. Prettier Decisions
+- **No semicolons, single quotes, 4 spaces:** matches most of the code I'd already written.
+- **`printWidth: 120`:** measured the reformat at 80 / 100 / 120 characters: ~1,600 / ~1,300 / ~1,150 changed lines. 120 changed the least and suits long Tailwind class lists.
+- **Ignored:** Markdown (hand-formatted notes) and `package.json` / `package-lock.json` (npm manages them).
+- **Reformat in its own commit**, listed in **`.git-blame-ignore-revs`** so `git blame` shows who really wrote each line, not "Prettier reformat." GitHub reads the file automatically; locally: `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
+
+## 🧪 How It Was Tested
+- Env check, 5 cases (`.env.local` moved aside temporarily): missing file, template placeholders, service role JWT, `sb_secret_` key → all rejected with clear messages; a normal anon-style key → accepted.
+- Production server (`npm run build` + `next start`): `/login` and `/signup` 200; `/` logged out → 307 to `/login` (middleware works with the new import).
+- `npm run lint` 0 warnings (was 3), `npm run typecheck` passes, `npm run format:check` passes, build clean.
+- Bundle sizes: first load 100–181 kB per route, so no optimization needed.
+
+## 🗣 How to Say It in an Interview
+1. **Build-time check:** *"I validate config at build time so a missing setting fails the deploy with a clear message, instead of shipping a broken app that users discover."*
+2. **Service role key:** *"The anon key is public by design, because RLS limits it to the logged-in user's own rows. The service role key bypasses RLS, so in a `NEXT_PUBLIC_` variable it's in every visitor's browser and anyone could read everyone's data. It only belongs in server-only code, and my env check refuses to start if it's in the wrong place."*
+3. **Lint warnings:** *"An 'unused variable' warning turned out to mean the signup page never showed its error. I keep lint at zero warnings so a new one gets noticed."*
+
+## 🔮 Later
+- `no-floating-promises` lint rule (catches un-awaited promises) needs type-aware linting setup; skipped for the two-week push.
+- Prettier format-on-save: install the Prettier VS Code extension and set it as the default formatter.
+- Run `npm run format:check` and `npm run lint` in CI (with #36).
+
 ---
 
 # 🔁 Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic
