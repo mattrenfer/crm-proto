@@ -16,6 +16,7 @@ import {
     updateNote,
     updateTask,
 } from '@/lib/data'
+import { formatDate } from '@/lib/dates'
 import { ClientFormData, NoteFormData, noteSchema, TaskFormData } from '@/lib/schemas'
 import type { Client, Note, Task } from '@/lib/supabase'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -470,7 +471,7 @@ export default function ClientDetailPage() {
                                                     </span>
                                                     {task.due_date && (
                                                         <span className="text-gray-500 dark:text-gray-400">
-                                                            Due: {new Date(task.due_date).toLocaleDateString()}
+                                                            Due: {formatDate(task.due_date)}
                                                         </span>
                                                     )}
                                                 </div>
