@@ -47,9 +47,15 @@ Next.js 15 App Router + Supabase (Postgres + Auth via `@supabase/ssr`). Path ali
 - `src/contexts/AuthContext.tsx` provides `useAuth()` (session state for the UI, e.g. `Navigation`), mounted via `src/components/Providers.tsx` in the root layout alongside the `react-hot-toast` `<Toaster />`.
 
 ### Data isolation (RLS)
-- Every table (`clients`, `tasks`, `notes`) has a `user_id`, and RLS policies enforce `auth.uid() = user_id`. Queries do not filter by user explicitly — RLS does it. Inserts must include `user_id` or they will be rejected.
+- Every table (`clients`, `tasks`, `notes`) has a required (NOT NULL) `user_id`, and RLS policies (for the `authenticated` role only) enforce `auth.uid() = user_id`. Queries do not filter by user explicitly — RLS does it. Inserts must include `user_id` or they will be rejected.
+- Task and note insert/update checks also require that `client_id` points to a client owned by the same user.
 - `tasks` and `notes` reference `clients` with `ON DELETE CASCADE`.
-- **`database/schema.sql` is stale**: it predates `user_id` and still has permissive "allow all" policies. The RLS changes were applied in the Supabase dashboard and are documented in `.claude/ticket-2.6-completion.md`. Migrations are deferred to Ticket 4.2.
+
+### Migrations (`supabase/`)
+- The schema lives in `supabase/migrations/` (Supabase CLI, `npx supabase`). Never change the schema in the dashboard; add a migration. Workflow: `supabase/README.md`.
+- Two projects: `crm-proto-test` (throwaway; keep the CLI linked to it by default) and `CRM Proto` (live). Check `supabase/.temp/project-ref` before any `db push` / `db reset`.
+- Migration 1 is a baseline of the hand-built live DB (marked applied on live via `migration repair`, not run). `.claude/ticket-2.6-completion.md` does not match what was actually deployed; trust the migrations.
+- `supabase/tests/rls_test.sql` is a two-user RLS test: `npx supabase db query --linked -f supabase/tests/rls_test.sql` on the **test project only**. Every case should be PASS.
 
 ### Forms
 - Zod schemas + inferred form types live in `src/lib/schemas.ts`, used with `react-hook-form` + `@hookform/resolvers/zod`. Task `status` / `priority` enums there must match the `Task` type in `src/lib/supabase.ts` and the DB check constraints.
@@ -81,10 +87,9 @@ Launch a production-ready CRM application end-to-end while deeply learning Next.
 
 Per git history: Phase 1 (Supabase CRUD) and Phase 2 (auth, session context, protected routes, RLS — tickets 2.1–2.6) are complete, and Ticket 3.1 (form validation) is done. Toasts (`react-hot-toast`) are already wired in.
 
-Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`), 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) and 3.6 (#19, env validation, Prettier, lint at zero) are done, completing Phase 3. **As of Oct 29, 2026 this is a two-week push to ship the app as a job-search portfolio piece:** next are the schema fixes and migrations with RLS (#21), the Vercel deploy (#20), a few Playwright tests in CI (#36), and the README / demo account / video (#23). Work mode for this phase: Claude drafts, the author reviews and explains it back; nothing ships the author can't explain. Lower priority, if time allows: monitoring beyond Vercel Analytics (#22) and unit tests (#38; at least its two test-first bug fixes).
+Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`), 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) and 3.6 (#19, env validation, Prettier, lint at zero) are done, completing Phase 3. **As of Oct 29, 2026 this is a two-week push to ship the app as a job-search portfolio piece:** the schema fixes and migrations with RLS (#21) shipped Nov 2 (migration 2 written by the author); next are the Vercel deploy (#20), a few Playwright tests in CI (#36), and the README / demo account / video (#23). Work mode for this phase: Claude drafts, the author reviews and explains it back; nothing ships the author can't explain. Lower priority, if time allows: monitoring beyond Vercel Analytics (#22) and unit tests (#38; at least its two test-first bug fixes).
 
 ### What's Missing ❌
-- Migrations (`schema.sql` is out of date — see Architecture)
 - Testing suite
 - Production deployment
 
@@ -337,12 +342,13 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 - [ ] Test deployment pipeline
 - **Learning**: Vercel platform, CI/CD basics
 
-#### Ticket 4.2: Database Migrations Setup
+#### Ticket 4.2: Database Migrations Setup (#21) ✅ COMPLETED (2026-11-02)
 **Size**: M (3-4 hours)
-- [ ] Set up Supabase migrations folder
-- [ ] Create initial migration from schema.sql
-- [ ] Document migration workflow
-- [ ] Test migration rollback
+- [x] Set up Supabase migrations folder
+- [x] Create initial migration (from an inspection of the live DB; `schema.sql` was out of date and is deleted)
+- [x] Document migration workflow (`supabase/README.md`)
+- [x] Test migration rollback (on the `crm-proto-test` project)
+- [x] Added: fix the RLS gaps (NOT NULL `user_id`, `user_id` indexes, `to authenticated`, client-ownership check) and a two-user RLS test
 - **Learning**: Database migrations, version control for schemas
 
 #### Ticket 4.3: Production Monitoring
