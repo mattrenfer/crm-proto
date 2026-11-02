@@ -57,9 +57,13 @@ A Customer Relationship Management (CRM) system using modern web development wit
 
 5. Set up the database:
 
-    - Go to your Supabase project dashboard
-    - Navigate to the SQL Editor
-    - Run the SQL commands from `database/schema.sql`
+    ```bash
+    npx supabase login
+    npx supabase link --project-ref <your-project-ref>
+    npx supabase db push --linked
+    ```
+
+    This applies the migrations in `supabase/migrations/` (see `supabase/README.md`).
 
 6. Start the development server:
 
@@ -77,7 +81,7 @@ The application uses three main tables:
 -   **tasks**: Track tasks and their status for each client
 -   **notes**: Store notes and comments about clients
 
-See `database/schema.sql` for the complete schema.
+The schema, including Row Level Security policies, is defined by the migrations in `supabase/migrations/`.
 
 ## Project Structure
 
