@@ -37,7 +37,7 @@ Three main tables in Supabase:
 - **tasks**: Tasks for clients (title, description, status, priority, due_date)
 - **notes**: Notes about clients (content, timestamps)
 
-See `database/schema.sql` for complete schema.
+See `supabase/migrations/` for the complete schema (`database/schema.sql` was removed in Ticket 4.2).
 
 ## Recent Work
 - Added dashboard statistics (total clients, active tasks, pending tasks)

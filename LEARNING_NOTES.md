@@ -4,6 +4,15 @@
 **Started**: November 17, 2025
 **Purpose**: Document patterns, concepts, and learnings throughout this project
 
+These are my notes from building this app, written as I went. 
+
+I have 15 years in front-end development. This project was me learning back-end in order to launch an application end-to-end.
+
+This project was AI-assisted and built with Claude. Most of the code was generated from my prompts. I planned the work, integrated and tested every change, and made sure I understood why each piece works before moving on. These notes are that record. From Phase 3 on I wrote more of the code myself, with Claude giving hints and reviewing. In the final push (Ticket 3.6 onward) Claude drafted, I reviewed and explained each change back, and I wrote parts myself (for example, the RLS migration in Ticket 4.2). Each phase below says how it was built.
+
+**Start here:** [Ticket 4.2: Migrations + RLS](#-ticket-42-database-migrations--tightening-rls) · [Bug #31](#-bug-31-adding-a-task-without-a-due-date-fails) · [Ticket 3.6: Keys & Config](#-ticket-36-environment--build-configuration) · [Data Update Patterns](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic)
+
+
 ---
 
 ## Table of Contents
@@ -34,12 +43,15 @@
 
 ### Phase 4: Deployment & Launch
 - [Bug #31: Adding a Task Without a Due Date Fails](#-bug-31-adding-a-task-without-a-due-date-fails)
+- [Ticket 4.2: Database Migrations + Tightening RLS](#-ticket-42-database-migrations--tightening-rls)
 
 ### Reference
 - [Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic) (correction to 1.3 / 1.4)
 - [Editor Shortcuts & Tooling](#-editor-shortcuts--tooling-vs-code--cursor-windows)
 
 ---
+
+> **How Phase 1 was built:** a mix. Claude generated much of the code from my prompts, and I implemented it in the project, working through why each piece works.
 
 ## Architecture Patterns
 
@@ -529,7 +541,7 @@ export async function deleteClient(id: string): Promise<void> {
 - No `.select()` needed (we don't care about the deleted data)
 
 **CASCADE behavior:**
-Remember from your `schema.sql`:
+Remember from your `schema.sql`: (**Update (Nov 2026):** `schema.sql` was replaced by migrations; see Ticket 4.2.)
 ```sql
 client_id UUID REFERENCES clients(id) ON DELETE CASCADE
 ```
@@ -810,7 +822,7 @@ The patterns learned here (optimistic updates, toast, Partial<T>) were reused an
 ### 💡 Key Takeaways
 
 **Core principle:**
-> "Write operations follow the same error handling pattern as reads - try/catch with descriptive errors, but now we return the created/modified data for optimistic UI updates."
+> "Write operations follow the same error handling pattern as reads - try/catch with descriptive errors, but now we return the created/modified record, so the screen can show exactly what the database saved."
 
 **The progression:**
 1. **Ticket 1.2**: Read data ✅
@@ -823,6 +835,8 @@ The patterns learned here (optimistic updates, toast, Partial<T>) were reused an
 
 **Completed**: November 21, 2025
 **What We Built**: Complete Task CRUD operations with client-side data joins and optimistic UI updates
+
+> **Update (Nov 2026):** the updates here aren't actually optimistic: the app waits for the server, then updates the screen. See [Data Update Patterns](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic).
 
 ### 🎯 The Challenge
 
@@ -1404,8 +1418,8 @@ return updated  // ← Return from database
 
 **The patterns we learned are:**
 1. ✅ Universal (apply to all modern frameworks)
-2. ✅ Production-ready (used by big tech companies)
-3. ✅ Performant (Map lookups, optimistic UI)
+2. ✅ Widely used (standard patterns in React apps)
+3. ✅ Performant (Map lookups)
 4. ✅ Maintainable (separation of concerns)
 5. ✅ Safe (defensive coding, type guards)
 
@@ -1429,7 +1443,7 @@ return updated  // ← Return from database
 
 ### 🎯 The Context
 
-This was a **reinforcement ticket** - applying the patterns mastered in Tickets 1.3 and 1.4 to a simpler domain. Notes are much simpler than tasks:
+This was a **reinforcement ticket** - applying the patterns learned in Tickets 1.3 and 1.4 to a simpler domain. Notes are much simpler than tasks:
 - Only one user field: `content`
 - No status updates or filtering
 - No separate page (only in client detail)
@@ -1858,6 +1872,8 @@ This will round out your data access skills with **analytics queries**.
 ---
 
 ## Phase 2: Authentication & Security
+
+> **How Phase 2 was built:** a mix. Claude generated most of the code from my prompts and I implemented it, understanding each piece. Ticket 2.3 (signup) I built on my own, using the login page's patterns.
 
 ### Ticket 2.1: Supabase Auth Setup - Core Concepts
 
@@ -2452,7 +2468,7 @@ Webpack bundles Client Components for the browser. Can't include Node.js APIs.
 - `src/lib/supabase/server.ts` - Server client for Server Components
 - `src/lib/supabase/middleware.ts` - Middleware client for route protection
 - `src/lib/auth.ts` - Helper functions (signUp, signIn, signOut, getSession, getUser)
-- `src/app/test-auth/page.tsx` - Test page to verify auth works (can be deleted)
+- `src/app/test-auth/page.tsx` - Test page to verify auth works (can be deleted) (**Update (Nov 2026):** moved to `/dev/auth-test` in 2.5.)
 
 **What We Learned:**
 - ✅ JWT-based authentication vs traditional sessions
@@ -2884,7 +2900,7 @@ else {
 
 ---
 
-## 🎯 Reusable Form Patterns Mastered
+## 🎯 Reusable Form Patterns Practiced
 
 **These patterns work for ANY form:**
 
@@ -3569,7 +3585,8 @@ Created Next.js middleware to protect all routes with authentication, redirect u
 
 
 ---
----
+
+> **How Phase 3 was built:** after picking the project back up, I wrote the code myself, with Claude giving a plan, hints and file pointers, then reviewing. Ticket 3.6 onward switched to Claude drafting and me reviewing and explaining it back (see 3.6).
 
 # 📋 Ticket 3.1: Form Validation Library
 
@@ -4204,8 +4221,8 @@ A CRM stores **other people's personal data**, behind logins, in a shared multi-
 
 | Before launch | Ticket |
 |---|---|
-| `schema.sql` lacks the RLS policies; a fresh database built from it would expose all data | #21 |
-| Only the **anon** key in `NEXT_PUBLIC_*`; the **service role** key bypasses RLS and must never reach the browser | #19 |
+| `schema.sql` lacks the RLS policies; a fresh database built from it would expose all data | #21 ✅ replaced by migrations (4.2) |
+| Only the **anon** key in `NEXT_PUBLIC_*`; the **service role** key bypasses RLS and must never reach the browser | #19 ✅ checked by `env.ts` (3.6) |
 | Turn email confirmation back **on** in Supabase Auth | #20 |
 
 Reference: the **OWASP Top 10** (the standard list of common web app risks).
@@ -4328,6 +4345,8 @@ Same behavior as before, but the dependency list is now **complete and checked b
 **GitHub Issue:** #31
 **Difficulty:** ⭐⭐ (2/5)
 
+**How this was built:** I traced the bug and wrote the fix (`emptyToNull`, the `??` defaults) with hints; Claude's review caught a regression in my `updateTask` change and suggested the fix.
+
 ## The Bug
 Adding a task with no due date showed "Failed to add task" and lost everything typed. Reproduced in the browser before fixing.
 
@@ -4386,6 +4405,103 @@ Add without a due date (both pages); add with a date and confirm the same date s
 
 ## 🗣 How to Say It in an Interview
 > *"Empty date inputs send an empty string, which Postgres rejects for a DATE column, so I normalize empty to null in the data layer, where every form goes through it. In review I caught that my first version also turned a missing field into null, which would have erased due dates on status-only updates, so it only converts the field when the update includes it. I also fixed an off-by-one-day display: date-only strings are parsed as UTC midnight, so I build the date in local time."*
+
+---
+
+# 🗄 Ticket 4.2: Database Migrations + Tightening RLS
+
+**Date Completed:** November 2, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #21
+**Difficulty:** ⭐⭐⭐⭐ (4/5): my first real SQL
+
+**How this ticket was built:** Claude inspected the live database and drafted migration 1 (a record of what was there). **I wrote migration 2** (the fixes), with hints and review rounds. Claude wrote the two-user RLS test. I ran the production steps myself.
+
+## 🎯 What Changed, in Plain Terms
+| Change | Why |
+|---|---|
+| `supabase/migrations/` with two migration files | The database's structure now lives in git, like the code |
+| **Migration 1** `initial_schema`: the live DB exactly as it was, gaps included | A starting point that matches reality. On live it was marked "already applied," not run |
+| **Migration 2** `tighten_rls_and_constraints` (I wrote it) | Fixes the four gaps below |
+| `supabase/tests/rls_test.sql` | A rerunnable two-user security test (test project only) |
+| Deleted `database/schema.sql` | It was wrong (no `user_id`, "allow all" policies). A new database built from it would have exposed everyone's data |
+
+**The four gaps migration 2 fixes:**
+1. `user_id` allowed NULL → now **NOT NULL** (every row must have an owner)
+2. No `user_id` index on tasks/notes → **added** (every RLS check filters by `user_id`). Dropped the unused `idx_clients_email`
+3. Policies applied to every role, even logged-out visitors → now **`to authenticated`**
+4. A task/note only had to be *mine*, not attached to *my* client → now **both**
+
+## 🔑 Key Concepts
+
+### 1. Why Migrations?
+My first guess: "you need migrations to change rules on live data." Partly right. **You *can* change the database by clicking in the dashboard** (that's how 2.6 was done). The problem is **nobody has a record of it.**
+
+This ticket proved it: the 2.6 notes said NOT NULL and the `user_id` indexes were done. **The live DB had neither**, and the policy names were different too. Notes drift from reality; migration files *are* the reality.
+
+A migration = **one schema change, as a file in git**: ordered (timestamp in the name), reviewable in a PR, and repeatable. The same files build the test project, live, or a new developer's copy. Each database keeps a table of which ones it has run (`supabase_migrations.schema_migrations`).
+
+**Where my live-data instinct was right:** a migration must work with rows already there.
+- **`set not null`** checks existing rows and **fails** if any are NULL → counted them first (0)
+- **New RLS checks only apply to future writes**; bad rows already there would just stay → counted mismatched tasks/notes first (0)
+- Sometimes a migration has to *fix* data before adding the rule (fill in missing values, *then* `set not null`)
+
+### 2. Record First, Then Fix
+Migration 1 deliberately copies the live DB **with its gaps**, and migration 2 fixes them. Why not write a perfect migration 1?
+- Live already had migration 1's tables, so it **couldn't run there**. It's marked applied with `migration repair`. Its fixes would never have reached live.
+- Keeping them separate makes the history honest: *this is what we had, this is what we changed, and why.*
+
+### 3. SQL Basics I Learned Writing Migration 2
+- Every statement ends with **`;`**. A missing one merges two statements into one broken one (my first section 3)
+- **`'single'` = a text value; `"double"` = a name** (policy names have spaces, so they need double quotes and must match exactly)
+- **`create`** new / **`alter`** existing / **`drop`** remove
+- `drop index public.idx_clients_email;`: dropping only needs the **name**. `create` needs `on table (column)` because it's building something
+- **`alter policy` can't change the operation** (select/insert/update/delete); that's fixed when the policy is created. It can change `to <role>`, `using` and `with check`
+- **`with check (...)` replaces the whole check**, so keep the old condition and `and` the new one
+- `exists (select 1 from ... where ...)`: true/false "does a matching row exist?" `select 1` = I don't need data back. Needs its own parentheses (my last bug: one `)` short per statement)
+- In `where clients.id = client_id`, the **prefixed** name is the table being searched; the **unprefixed** `client_id` is the task/note being saved
+
+### 4. `USING` vs `WITH CHECK`
+- **`using`** = which **existing** rows can I see / change / delete? (select, update, delete)
+- **`with check`** = is the **new or changed** row allowed? (insert, update)
+- Update has **both**: you must be allowed to touch the row now *and* what you change it to must still be allowed. That's why test 9 (moving my task onto someone else's client) is blocked.
+
+### 5. The Gap Section 4 Closed
+Before: user B could create a task with *their own* `user_id` but **user A's `client_id`**.
+- **Correction to my first answer:** A would *not* see it. A's view rule is `auth.uid() = user_id`, and the task is B's.
+- The real problems: **bad data** (a task attached to someone else's client); a **leak** (a made-up client ID errors, a real one succeeds, so B can probe which IDs exist); **side effects** (if A deletes the client, B's task is cascade-deleted)
+
+### 6. Testing a Migration Safely
+- **A separate empty project** (`crm-proto-test`): proves the files build a working database **from nothing**, without touching real data
+- **"Acting as" a user in SQL:** set `request.jwt.claims` (what `auth.uid()` reads) and switch to the `authenticated` role, exactly what a logged-in browser request does
+- **A test must be able to fail.** At first, "blocked" counted *any* error, so a typo would also pass. Tightened it to only RLS's error (`insufficient_privilege`)
+- **Rollback drill:** pushed a migration that reverses section 4 → **exactly tests 5, 6, 9 failed** (proves the rollback worked *and* the test catches the hole). Then `db reset` rebuilt the test DB from migrations 1 + 2 → all pass again
+- **Rollback on live is a new migration, not a deleted file.** Deleting the drill file only worked because the test DB could be wiped
+
+### 7. Applying to Production
+1. `migration list` → both files local, nothing on live
+2. `migration repair --status applied <migration 1>` → records it as done **without running it**
+3. `db push --dry-run` → must list **only** migration 2 (stop if it lists migration 1)
+4. `db push` → runs in a transaction: **all or nothing**
+5. Read-only checks in the SQL editor, then the app itself
+
+**Gotcha:** my older live project rejected the CLI's temporary login (`cli_login_postgres`); setting `$env:SUPABASE_DB_PASSWORD` in my terminal made it connect directly. **The DB password can't be viewed, only reset**, and resetting is safe: the app uses the URL + anon key, never the DB password.
+
+## 🧪 How It Was Tested
+- Test project: both migrations applied from empty; schema query matched (NOT NULL ×3, indexes, 12 policies `authenticated`, 4 ownership checks)
+- `rls_test.sql`: **12/12 PASS** (own data works; B can't see, edit, attach to or move onto A's client; same email allowed per user; logged-out sees nothing; no-owner rows rejected; cleanup)
+- Rollback drill: 3 expected failures, then 12/12 after rebuild
+- Live: dry run listed only migration 2; push succeeded; same schema query matched; app checked in the browser
+
+## 🗣 How to Say It in an Interview
+1. **Migrations:** *"The schema had been changed by hand in the dashboard, and my notes had drifted from what was really deployed. I inspected the live database, recorded it as a baseline migration, marked it applied, and made every change after that a reviewed migration file."*
+2. **The RLS gap:** *"RLS stopped users reading each other's data, but not referencing it. A user could attach a task to another user's client ID. I added a WITH CHECK requiring the parent client to belong to the same user, on insert and update."*
+3. **Testing:** *"I test migrations on a separate empty project, with a SQL script that acts as two users. I proved the test could catch the hole by rolling the fix back and watching those exact cases fail."*
+
+## 🔮 Later
+- Run `rls_test.sql` in CI against the test project (with #36)
+- Supabase free projects pause after ~a week idle → keep-alive with #20
+- Supabase CLI v3 is out (installed: 2.122.0)
 
 ---
 
