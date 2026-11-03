@@ -19,6 +19,11 @@ A Customer Relationship Management (CRM) system using modern web development wit
 -   **Database**: Supabase (PostgreSQL)
 -   **Authentication**: Supabase Auth (ready to implement)
 
+
+## How This Was Built
+
+See LEARNING_NOTES.md.
+
 ## Getting Started
 
 ### Prerequisites

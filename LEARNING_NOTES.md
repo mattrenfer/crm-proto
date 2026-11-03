@@ -4,6 +4,15 @@
 **Started**: November 17, 2025
 **Purpose**: Document patterns, concepts, and learnings throughout this project
 
+These are my notes from building this app, written as I went. 
+
+I have 15 years in front-end development. This project was me learning back-end in order to launch an application end-to-end.
+
+This project was AI-assisted and built with Claude. Most of the code was generated from my prompts. I planned the work, integrated and tested every change, and made sure I understood why each piece works before moving on. These notes are that record. From Phase 3 on I wrote more of the code myself, with Claude giving hints and reviewing. In the final push (Ticket 3.6 onward) Claude drafted, I reviewed and explained each change back, and I wrote parts myself (for example, the RLS migration in Ticket 4.2). Each phase below says how it was built.
+
+**Start here:** [Ticket 4.2: Migrations + RLS](#-ticket-42-database-migrations--tightening-rls) · [Bug #31](#-bug-31-adding-a-task-without-a-due-date-fails) · [Ticket 3.6: Keys & Config](#-ticket-36-environment--build-configuration) · [Data Update Patterns](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic)
+
+
 ---
 
 ## Table of Contents
@@ -41,6 +50,8 @@
 - [Editor Shortcuts & Tooling](#-editor-shortcuts--tooling-vs-code--cursor-windows)
 
 ---
+
+> **How Phase 1 was built:** a mix. Claude generated much of the code from my prompts, and I implemented it in the project, working through why each piece works.
 
 ## Architecture Patterns
 
@@ -530,7 +541,7 @@ export async function deleteClient(id: string): Promise<void> {
 - No `.select()` needed (we don't care about the deleted data)
 
 **CASCADE behavior:**
-Remember from your `schema.sql`:
+Remember from your `schema.sql`: (**Update (Nov 2026):** `schema.sql` was replaced by migrations; see Ticket 4.2.)
 ```sql
 client_id UUID REFERENCES clients(id) ON DELETE CASCADE
 ```
@@ -811,7 +822,7 @@ The patterns learned here (optimistic updates, toast, Partial<T>) were reused an
 ### 💡 Key Takeaways
 
 **Core principle:**
-> "Write operations follow the same error handling pattern as reads - try/catch with descriptive errors, but now we return the created/modified data for optimistic UI updates."
+> "Write operations follow the same error handling pattern as reads - try/catch with descriptive errors, but now we return the created/modified record, so the screen can show exactly what the database saved."
 
 **The progression:**
 1. **Ticket 1.2**: Read data ✅
@@ -824,6 +835,8 @@ The patterns learned here (optimistic updates, toast, Partial<T>) were reused an
 
 **Completed**: November 21, 2025
 **What We Built**: Complete Task CRUD operations with client-side data joins and optimistic UI updates
+
+> **Update (Nov 2026):** the updates here aren't actually optimistic: the app waits for the server, then updates the screen. See [Data Update Patterns](#-data-update-patterns-refetch-vs-server-confirmed-vs-optimistic).
 
 ### 🎯 The Challenge
 
@@ -1405,8 +1418,8 @@ return updated  // ← Return from database
 
 **The patterns we learned are:**
 1. ✅ Universal (apply to all modern frameworks)
-2. ✅ Production-ready (used by big tech companies)
-3. ✅ Performant (Map lookups, optimistic UI)
+2. ✅ Widely used (standard patterns in React apps)
+3. ✅ Performant (Map lookups)
 4. ✅ Maintainable (separation of concerns)
 5. ✅ Safe (defensive coding, type guards)
 
@@ -1430,7 +1443,7 @@ return updated  // ← Return from database
 
 ### 🎯 The Context
 
-This was a **reinforcement ticket** - applying the patterns mastered in Tickets 1.3 and 1.4 to a simpler domain. Notes are much simpler than tasks:
+This was a **reinforcement ticket** - applying the patterns learned in Tickets 1.3 and 1.4 to a simpler domain. Notes are much simpler than tasks:
 - Only one user field: `content`
 - No status updates or filtering
 - No separate page (only in client detail)
@@ -1859,6 +1872,8 @@ This will round out your data access skills with **analytics queries**.
 ---
 
 ## Phase 2: Authentication & Security
+
+> **How Phase 2 was built:** a mix. Claude generated most of the code from my prompts and I implemented it, understanding each piece. Ticket 2.3 (signup) I built on my own, using the login page's patterns.
 
 ### Ticket 2.1: Supabase Auth Setup - Core Concepts
 
@@ -2453,7 +2468,7 @@ Webpack bundles Client Components for the browser. Can't include Node.js APIs.
 - `src/lib/supabase/server.ts` - Server client for Server Components
 - `src/lib/supabase/middleware.ts` - Middleware client for route protection
 - `src/lib/auth.ts` - Helper functions (signUp, signIn, signOut, getSession, getUser)
-- `src/app/test-auth/page.tsx` - Test page to verify auth works (can be deleted)
+- `src/app/test-auth/page.tsx` - Test page to verify auth works (can be deleted) (**Update (Nov 2026):** moved to `/dev/auth-test` in 2.5.)
 
 **What We Learned:**
 - ✅ JWT-based authentication vs traditional sessions
@@ -2885,7 +2900,7 @@ else {
 
 ---
 
-## 🎯 Reusable Form Patterns Mastered
+## 🎯 Reusable Form Patterns Practiced
 
 **These patterns work for ANY form:**
 
@@ -3570,7 +3585,8 @@ Created Next.js middleware to protect all routes with authentication, redirect u
 
 
 ---
----
+
+> **How Phase 3 was built:** after picking the project back up, I wrote the code myself, with Claude giving a plan, hints and file pointers, then reviewing. Ticket 3.6 onward switched to Claude drafting and me reviewing and explaining it back (see 3.6).
 
 # 📋 Ticket 3.1: Form Validation Library
 
@@ -4205,8 +4221,8 @@ A CRM stores **other people's personal data**, behind logins, in a shared multi-
 
 | Before launch | Ticket |
 |---|---|
-| `schema.sql` lacks the RLS policies; a fresh database built from it would expose all data | #21 |
-| Only the **anon** key in `NEXT_PUBLIC_*`; the **service role** key bypasses RLS and must never reach the browser | #19 |
+| `schema.sql` lacks the RLS policies; a fresh database built from it would expose all data | #21 ✅ replaced by migrations (4.2) |
+| Only the **anon** key in `NEXT_PUBLIC_*`; the **service role** key bypasses RLS and must never reach the browser | #19 ✅ checked by `env.ts` (3.6) |
 | Turn email confirmation back **on** in Supabase Auth | #20 |
 
 Reference: the **OWASP Top 10** (the standard list of common web app risks).
@@ -4328,6 +4344,8 @@ Same behavior as before, but the dependency list is now **complete and checked b
 **Status:** ✅ Complete
 **GitHub Issue:** #31
 **Difficulty:** ⭐⭐ (2/5)
+
+**How this was built:** I traced the bug and wrote the fix (`emptyToNull`, the `??` defaults) with hints; Claude's review caught a regression in my `updateTask` change and suggested the fix.
 
 ## The Bug
 Adding a task with no due date showed "Failed to add task" and lost everything typed. Reproduced in the browser before fixing.

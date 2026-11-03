@@ -1,5 +1,7 @@
 # 🔐 Ticket 2.6: Row Level Security (RLS) - Completion Summary
 
+> **Update (Nov 2026):** an inspection of the live database in Ticket 4.2 found this summary doesn't match what was deployed: `user_id` was still nullable, the `user_id` indexes on tasks/notes didn't exist, and the policy names differ. Ticket 4.2's migrations fixed it; trust `supabase/migrations/` over this file.
+
 **Date Completed:** December 4, 2024
 **Status:** ✅ Complete
 **GitHub Issue:** #13
