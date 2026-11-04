@@ -20,6 +20,7 @@ import { signupSchema, SignupFormData } from '@/lib/schemas'
 export default function SignUpPage() {
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
+    const [checkEmail, setCheckEmail] = useState<string | null>(null)
 
     const {
         register: registerSignup,
@@ -47,6 +48,7 @@ export default function SignUpPage() {
     const handleSubmit = async (data: SignupFormData) => {
         setError(null)
         setLoading(true)
+        setCheckEmail(data.email)
 
         try {
             const supabase = createClient()
@@ -75,6 +77,7 @@ export default function SignUpPage() {
     }
 
     return (
+
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
             <div className="max-w-md w-full space-y-8">
                 {/* Header */}
@@ -91,6 +94,14 @@ export default function SignUpPage() {
                     </p>
                 </div>
 
+                {checkEmail && (
+                    <>
+                        <div>
+                            <h1>Check your email</h1>
+                            <p>We sent a confirmation email to {checkEmail}. Please click the link in the email to confirm your account.</p>
+                        </div>
+                    </>
+                )}
                 {/* Form Card */}
                 <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow rounded-lg">
                     <form className="space-y-6" onSubmit={handleSubmitSignup(handleSubmit)}>
