@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
@@ -19,7 +18,6 @@ import { signupSchema, SignupFormData } from '@/lib/schemas'
  * - Redirects if already logged in
  */
 export default function SignUpPage() {
-    const router = useRouter()
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
 
@@ -39,12 +37,12 @@ export default function SignUpPage() {
 
             if (session) {
                 // Already logged in, redirect to home
-                router.push('/')
+                window.location.assign('/')
             }
         }
 
         checkUser()
-    }, [router])
+    }, [])
 
     const handleSubmit = async (data: SignupFormData) => {
         setError(null)
@@ -67,7 +65,7 @@ export default function SignUpPage() {
             }
 
             // Success! Redirect to home page
-            router.push('/')
+            window.location.assign('/')
         } catch (err) {
             console.error('Sign up error:', err)
             setError('Unable to connect. Please check your internet connection.')
