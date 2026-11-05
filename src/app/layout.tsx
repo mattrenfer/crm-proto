@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: 'Simple CRM',
-    description: 'Customer Relationship Management system built with Next.js, TypeScript, and Supabase',
+    description: 'Keep your clients, tasks and notes in one place.',
 }
 
 export default function RootLayout({

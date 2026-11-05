@@ -39,7 +39,7 @@ export default function Navigation() {
                     </div>
                     {user ? (
                         <div className="flex items-center space-x-4">
-                            <span className="text-sm text-gray-500">{user.email}</span>
+                            <span className="hidden sm:inline text-sm text-gray-500">{user.email}</span>
                             <button
                                 onClick={async () => {
                                     await signOut()
@@ -61,6 +61,25 @@ export default function Navigation() {
                         </div>
                     )}
                 </div>
+                {/* The desktop links above are hidden on small screens, so logged-in users get this row instead */}
+                {user && (
+                    <div className="flex space-x-6 pb-3 sm:hidden">
+                        {navItems.map((item) => (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                aria-current={pathname === item.href ? 'page' : undefined}
+                                className={`text-sm font-medium ${
+                                    pathname === item.href
+                                        ? 'text-gray-900 dark:text-white'
+                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white'
+                                }`}
+                            >
+                                {item.label}
+                            </Link>
+                        ))}
+                    </div>
+                )}
             </div>
         </nav>
     )

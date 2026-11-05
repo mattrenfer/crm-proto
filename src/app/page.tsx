@@ -4,6 +4,12 @@ import { getDashboardStats } from '../lib/data-server'
 // Stats depend on who is logged in (cookies), so render per request instead of trying to pre-render at build time
 export const dynamic = 'force-dynamic'
 
+const gettingStartedSteps = [
+    { title: 'Add a client', text: 'Start with someone you work with.' },
+    { title: 'Create a task', text: 'Set a priority and due date so nothing slips.' },
+    { title: 'Keep notes', text: 'Open a client to save notes from your conversations.' },
+]
+
 export default async function HomePage() {
     const { totalClients, activeTasks, pendingTasks } = await getDashboardStats()
 
@@ -116,16 +122,34 @@ export default async function HomePage() {
                     </Link>
                 </div>
 
-                {/* Getting Started Guide */}
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6" id="getting-started-section">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Getting Started</h2>
-                    <div className="space-y-3 text-gray-600 dark:text-gray-300">
-                        <p>• Add your first client using the &ldquo;Manage Clients&rdquo; section</p>
-                        <p>• Create tasks for each client to track your work</p>
-                        <p>• Use the client detail pages to add notes and manage client-specific information</p>
-                        <p>• Configure Supabase in your environment variables to persist data</p>
+                {/* Getting Started: only for new users who haven't added a client yet */}
+                {totalClients === 0 && (
+                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6" id="getting-started-section">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Get started in 3 steps</h2>
+                        <ol className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {gettingStartedSteps.map((step, index) => (
+                                <li key={step.title} className="flex">
+                                    <span
+                                        aria-hidden="true"
+                                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-200"
+                                    >
+                                        {index + 1}
+                                    </span>
+                                    <div className="ml-3">
+                                        <h3 className="font-medium text-gray-900 dark:text-white">{step.title}</h3>
+                                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{step.text}</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                        <Link
+                            href="/clients"
+                            className="mt-6 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
+                        >
+                            Add your first client
+                        </Link>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     )
