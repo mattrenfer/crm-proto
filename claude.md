@@ -386,7 +386,6 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 - [ ] Test-first bug fix: clearing a task due date sends `''` (needs `null`); check UTC date display
 - **Learning**: unit testing, test-first bug fixing, extracting pure functions
 
----
 #### Ticket 4.7: First Impressions (#48)
 **Size**: S (about 2 hours) — added 2026-11-05; do this first, then #23, then #36
 - [x] Replace the Getting Started list with 3 steps for new users (#47)
@@ -404,6 +403,7 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 - [ ] Own layout instead of the default card grid
 - **Learning**: design systems, visual hierarchy
 
+---
 
 ### 🎁 PHASE 5: Enhancement & Advanced Features (Week 8+)
 **Goal**: Add value-add features. Learn advanced patterns.
