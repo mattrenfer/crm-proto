@@ -42,16 +42,6 @@ export default function DashboardSkeleton() {
                         </div>
                     ))}
                 </div>
-
-                {/* Getting started */}
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-                    <Skeleton className="h-6 w-40 my-0.5 mb-4" />
-                    <div className="space-y-3">
-                        {['w-3/4', 'w-2/3', 'w-5/6', 'w-3/5'].map((width, i) => (
-                            <Skeleton key={i} className={`h-4 my-1 ${width}`} />
-                        ))}
-                    </div>
-                </div>
             </div>
         </div>
     )

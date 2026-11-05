@@ -166,11 +166,6 @@ export default function LoginPage() {
                         </div>
                     </form>
                 </div>
-
-                {/* Footer Note */}
-                <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-                    By signing in, you agree to our Terms of Service and Privacy Policy.
-                </p>
             </div>
         </div>
     )
