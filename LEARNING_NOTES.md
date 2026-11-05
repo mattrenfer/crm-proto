@@ -4500,8 +4500,101 @@ Before: user B could create a task with *their own* `user_id` but **user A's `cl
 
 ## 🔮 Later
 - Run `rls_test.sql` in CI against the test project (with #36)
-- Supabase free projects pause after ~a week idle → keep-alive with #20
+- Supabase free projects pause after ~a week idle → keep-alive with #20 (done, see Ticket 4.1)
 - Supabase CLI v3 is out (installed: 2.122.0)
+
+---
+
+# 🚀 Ticket 4.1: Deploying to Production
+
+**Date Completed:** November 5, 2026
+**Status:** ✅ Complete
+**GitHub Issue:** #20
+**Live:** https://crm.matthewrenfer.com
+
+**How this ticket was built:** I did the Vercel, Supabase, Resend and DNS setup myself and tested every step. I wrote the auth redirect fix and the signup confirmation fix, with hints and review. Claude drafted the keep-alive workflow and these notes, and I explained the workflow back before it shipped.
+
+## 🎯 What Changed, in Plain Terms
+| Change | Why |
+|---|---|
+| Next.js 15.4.2 → 15.5.29 | Vercel refuses to deploy versions with known security holes |
+| Full page load after login, signup and logout | The production router cache was serving stale redirects |
+| "Check your email" screen after signup | With confirmation on, there's no session yet, so redirecting home just bounced people to `/login` |
+| `crm.matthewrenfer.com` | A real address for the portfolio link |
+| Custom SMTP with Resend | The built-in sender only allows a few emails per hour |
+| Keep-alive GitHub Action | Free Supabase projects pause when idle, which would break the demo link |
+
+## 🔑 Key Concepts
+
+### 1. Upgrading Within a Major Version
+**Semver:** major.minor.patch. I moved to 15.5.29, not 16. A new major version is allowed to break things, and the goal was a security fix. `npm audit fix --force` would have installed Next 16, so `--force` is worth reading before running.
+
+### 2. Environment Variables Are Per Environment
+Vercel scopes variables to Production, Preview and Development, and `NEXT_PUBLIC_*` values are **baked in at build time**. My preview build failed because the variables weren't enabled for Preview. `env.ts` (Ticket 3.6) caught it with a readable message instead of a broken site, which is what it was built for.
+
+### 3. "It Works Locally" Isn't the Last Test
+Signing in worked in `npm run dev` but not on Vercel: no redirect after login or logout until I refreshed.
+
+- **Cause:** in production, Next.js prefetches links and caches the responses. Those were made while logged out, so `router.push` reused a stale answer after the auth state changed. Dev mode doesn't prefetch, so it never showed up there.
+- **Fix:** `window.location.assign('/')` does a full page load, so the request goes through middleware with the new cookie.
+
+**Testing layers:** `npm run dev` → `npm run build && npm start` for auth or routing changes → Vercel preview → merge to production.
+
+### 4. Email Confirmation Changes What `signUp` Returns
+With "Confirm email" on, `signUp` succeeds but returns `session: null`.
+- **Session** → go to the dashboard (confirmation is off)
+- **No session** → show "Check your email"
+
+### 5. Account Enumeration
+With confirmation on, signing up with an existing email looks like a normal success. That's on purpose. If Supabase said "already registered," anyone could test addresses to find out who has an account. There's a workaround (an empty `identities` list), and I chose not to use it, because it would bring the leak back.
+
+`user_already_exists` stays in my code because Supabase still sends it when confirmation is off.
+
+### 6. Match on Error Codes, Not Messages
+`error.code === 'over_email_send_rate_limit'` is a stable contract. `error.message.includes(...)` breaks silently if the wording changes. My first version also logged the same error three times; one `console.error` is enough.
+
+### 7. DNS: CNAME
+A **CNAME** says "this name is an alias for that one." `crm` points to Vercel, so Vercel can change its servers without me touching my DNS. A new subdomain doesn't affect the main site. A name with a CNAME can't have other records, so email records went on `mail.matthewrenfer.com`.
+
+### 8. Sending Real Email
+- **SPF and DKIM** are DNS records that prove I'm allowed to send from this domain
+- A separate `mail.` subdomain keeps sending reputation away from the main domain
+- **A 200 from the email provider means "accepted," not "delivered"**
+- A new domain may land in spam at first
+
+### 9. Keep-Alive
+- `cron: '0 12 * * 1,4'` = Mondays and Thursdays at 12:00 UTC. Twice, so one failed run isn't a problem
+- The request uses the anon key, so RLS returns `[]` with HTTP 200. It filters rows rather than refusing the read. It still counts as activity, because the query reaches Postgres
+- It **prevents** pausing. It can't wake up a project that has already paused
+- `--fail` makes HTTP errors turn the run red. Without it, a broken ping stays green
+
+## 🐛 Production Problems I Hit
+| Symptom | Cause | Lesson |
+|---|---|---|
+| Deploy blocked | Vulnerable Next.js version | Keep dependencies patched |
+| Preview build failed | Variables not enabled for Preview | Env vars are per environment |
+| No redirect after login on Vercel | Production router cache | Test the production build for auth changes |
+| Signup worked in my test, failed for another address | Resend domain wasn't verified yet, so it couldn't send to other addresses | Test with an address that isn't yours. The console and provider logs had the real error |
+| Keep-alive failed with 401 | The secret was saved under a different name, so the key was empty | A missing GitHub secret is an empty string, not an error. Check names first |
+
+## 🧪 How It Was Tested
+- Live domain: HTTPS valid, logged-out `/` redirects to `/login`, main site unaffected
+- Signup with a new address: "Check your email" stays up, the email arrives from my domain, and the link confirms the account
+- Unconfirmed login shows "Please confirm your email before logging in."
+- Rate limit error shows its own message
+- Keep-alive: red on a real 401, green after the fix
+
+## 🗣 How to Say It in an Interview
+1. **The production bug:** *"Login worked locally but not on Vercel. Next.js prefetches in production, so the router reused a response cached before the login. A full page load sends the request through middleware with the new cookie. Now I test auth changes on a production build first."*
+2. **Duplicate signups:** *"Signing up with an existing email looks the same as a new one. That stops people from finding out who has an account, so I left it that way."*
+3. **The email bug:** *"Signup worked for me but failed for another address, and the UI only showed a generic error. The console gave me the real code, and it traced to an unverified sending domain."*
+
+## 🔮 Later
+- Use a Sending-access Resend key, not Full access (least privilege)
+- Match `.code` on the login page, as signup does
+- Point Preview deployments at the test database; they use the live one now
+- Next 16 upgrade and the `next lint` deprecation
+- Rewrite the check-your-email text so it doesn't promise an email was sent (I skipped this for now)
 
 ---
 

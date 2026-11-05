@@ -79,7 +79,7 @@ Launch a production-ready CRM application end-to-end while deeply learning Next.
 - **Styling**: Tailwind CSS 4
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth
-- **Deployment**: TBD (Vercel recommended)
+- **Deployment**: Vercel (https://crm.matthewrenfer.com)
 
 ---
 
@@ -87,11 +87,10 @@ Launch a production-ready CRM application end-to-end while deeply learning Next.
 
 Per git history: Phase 1 (Supabase CRUD) and Phase 2 (auth, session context, protected routes, RLS — tickets 2.1–2.6) are complete, and Ticket 3.1 (form validation) is done. Toasts (`react-hot-toast`) are already wired in.
 
-Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`), 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) and 3.6 (#19, env validation, Prettier, lint at zero) are done, completing Phase 3. **As of Oct 29, 2026 this is a two-week push to ship the app as a job-search portfolio piece:** the schema fixes and migrations with RLS (#21) shipped Nov 2 (migration 2 written by the author); next are the Vercel deploy (#20), a few Playwright tests in CI (#36), and the README / demo account / video (#23). Work mode for this phase: Claude drafts, the author reviews and explains it back; nothing ships the author can't explain. Lower priority, if time allows: monitoring beyond Vercel Analytics (#22) and unit tests (#38; at least its two test-first bug fixes).
+Phase 3 progress: 3.1, 3.7 (#30, editing), 3.3 (#16, toasts), 3.2 (#15, loading states and skeletons), 3.4 (#17, confirmation dialogs via a reusable native `<dialog>` in `src/components/ConfirmDialog.tsx`), 3.5 (#18, `error.tsx` / `global-error.tsx` / `not-found.tsx`) and 3.6 (#19, env validation, Prettier, lint at zero) are done, completing Phase 3. **As of Oct 29, 2026 this is a two-week push to ship the app as a job-search portfolio piece:** the schema fixes and migrations with RLS (#21) shipped Nov 2 (migration 2 written by the author), and the Vercel deploy (#20) shipped Nov 5 with a custom domain, custom SMTP (Resend) and a keep-alive GitHub Action; next are a few Playwright tests in CI (#36), and the README / demo account / video (#23). Work mode for this phase: Claude drafts, the author reviews and explains it back; nothing ships the author can't explain. Lower priority, if time allows: monitoring beyond Vercel Analytics (#22) and unit tests (#38; at least its two test-first bug fixes).
 
 ### What's Missing ❌
 - Testing suite
-- Production deployment
 
 ### Code Quality
 - **Status**: Good foundation
@@ -333,13 +332,13 @@ We fetch all clients and tasks then filter in JavaScript rather than using SQL C
 ### 🚀 PHASE 4: Deployment & DevOps (Week 7)
 **Goal**: Launch the application. Learn deployment and monitoring.
 
-#### Ticket 4.1: Vercel Deployment Setup
+#### Ticket 4.1: Vercel Deployment Setup (#20) ✅ COMPLETED (2026-11-05)
 **Size**: M (3 hours)
-- [ ] Create Vercel account and link GitHub repo
-- [ ] Configure environment variables in Vercel
-- [ ] Set up automatic deployments from main branch
-- [ ] Configure preview deployments for PRs
-- [ ] Test deployment pipeline
+- [x] Create Vercel account and link GitHub repo
+- [x] Configure environment variables in Vercel
+- [x] Set up automatic deployments from main branch
+- [x] Configure preview deployments for PRs
+- [x] Test deployment pipeline
 - **Learning**: Vercel platform, CI/CD basics
 
 #### Ticket 4.2: Database Migrations Setup (#21) ✅ COMPLETED (2026-11-02)
