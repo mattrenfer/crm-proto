@@ -83,9 +83,10 @@ export default function ClientsPage() {
         setEditingClient(null)
     }
 
+    // Clicking Edit on the row that's already open closes it
     const handleEditClient = (client: Client) => {
-        setShowClientForm(true)
-        setEditingClient(client)
+        setShowClientForm(false)
+        setEditingClient(editingClient?.id === client.id ? null : client)
     }
 
     const handleCloseForm = () => {
@@ -166,8 +167,11 @@ export default function ClientsPage() {
                 </button>
             </PageHeader>
 
-            {showClientForm && (
-                <ClientForm client={editingClient} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
+            {/* Adding starts at the top. Editing opens in the row being edited. */}
+            {showClientForm && !editingClient && (
+                <div className="mb-10">
+                    <ClientForm client={null} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
+                </div>
             )}
 
             {clients.length === 0 ? (
@@ -215,6 +219,7 @@ export default function ClientsPage() {
                                     <button
                                         onClick={() => handleEditClient(client)}
                                         aria-label={`Edit ${client.name}`}
+                                        aria-expanded={editingClient?.id === client.id}
                                         className={textButtonClass}
                                     >
                                         Edit
@@ -228,6 +233,16 @@ export default function ClientsPage() {
                                         {deletingId === client.id ? 'Deleting...' : 'Delete'}
                                     </button>
                                 </div>
+
+                                {editingClient?.id === client.id && (
+                                    <div className="basis-full">
+                                        <ClientForm
+                                            client={editingClient}
+                                            onSubmit={handleSaveClient}
+                                            onCancel={handleCloseForm}
+                                        />
+                                    </div>
+                                )}
                             </li>
                         )
                     })}
