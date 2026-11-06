@@ -45,7 +45,7 @@ export default function RootLayout({
                         />
                     </div>
                     <Navigation />
-                    <main className="min-h-screen bg-gray-50 dark:bg-gray-900">{children}</main>
+                    <main className="min-h-screen bg-paper">{children}</main>
                 </Providers>
                 <Analytics />
             </body>

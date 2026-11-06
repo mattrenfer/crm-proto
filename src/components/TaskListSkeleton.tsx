@@ -14,7 +14,7 @@ export default function TaskListSkeleton() {
                 {/* Stats: 4 cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     {Array.from({ length: 4 }, (_, i) => (
-                        <div key={i} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                        <div key={i} className="bg-sheet overflow-hidden shadow rounded-lg">
                             <div className="p-5">
                                 <div className="flex items-center">
                                     <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
@@ -30,7 +30,7 @@ export default function TaskListSkeleton() {
 
                 {/* Filter tabs */}
                 <div className="mb-6">
-                    <div className="border-b border-gray-200 dark:border-gray-700">
+                    <div className="border-b border-rule">
                         <div className="-mb-px flex space-x-8">
                             {['w-24', 'w-20', 'w-24', 'w-24'].map((width, i) => (
                                 <div key={i} className="py-2 px-1 border-b-2 border-transparent">
@@ -44,7 +44,7 @@ export default function TaskListSkeleton() {
                 {/* Task cards */}
                 <div className="space-y-4">
                     {Array.from({ length: 3 }, (_, i) => (
-                        <div key={i} className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                        <div key={i} className="bg-sheet shadow rounded-lg p-6">
                             <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                     {/* Title + status and priority pills */}

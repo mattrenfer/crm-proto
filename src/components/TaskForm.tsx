@@ -50,17 +50,15 @@ export default function TaskForm({
     }, [task, clientId, resetTaskForm])
 
     return (
-        <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                {task ? 'Edit Task' : 'Add New Task'}
-            </h3>
+        <div className="mb-6 bg-sheet shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-ink mb-4">{task ? 'Edit Task' : 'Add New Task'}</h3>
             <form onSubmit={handleSubmitTask(onSubmit)} className="space-y-4">
                 {clients && (
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Client *</label>
+                        <label className="block text-sm font-medium text-ink">Client *</label>
                         <select
                             {...registerTask('client_id')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                         >
                             <option value="">Select Client</option>
                             {clients.map((c) => (
@@ -69,83 +67,65 @@ export default function TaskForm({
                                 </option>
                             ))}
                         </select>
-                        {taskErrors && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {taskErrors.client_id?.message}
-                            </p>
-                        )}
+                        {taskErrors && <p className="mt-1 text-sm text-danger">{taskErrors.client_id?.message}</p>}
                     </div>
                 )}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title *</label>
+                    <label className="block text-sm font-medium text-ink">Title *</label>
                     <input
                         type="text"
                         {...registerTask('title')}
                         defaultValue={task?.title}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                     />
-                    {taskErrors && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{taskErrors.title?.message}</p>
-                    )}
+                    {taskErrors && <p className="mt-1 text-sm text-danger">{taskErrors.title?.message}</p>}
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                    <label className="block text-sm font-medium text-ink">Description</label>
                     <textarea
                         {...registerTask('description')}
                         defaultValue={task?.description}
                         rows={3}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                     />
-                    {taskErrors && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{taskErrors.description?.message}</p>
-                    )}
+                    {taskErrors && <p className="mt-1 text-sm text-danger">{taskErrors.description?.message}</p>}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                        <label className="block text-sm font-medium text-ink">Status</label>
                         <select
                             defaultValue={task?.status}
                             {...registerTask('status')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                         >
                             <option value="pending">Pending</option>
                             <option value="in_progress">In Progress</option>
                             <option value="completed">Completed</option>
                         </select>
-                        {taskErrors && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{taskErrors.status?.message}</p>
-                        )}
+                        {taskErrors && <p className="mt-1 text-sm text-danger">{taskErrors.status?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
+                        <label className="block text-sm font-medium text-ink">Priority</label>
                         <select
                             defaultValue={task?.priority}
                             {...registerTask('priority')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                         >
                             <option value="low">Low</option>
                             <option value="medium">Medium</option>
                             <option value="high">High</option>
                         </select>
-                        {taskErrors && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {taskErrors.priority?.message}
-                            </p>
-                        )}
+                        {taskErrors && <p className="mt-1 text-sm text-danger">{taskErrors.priority?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
+                        <label className="block text-sm font-medium text-ink">Due Date</label>
                         <input
                             defaultValue={task?.due_date ?? ''}
                             type="date"
                             {...registerTask('due_date')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                         />
-                        {taskErrors && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {taskErrors.due_date?.message}
-                            </p>
-                        )}
+                        {taskErrors && <p className="mt-1 text-sm text-danger">{taskErrors.due_date?.message}</p>}
                     </div>
                 </div>
                 <div className="flex justify-end space-x-3">
@@ -153,14 +133,14 @@ export default function TaskForm({
                         type="button"
                         disabled={isSubmittingTask}
                         onClick={() => onCancel()}
-                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+                        className="px-4 py-2 border border-rule rounded-md shadow-sm text-sm font-medium text-ink bg-sheet hover:bg-paper"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmittingTask}
-                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-on-accent bg-accent hover:bg-ink"
                     >
                         {isSubmittingTask ? 'Saving...' : task ? 'Update Task' : 'Add Task'}
                     </button>

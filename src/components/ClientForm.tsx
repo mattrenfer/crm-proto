@@ -35,56 +35,50 @@ export default function ClientForm({
         }
     }, [client, resetClientForm])
     return (
-        <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                {client ? 'Edit Client' : 'Add New Client'}
-            </h2>
+        <div className="mb-6 bg-sheet shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-ink mb-4">{client ? 'Edit Client' : 'Add New Client'}</h2>
             <form onSubmit={handleSubmitClient(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name *</label>
+                        <label className="block text-sm font-medium text-ink">Name *</label>
                         <input
                             type="text"
                             {...registerClient('name')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                         />
-                        {clientErrors.name && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{clientErrors.name?.message}</p>
-                        )}
+                        {clientErrors.name && <p className="mt-1 text-sm text-danger">{clientErrors.name?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email *</label>
+                        <label className="block text-sm font-medium text-ink">Email *</label>
                         <input
                             type="email"
                             {...registerClient('email')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                         />
                         {clientErrors.email && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{clientErrors.email?.message}</p>
+                            <p className="mt-1 text-sm text-danger">{clientErrors.email?.message}</p>
                         )}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+                        <label className="block text-sm font-medium text-ink">Phone</label>
                         <input
                             type="tel"
                             {...registerClient('phone')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                         />
                         {clientErrors.phone && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{clientErrors.phone?.message}</p>
+                            <p className="mt-1 text-sm text-danger">{clientErrors.phone?.message}</p>
                         )}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company</label>
+                        <label className="block text-sm font-medium text-ink">Company</label>
                         <input
                             type="text"
                             {...registerClient('company')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
                         />
                         {clientErrors.company && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {clientErrors.company?.message}
-                            </p>
+                            <p className="mt-1 text-sm text-danger">{clientErrors.company?.message}</p>
                         )}
                     </div>
                 </div>
@@ -93,14 +87,14 @@ export default function ClientForm({
                         type="button"
                         disabled={isSubmittingClient}
                         onClick={() => onCancel()}
-                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+                        className="px-4 py-2 border border-rule rounded-md shadow-sm text-sm font-medium text-ink bg-sheet hover:bg-paper focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmittingClient}
-                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-on-accent bg-accent hover:bg-ink focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
                     >
                         {isSubmittingClient ? 'Saving...' : client ? 'Update Client' : 'Add Client'}
                     </button>

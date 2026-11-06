@@ -13,8 +13,8 @@ export default function ClientListSkeleton() {
                 </div>
 
                 {/* Clients list card */}
-                <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-                    <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                <div className="bg-sheet shadow overflow-hidden sm:rounded-md">
+                    <ul className="divide-y divide-rule">
                         {Array.from({ length: 5 }, (_, i) => (
                             <li key={i}>
                                 <div className="px-4 py-4 sm:px-6">

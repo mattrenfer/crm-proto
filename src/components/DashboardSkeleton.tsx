@@ -14,7 +14,7 @@ export default function DashboardSkeleton() {
                 {/* Stats: 3 cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {Array.from({ length: 3 }, (_, i) => (
-                        <div key={i} className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                        <div key={i} className="bg-sheet overflow-hidden shadow rounded-lg">
                             <div className="p-5">
                                 <div className="flex items-center">
                                     <Skeleton className="h-8 w-8 flex-shrink-0" />
@@ -31,7 +31,7 @@ export default function DashboardSkeleton() {
                 {/* Quick actions: 2 cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     {Array.from({ length: 2 }, (_, i) => (
-                        <div key={i} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                        <div key={i} className="border border-rule rounded-lg p-6">
                             <div className="flex items-center">
                                 <Skeleton className="h-9 w-9 mr-4 flex-shrink-0" />
                                 <div className="flex-1">
