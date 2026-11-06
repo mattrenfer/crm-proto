@@ -369,7 +369,7 @@ export default function ClientDetailPage() {
                                 onClick={() => setActiveTab('tasks')}
                                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                                     activeTab === 'tasks'
-                                        ? 'border-accent text-accent '
+                                        ? 'border-accent text-accent'
                                         : 'border-transparent text-muted hover:text-ink hover:border-ink '
                                 }`}
                             >
@@ -379,7 +379,7 @@ export default function ClientDetailPage() {
                                 onClick={() => setActiveTab('notes')}
                                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                                     activeTab === 'notes'
-                                        ? 'border-accent text-accent '
+                                        ? 'border-accent text-accent'
                                         : 'border-transparent text-muted hover:text-ink hover:border-ink '
                                 }`}
                             >
@@ -441,7 +441,7 @@ export default function ClientDetailPage() {
                                                     <span
                                                         className={`px-2 py-1 rounded-full text-xs font-medium ${
                                                             task.priority === 'high'
-                                                                ? 'bg-sheet text-danger'
+                                                                ? 'bg-sheet text-accent'
                                                                 : task.priority === 'medium'
                                                                   ? 'bg-sheet text-ink'
                                                                   : 'bg-rule text-ink'

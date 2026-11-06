@@ -160,7 +160,7 @@ export default function TasksPage() {
     const getPriorityBadgeClass = (priority: Task['priority']) => {
         switch (priority) {
             case 'high':
-                return 'bg-sheet text-danger'
+                return 'bg-sheet text-accent'
             case 'medium':
                 return 'bg-sheet text-ink'
             default:
@@ -347,7 +347,7 @@ export default function TasksPage() {
                                     onClick={() => setFilter(tab.key as typeof filter)}
                                     className={`py-2 px-1 border-b-2 font-medium text-sm ${
                                         filter === tab.key
-                                            ? 'border-accent text-accent '
+                                            ? 'border-accent text-accent'
                                             : 'border-transparent text-muted hover:text-ink hover:border-ink '
                                     }`}
                                 >

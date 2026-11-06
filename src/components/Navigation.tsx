@@ -31,7 +31,7 @@ export default function Navigation() {
                                     href={item.href}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                                         pathname === item.href
-                                            ? 'border-accent text-ink '
+                                            ? 'border-accent text-ink'
                                             : 'border-transparent text-muted hover:text-ink hover:border-ink  '
                                     }`}
                                 >
@@ -73,7 +73,7 @@ export default function Navigation() {
                                 href={item.href}
                                 aria-current={pathname === item.href ? 'page' : undefined}
                                 className={`text-sm font-medium ${
-                                    pathname === item.href ? 'text-ink ' : 'text-muted hover:text-ink  '
+                                    pathname === item.href ? 'text-ink' : 'text-muted hover:text-ink  '
                                 }`}
                             >
                                 {item.label}
