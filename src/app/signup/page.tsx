@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import AuthMasthead from '@/components/AuthMasthead'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signupSchema, SignupFormData } from '@/lib/schemas'
@@ -84,6 +85,7 @@ export default function SignUpPage() {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
             <div className="max-w-md w-full space-y-8">
+                <AuthMasthead />
                 {checkEmail ? (
                     <>
                         <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">

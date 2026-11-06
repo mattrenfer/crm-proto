@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import Logo from '@/components/Logo'
 
 export default function Navigation() {
     const pathname = usePathname()
@@ -19,7 +20,9 @@ export default function Navigation() {
                 <div className="flex justify-between h-16">
                     <div className="flex">
                         <div className="flex-shrink-0 flex items-center">
-                            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Simple CRM</h1>
+                            <Link href="/">
+                                <Logo className="text-2xl" />
+                            </Link>
                         </div>
                         <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                             {navItems.map((item) => (
