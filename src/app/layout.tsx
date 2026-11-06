@@ -4,6 +4,7 @@ import './globals.css'
 import Navigation from '@/components/Navigation'
 import { Toaster } from 'react-hot-toast'
 import { Providers } from '@/components/Providers'
+import { Analytics } from '@vercel/analytics/next'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -43,6 +44,7 @@ export default function RootLayout({
                     <Navigation />
                     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">{children}</main>
                 </Providers>
+                <Analytics />
             </body>
         </html>
     )
