@@ -56,8 +56,13 @@ export default async function HomePage() {
                             {lead ? (
                                 <>
                                     <DueLabel date={lead.due_date} />
-                                    <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-tight tracking-tight text-balance break-words">
-                                        {lead.clientName}: {lead.title}
+                                    <h1 className="break-words">
+                                        <span className="block font-display text-[clamp(2.75rem,7vw,5.5rem)] leading-none tracking-tight">
+                                            {lead.clientName}
+                                        </span>
+                                        <span className="block mt-3 italic text-[clamp(1.5rem,3vw,2.25rem)] leading-tight">
+                                            {lead.title}
+                                        </span>
                                     </h1>
                                     {lead.description && <p className="max-w-xl">{lead.description}</p>}
                                     <p>
@@ -99,10 +104,11 @@ export default async function HomePage() {
                                         <li key={task.id}>
                                             <Link
                                                 href={`/clients/${task.client_id}`}
-                                                className="font-semibold hover:text-accent break-words"
+                                                className="block font-display text-xl hover:text-accent break-words"
                                             >
-                                                {task.clientName}: {task.title}
+                                                {task.clientName}
                                             </Link>
+                                            <p className="break-words">{task.title}</p>
                                             <DueLabel date={task.due_date} />
                                         </li>
                                     ))}
