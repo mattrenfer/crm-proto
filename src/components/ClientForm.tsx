@@ -22,6 +22,7 @@ export default function ClientForm({
         handleSubmit: handleSubmitClient,
         formState: { errors: clientErrors, isSubmitting: isSubmittingClient },
         reset: resetClientForm,
+        setFocus,
     } = useForm<ClientFormData>({ resolver: zodResolver(clientSchema) })
     useEffect(() => {
         if (client) {
@@ -35,8 +36,14 @@ export default function ClientForm({
             resetClientForm({ name: '', email: '', phone: '', company: '' })
         }
     }, [client, resetClientForm])
+
+    // Moves keyboard and screen reader users straight into the form when it opens
+    useEffect(() => {
+        setFocus('name')
+    }, [client, setFocus])
+
     return (
-        <div className="mb-10 pt-4 border-t border-ink">
+        <div className="pt-4 border-t border-ink">
             <h2 className="font-display text-2xl mb-5">{client ? 'Edit client' : 'Add a client'}</h2>
             <form onSubmit={handleSubmitClient(onSubmit)} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

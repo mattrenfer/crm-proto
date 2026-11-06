@@ -28,6 +28,7 @@ export default function TaskForm({
         handleSubmit: handleSubmitTask,
         formState: { errors: taskErrors, isSubmitting: isSubmittingTask },
         reset: resetTaskForm,
+        setFocus,
     } = useForm<TaskWithClientFormData>({ resolver: zodResolver(taskWithClientSchema) })
     useEffect(() => {
         if (task) {
@@ -51,8 +52,13 @@ export default function TaskForm({
         }
     }, [task, clientId, resetTaskForm])
 
+    // Moves keyboard and screen reader users straight into the form when it opens
+    useEffect(() => {
+        setFocus('title')
+    }, [task, setFocus])
+
     return (
-        <div className="mb-10 pt-4 border-t border-ink">
+        <div className="pt-4 border-t border-ink">
             <h2 className="font-display text-2xl mb-5">{task ? 'Edit task' : 'Add a task'}</h2>
             <form onSubmit={handleSubmitTask(onSubmit)} className="space-y-5">
                 {clients && (

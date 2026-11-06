@@ -167,6 +167,7 @@ export default function TasksPage() {
     }
 
     const handleAddTask = () => {
+        setEditingTask(null)
         setShowTaskForm(true)
     }
 
@@ -183,9 +184,10 @@ export default function TasksPage() {
         setEditingTask(null)
     }
 
+    // Clicking Edit on the row that's already open closes it
     const handleEditTask = (task: Task) => {
-        setShowTaskForm(true)
-        setEditingTask(task)
+        setShowTaskForm(false)
+        setEditingTask(editingTask?.id === task.id ? null : task)
     }
 
     const handleShowDeleteTaskModal = (id: string) => {
@@ -218,13 +220,11 @@ export default function TasksPage() {
                 </button>
             </PageHeader>
 
-            {showTaskForm && (
-                <TaskForm
-                    task={editingTask}
-                    clients={clients}
-                    onSubmit={handleSaveTask}
-                    onCancel={handleCloseTaskForm}
-                />
+            {/* Adding starts at the top. Editing opens in the row being edited. */}
+            {showTaskForm && !editingTask && (
+                <div className="mb-10">
+                    <TaskForm task={null} clients={clients} onSubmit={handleSaveTask} onCancel={handleCloseTaskForm} />
+                </div>
             )}
 
             <div className="flex flex-wrap gap-x-6 mb-6">
@@ -301,6 +301,7 @@ export default function TasksPage() {
                                     <button
                                         onClick={() => handleEditTask(task)}
                                         aria-label={`Edit ${task.title}`}
+                                        aria-expanded={editingTask?.id === task.id}
                                         className={textButtonClass}
                                     >
                                         Edit
@@ -314,6 +315,17 @@ export default function TasksPage() {
                                         {deletingId === task.id ? 'Deleting...' : 'Delete'}
                                     </button>
                                 </div>
+
+                                {editingTask?.id === task.id && (
+                                    <div className="basis-full">
+                                        <TaskForm
+                                            task={editingTask}
+                                            clients={clients}
+                                            onSubmit={handleSaveTask}
+                                            onCancel={handleCloseTaskForm}
+                                        />
+                                    </div>
+                                )}
                             </li>
                         )
                     })}
