@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import type { Client, Task } from '@/lib/supabase'
 import { getTasks, getClients, createTask, deleteTask, updateTask } from '@/lib/data'
-import { formatDate } from '@/lib/dates'
+import { describeDue } from '@/lib/dates'
+import { buttonClass, inputClass, textButtonClass } from '@/lib/formStyles'
+import { sortByUrgency, statusLabels } from '@/lib/tasks'
+import PageHeader from '@/components/PageHeader'
 import toast from 'react-hot-toast'
 import TaskForm from '@/components/TaskForm'
 import TaskListSkeleton from '@/components/TaskListSkeleton'
@@ -28,7 +31,7 @@ export default function TasksPage() {
 
     useEffect(() => {
         loadTasks()
-    }, [filter]) // Re-fetch when filter changes
+    }, [])
 
     async function loadTasks() {
         setLoading(true)
@@ -111,13 +114,6 @@ export default function TasksPage() {
 
             setTasks(tasks.map((task) => (task.id === taskId ? { ...task, ...updated } : task)))
 
-            // Success feedback
-            const statusLabels = {
-                pending: 'Pending',
-                in_progress: 'In Progress',
-                completed: 'Completed',
-            }
-
             toast.success(`Task marked as ${statusLabels[newStatus]}`)
         } catch (error) {
             console.error('Error updating task:', error)
@@ -141,32 +137,19 @@ export default function TasksPage() {
         }
     }
 
-    const filteredTasks = tasks.filter((task) => {
-        if (filter === 'all') return true
-        return task.status === filter
-    })
-
-    const getStatusBadgeClass = (status: Task['status']) => {
-        switch (status) {
-            case 'completed':
-                return 'bg-sheet text-accent'
-            case 'in_progress':
-                return 'bg-sheet text-ink'
-            default:
-                return 'bg-rule text-ink'
-        }
-    }
-
-    const getPriorityBadgeClass = (priority: Task['priority']) => {
-        switch (priority) {
-            case 'high':
-                return 'bg-sheet text-accent'
-            case 'medium':
-                return 'bg-sheet text-ink'
-            default:
-                return 'bg-rule text-ink'
-        }
-    }
+    // Filtering happens here, in the browser, because every task is already loaded.
+    const filteredTasks = tasks.filter((task) => filter === 'all' || task.status === filter)
+    const visibleTasks = [
+        ...sortByUrgency(filteredTasks),
+        ...filteredTasks.filter((task) => task.status === 'completed'),
+    ]
+    const openCount = tasks.filter((task) => task.status !== 'completed').length
+    const filters: { key: typeof filter; label: string }[] = [
+        { key: 'all', label: 'All' },
+        { key: 'pending', label: statusLabels.pending },
+        { key: 'in_progress', label: statusLabels.in_progress },
+        { key: 'completed', label: statusLabels.completed },
+    ]
 
     if (loading) {
         return <TaskListSkeleton />
@@ -174,22 +157,13 @@ export default function TasksPage() {
 
     if (error) {
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <div className="text-danger mb-4">{error}</div>
-                    <button onClick={loadTasks} className="px-4 py-2 bg-accent text-on-accent rounded-md hover:bg-ink">
-                        Try Again
-                    </button>
-                </div>
+            <div className="max-w-6xl mx-auto px-4 sm:px-8 py-16 text-lg text-center">
+                <p className="text-danger mb-4">{error}</p>
+                <button onClick={loadTasks} className={buttonClass}>
+                    Try again
+                </button>
             </div>
         )
-    }
-
-    const taskCounts = {
-        all: tasks.length,
-        pending: tasks.filter((t) => t.status === 'pending').length,
-        in_progress: tasks.filter((t) => t.status === 'in_progress').length,
-        completed: tasks.filter((t) => t.status === 'completed').length,
     }
 
     const handleAddTask = () => {
@@ -229,7 +203,7 @@ export default function TasksPage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-10 text-lg">
             <ConfirmDialog
                 open={pendingDeleteTaskId !== null}
                 isDeleting={deletingId !== null}
@@ -237,216 +211,114 @@ export default function TasksPage() {
                 onCancel={handleCancelDelete}
                 confirmLabel="Are you sure you want to delete this task?"
             />
-            <div className="px-4 py-6 sm:px-0">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-ink">Tasks</h1>
+
+            <PageHeader title="What's next" subtitle={`${openCount} open ${openCount === 1 ? 'task' : 'tasks'}`}>
+                <button onClick={handleAddTask} className={buttonClass}>
+                    Add a task
+                </button>
+            </PageHeader>
+
+            {showTaskForm && (
+                <TaskForm
+                    task={editingTask}
+                    clients={clients}
+                    onSubmit={handleSaveTask}
+                    onCancel={handleCloseTaskForm}
+                />
+            )}
+
+            <div className="flex flex-wrap gap-x-6 mb-6">
+                {filters.map(({ key, label }) => (
                     <button
-                        onClick={handleAddTask}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-on-accent bg-accent hover:bg-ink focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+                        key={key}
+                        onClick={() => setFilter(key)}
+                        aria-pressed={filter === key}
+                        className={`min-h-11 cursor-pointer underline-offset-4 hover:text-accent ${
+                            filter === key ? 'font-semibold underline decoration-accent decoration-2' : ''
+                        }`}
                     >
-                        Add Task
+                        {label}
                     </button>
-                </div>
-
-                {showTaskForm && (
-                    <TaskForm
-                        task={editingTask}
-                        clients={clients}
-                        onSubmit={handleSaveTask}
-                        onCancel={handleCloseTaskForm}
-                    />
-                )}
-
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-sheet overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
-                                        <span className="text-on-accent text-sm font-medium">A</span>
-                                    </div>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-muted truncate">All Tasks</dt>
-                                        <dd className="text-lg font-medium text-ink">{taskCounts.all}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-sheet overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                                        <span className="text-on-accent text-sm font-medium">P</span>
-                                    </div>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-muted truncate">Pending</dt>
-                                        <dd className="text-lg font-medium text-ink">{taskCounts.pending}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-sheet overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                                        <span className="text-on-accent text-sm font-medium">I</span>
-                                    </div>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-muted truncate">In Progress</dt>
-                                        <dd className="text-lg font-medium text-ink">{taskCounts.in_progress}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-sheet overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
-                                        <span className="text-on-accent text-sm font-medium">C</span>
-                                    </div>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-muted truncate">Completed</dt>
-                                        <dd className="text-lg font-medium text-ink">{taskCounts.completed}</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Filter Tabs */}
-                <div className="mb-6">
-                    <div className="border-b border-rule">
-                        <nav className="-mb-px flex space-x-8">
-                            {[
-                                { key: 'all', label: 'All Tasks', count: taskCounts.all },
-                                { key: 'pending', label: 'Pending', count: taskCounts.pending },
-                                { key: 'in_progress', label: 'In Progress', count: taskCounts.in_progress },
-                                { key: 'completed', label: 'Completed', count: taskCounts.completed },
-                            ].map((tab) => (
-                                <button
-                                    key={tab.key}
-                                    onClick={() => setFilter(tab.key as typeof filter)}
-                                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                                        filter === tab.key
-                                            ? 'border-accent text-accent'
-                                            : 'border-transparent text-muted hover:text-ink hover:border-ink '
-                                    }`}
-                                >
-                                    {tab.label} ({tab.count})
-                                </button>
-                            ))}
-                        </nav>
-                    </div>
-                </div>
-
-                {/* Tasks List */}
-                {filteredTasks.length === 0 ? (
-                    <div className="text-center py-12">
-                        <div className="text-muted">
-                            {filter === 'all' ? 'No tasks found.' : `No ${filter.replace('_', ' ')} tasks found.`}
-                        </div>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {filteredTasks.map((task) => (
-                            <div key={task.id} className="bg-sheet shadow rounded-lg p-6">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-3 mb-2">
-                                            <h3 className="text-lg font-medium text-ink">{task.title}</h3>
-                                            <span
-                                                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(task.status)}`}
-                                            >
-                                                {task.status.replace('_', ' ')}
-                                            </span>
-                                            <span
-                                                className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityBadgeClass(task.priority)}`}
-                                            >
-                                                {task.priority} priority
-                                            </span>
-                                        </div>
-
-                                        {task.description && <p className="text-muted mb-3">{task.description}</p>}
-
-                                        <div className="flex items-center space-x-4 text-sm text-muted">
-                                            <span>
-                                                Client:{' '}
-                                                <Link
-                                                    href={`/clients/${task.client.id}`}
-                                                    className="text-accent hover:text-ink"
-                                                >
-                                                    {task.client.name}
-                                                </Link>
-                                            </span>
-                                            {task.due_date && <span>Due: {formatDate(task.due_date)}</span>}
-                                            <span>Created: {new Date(task.created_at).toLocaleDateString()}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center space-x-2 ml-4">
-                                        {task.status === 'pending' && (
-                                            <button
-                                                onClick={() => updateTaskStatus(task.id, 'in_progress')}
-                                                className="text-ink hover:text-ink text-sm"
-                                            >
-                                                Start
-                                            </button>
-                                        )}
-                                        {task.status !== 'completed' && (
-                                            <button
-                                                onClick={() => updateTaskStatus(task.id, 'completed')}
-                                                className="text-accent hover:text-ink text-sm"
-                                            >
-                                                Complete
-                                            </button>
-                                        )}
-                                        {task.status === 'completed' && (
-                                            <button
-                                                onClick={() => updateTaskStatus(task.id, 'pending')}
-                                                className="text-muted hover:text-ink text-sm"
-                                            >
-                                                Reopen
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => handleEditTask(task)}
-                                            className="text-accent hover:text-ink text-sm"
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() => handleShowDeleteTaskModal(task.id)}
-                                            className="text-danger hover:text-ink text-sm"
-                                            disabled={deletingId === task.id}
-                                        >
-                                            {deletingId === task.id ? 'Deleting...' : 'Delete'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                ))}
             </div>
+
+            {visibleTasks.length === 0 ? (
+                <p className="py-12 text-center">
+                    {filter === 'all'
+                        ? 'Nothing on your list yet. Add a task to get started.'
+                        : `No tasks marked ${statusLabels[filter].toLowerCase()}.`}
+                </p>
+            ) : (
+                <ul className="border-b border-ink">
+                    {visibleTasks.map((task) => {
+                        const isDone = task.status === 'completed'
+                        const due = describeDue(task.due_date)
+
+                        return (
+                            <li
+                                key={task.id}
+                                className="flex flex-wrap justify-between items-center gap-x-8 gap-y-3 py-5 border-t border-ink"
+                            >
+                                <div className="flex-[3_1_18rem] min-w-0">
+                                    <h2 className="font-display text-3xl leading-tight break-words">{task.title}</h2>
+                                    {task.description && <p className="mt-1">{task.description}</p>}
+                                    <p className="mt-1">
+                                        <Link
+                                            href={`/clients/${task.client.id}`}
+                                            className="underline underline-offset-4 hover:text-accent"
+                                        >
+                                            {task.client.name}
+                                        </Link>
+                                        , {task.priority} priority
+                                    </p>
+                                    <p
+                                        className={
+                                            !isDone && due.needsYou ? 'italic font-semibold text-accent' : 'italic'
+                                        }
+                                    >
+                                        {isDone ? 'Done' : due.label}
+                                    </p>
+                                </div>
+
+                                <div className="flex-[1_1_15rem] min-w-0 flex flex-wrap items-end gap-x-4 gap-y-2">
+                                    <div>
+                                        <label htmlFor={`status-${task.id}`} className="block text-base">
+                                            Status
+                                        </label>
+                                        <select
+                                            id={`status-${task.id}`}
+                                            value={task.status}
+                                            onChange={(e) =>
+                                                updateTaskStatus(task.id, e.target.value as Task['status'])
+                                            }
+                                            className={inputClass}
+                                        >
+                                            <option value="pending">{statusLabels.pending}</option>
+                                            <option value="in_progress">{statusLabels.in_progress}</option>
+                                            <option value="completed">{statusLabels.completed}</option>
+                                        </select>
+                                    </div>
+                                    <button
+                                        onClick={() => handleEditTask(task)}
+                                        aria-label={`Edit ${task.title}`}
+                                        className={textButtonClass}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleShowDeleteTaskModal(task.id)}
+                                        aria-label={`Delete ${task.title}`}
+                                        className={textButtonClass}
+                                        disabled={deletingId === task.id}
+                                    >
+                                        {deletingId === task.id ? 'Deleting...' : 'Delete'}
+                                    </button>
+                                </div>
+                            </li>
+                        )
+                    })}
+                </ul>
+            )}
         </div>
     )
 }

@@ -1,12 +1,18 @@
 import type { Task } from '@/lib/supabase'
 
+export const statusLabels: Record<Task['status'], string> = {
+    pending: 'Not started',
+    in_progress: 'In progress',
+    completed: 'Done',
+}
+
 const priorityRank: Record<Task['priority'], number> = { high: 0, medium: 1, low: 2 }
 
 /**
  * Most urgent first: earliest due date, then tasks with no due date, then higher priority.
  * Completed tasks are left out. Due dates are 'YYYY-MM-DD', so they compare correctly as text.
  */
-export function sortByUrgency(tasks: Task[]): Task[] {
+export function sortByUrgency<T extends Task>(tasks: T[]): T[] {
     return tasks
         .filter((task) => task.status !== 'completed')
         .sort((a, b) => {
