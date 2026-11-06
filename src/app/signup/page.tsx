@@ -83,30 +83,21 @@ export default function SignUpPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-paper px-4">
             <div className="max-w-md w-full space-y-8">
                 <AuthMasthead />
                 {checkEmail ? (
                     <>
-                        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-                            Check your email!
-                        </h1>
-                        <p
-                            role="status"
-                            aria-live="polite"
-                            className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400"
-                        >
+                        <h1 className="text-3xl font-bold text-center text-ink">Check your email!</h1>
+                        <p role="status" aria-live="polite" className="mt-2 text-center text-sm text-muted">
                             We sent a confirmation email to{' '}
-                            <span className="font-medium text-blue-600 dark:text-blue-400">{checkEmail}</span>.
+                            <span className="font-medium text-accent">{checkEmail}</span>.
                         </p>
-                        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+                        <p className="mt-2 text-center text-sm text-muted">
                             Please click the link in the email to confirm your account.
                         </p>
-                        <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-                            <Link
-                                href="/login"
-                                className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-                            >
+                        <p className="mt-2 text-center text-sm text-muted">
+                            <Link href="/login" className="font-medium text-accent hover:text-ink">
                                 Sign in to your account
                             </Link>
                         </p>
@@ -115,13 +106,10 @@ export default function SignUpPage() {
                     <>
                         {/* Header */}
                         <div>
-                            <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white">Sign Up</h1>
-                            <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+                            <h1 className="text-3xl font-bold text-center text-ink">Sign Up</h1>
+                            <p className="mt-2 text-center text-sm text-muted">
                                 Or{' '}
-                                <Link
-                                    href="/login"
-                                    className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-                                >
+                                <Link href="/login" className="font-medium text-accent hover:text-ink">
                                     sign in to your account
                                 </Link>
                             </p>
@@ -129,13 +117,13 @@ export default function SignUpPage() {
 
                         {/* Form Card */}
 
-                        <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow rounded-lg">
+                        <div className="bg-sheet py-8 px-6 shadow rounded-lg">
                             <form className="space-y-6" onSubmit={handleSubmitSignup(handleSubmit)}>
                                 {/* Error Display */}
                                 {error && (
                                     <div
                                         role="alert"
-                                        className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-400 px-4 py-3 rounded-lg text-sm"
+                                        className="bg-sheet border border-danger text-danger px-4 py-3 rounded-lg text-sm"
                                     >
                                         {error}
                                     </div>
@@ -143,10 +131,7 @@ export default function SignUpPage() {
 
                                 {/* Email Input */}
                                 <div>
-                                    <label
-                                        htmlFor="email"
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                    >
+                                    <label htmlFor="email" className="block text-sm font-medium text-ink mb-2">
                                         Email address
                                     </label>
                                     <input
@@ -156,22 +141,17 @@ export default function SignUpPage() {
                                         autoFocus
                                         {...registerSignup('email')}
                                         disabled={loading}
-                                        className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="appearance-none block w-full px-3 py-2 border border-rule rounded-lg shadow-sm placeholder-muted focus:outline-none focus:ring-accent focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
                                         placeholder="you@example.com"
                                     />
                                     {signupErrors && (
-                                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                            {signupErrors.email?.message}
-                                        </p>
+                                        <p className="mt-1 text-sm text-danger">{signupErrors.email?.message}</p>
                                     )}
                                 </div>
 
                                 {/* Password Input */}
                                 <div>
-                                    <label
-                                        htmlFor="password"
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                    >
+                                    <label htmlFor="password" className="block text-sm font-medium text-ink mb-2">
                                         Password
                                     </label>
                                     <input
@@ -180,13 +160,11 @@ export default function SignUpPage() {
                                         type="password"
                                         autoComplete="current-password"
                                         disabled={loading}
-                                        className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="appearance-none block w-full px-3 py-2 border border-rule rounded-lg shadow-sm placeholder-muted focus:outline-none focus:ring-accent focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
                                         placeholder="••••••••"
                                     />
                                     {signupErrors && (
-                                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                            {signupErrors.password?.message}
-                                        </p>
+                                        <p className="mt-1 text-sm text-danger">{signupErrors.password?.message}</p>
                                     )}
                                 </div>
 
@@ -194,7 +172,7 @@ export default function SignUpPage() {
                                 <div>
                                     <label
                                         htmlFor="confirm-password"
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                        className="block text-sm font-medium text-ink mb-2"
                                     >
                                         Confirm Password
                                     </label>
@@ -205,11 +183,11 @@ export default function SignUpPage() {
                                         autoComplete="confirm-password"
                                         required
                                         disabled={loading}
-                                        className="appearance-none block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="appearance-none block w-full px-3 py-2 border border-rule rounded-lg shadow-sm placeholder-muted focus:outline-none focus:ring-accent focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
                                         placeholder="••••••••"
                                     />
                                     {signupErrors && (
-                                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                                        <p className="mt-1 text-sm text-danger">
                                             {signupErrors.confirmPassword?.message}
                                         </p>
                                     )}
@@ -220,7 +198,7 @@ export default function SignUpPage() {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600"
+                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-on-accent bg-accent hover:bg-ink focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {loading ? 'Signing up...' : 'Sign Up'}
                                     </button>

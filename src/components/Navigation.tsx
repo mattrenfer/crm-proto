@@ -15,7 +15,7 @@ export default function Navigation() {
     ]
 
     return (
-        <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <nav className="bg-sheet border-b border-rule">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex">
@@ -31,8 +31,8 @@ export default function Navigation() {
                                     href={item.href}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                                         pathname === item.href
-                                            ? 'border-blue-500 text-gray-900 dark:text-white'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-300 dark:hover:text-white'
+                                            ? 'border-accent text-ink '
+                                            : 'border-transparent text-muted hover:text-ink hover:border-ink  '
                                     }`}
                                 >
                                     {item.label}
@@ -42,23 +42,23 @@ export default function Navigation() {
                     </div>
                     {user ? (
                         <div className="flex items-center space-x-4">
-                            <span className="hidden sm:inline text-sm text-gray-500">{user.email}</span>
+                            <span className="hidden sm:inline text-sm text-muted">{user.email}</span>
                             <button
                                 onClick={async () => {
                                     await signOut()
                                     window.location.assign('/login')
                                 }}
-                                className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer"
+                                className="text-sm text-muted hover:text-ink cursor-pointer"
                             >
                                 Logout
                             </button>
                         </div>
                     ) : (
                         <div className="flex items-center space-x-4">
-                            <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700">
+                            <Link href="/login" className="text-sm text-muted hover:text-ink">
                                 Login
                             </Link>
-                            <Link href="/signup" className="text-sm text-gray-500 hover:text-gray-700">
+                            <Link href="/signup" className="text-sm text-muted hover:text-ink">
                                 Signup
                             </Link>
                         </div>
@@ -73,9 +73,7 @@ export default function Navigation() {
                                 href={item.href}
                                 aria-current={pathname === item.href ? 'page' : undefined}
                                 className={`text-sm font-medium ${
-                                    pathname === item.href
-                                        ? 'text-gray-900 dark:text-white'
-                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white'
+                                    pathname === item.href ? 'text-ink ' : 'text-muted hover:text-ink  '
                                 }`}
                             >
                                 {item.label}

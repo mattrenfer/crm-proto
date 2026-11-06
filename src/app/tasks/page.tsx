@@ -149,22 +149,22 @@ export default function TasksPage() {
     const getStatusBadgeClass = (status: Task['status']) => {
         switch (status) {
             case 'completed':
-                return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                return 'bg-sheet text-accent'
             case 'in_progress':
-                return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                return 'bg-sheet text-ink'
             default:
-                return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                return 'bg-rule text-ink'
         }
     }
 
     const getPriorityBadgeClass = (priority: Task['priority']) => {
         switch (priority) {
             case 'high':
-                return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                return 'bg-sheet text-danger'
             case 'medium':
-                return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                return 'bg-sheet text-ink'
             default:
-                return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                return 'bg-rule text-ink'
         }
     }
 
@@ -176,11 +176,8 @@ export default function TasksPage() {
         return (
             <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                 <div className="text-center py-12">
-                    <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
-                    <button
-                        onClick={loadTasks}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
+                    <div className="text-danger mb-4">{error}</div>
+                    <button onClick={loadTasks} className="px-4 py-2 bg-accent text-on-accent rounded-md hover:bg-ink">
                         Try Again
                     </button>
                 </div>
@@ -242,10 +239,10 @@ export default function TasksPage() {
             />
             <div className="px-4 py-6 sm:px-0">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tasks</h1>
+                    <h1 className="text-3xl font-bold text-ink">Tasks</h1>
                     <button
                         onClick={handleAddTask}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-on-accent bg-accent hover:bg-ink focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
                     >
                         Add Task
                     </button>
@@ -262,88 +259,72 @@ export default function TasksPage() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div className="bg-sheet overflow-hidden shadow rounded-lg">
                         <div className="p-5">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                        <span className="text-white text-sm font-medium">A</span>
+                                    <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+                                        <span className="text-on-accent text-sm font-medium">A</span>
                                     </div>
                                 </div>
                                 <div className="ml-5 w-0 flex-1">
                                     <dl>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                            All Tasks
-                                        </dt>
-                                        <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                                            {taskCounts.all}
-                                        </dd>
+                                        <dt className="text-sm font-medium text-muted truncate">All Tasks</dt>
+                                        <dd className="text-lg font-medium text-ink">{taskCounts.all}</dd>
                                     </dl>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div className="bg-sheet overflow-hidden shadow rounded-lg">
                         <div className="p-5">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">
-                                        <span className="text-white text-sm font-medium">P</span>
+                                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                        <span className="text-on-accent text-sm font-medium">P</span>
                                     </div>
                                 </div>
                                 <div className="ml-5 w-0 flex-1">
                                     <dl>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                            Pending
-                                        </dt>
-                                        <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                                            {taskCounts.pending}
-                                        </dd>
+                                        <dt className="text-sm font-medium text-muted truncate">Pending</dt>
+                                        <dd className="text-lg font-medium text-ink">{taskCounts.pending}</dd>
                                     </dl>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div className="bg-sheet overflow-hidden shadow rounded-lg">
                         <div className="p-5">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                                        <span className="text-white text-sm font-medium">I</span>
+                                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                                        <span className="text-on-accent text-sm font-medium">I</span>
                                     </div>
                                 </div>
                                 <div className="ml-5 w-0 flex-1">
                                     <dl>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                            In Progress
-                                        </dt>
-                                        <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                                            {taskCounts.in_progress}
-                                        </dd>
+                                        <dt className="text-sm font-medium text-muted truncate">In Progress</dt>
+                                        <dd className="text-lg font-medium text-ink">{taskCounts.in_progress}</dd>
                                     </dl>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div className="bg-sheet overflow-hidden shadow rounded-lg">
                         <div className="p-5">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0">
-                                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                        <span className="text-white text-sm font-medium">C</span>
+                                    <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+                                        <span className="text-on-accent text-sm font-medium">C</span>
                                     </div>
                                 </div>
                                 <div className="ml-5 w-0 flex-1">
                                     <dl>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                            Completed
-                                        </dt>
-                                        <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                                            {taskCounts.completed}
-                                        </dd>
+                                        <dt className="text-sm font-medium text-muted truncate">Completed</dt>
+                                        <dd className="text-lg font-medium text-ink">{taskCounts.completed}</dd>
                                     </dl>
                                 </div>
                             </div>
@@ -353,7 +334,7 @@ export default function TasksPage() {
 
                 {/* Filter Tabs */}
                 <div className="mb-6">
-                    <div className="border-b border-gray-200 dark:border-gray-700">
+                    <div className="border-b border-rule">
                         <nav className="-mb-px flex space-x-8">
                             {[
                                 { key: 'all', label: 'All Tasks', count: taskCounts.all },
@@ -366,8 +347,8 @@ export default function TasksPage() {
                                     onClick={() => setFilter(tab.key as typeof filter)}
                                     className={`py-2 px-1 border-b-2 font-medium text-sm ${
                                         filter === tab.key
-                                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
+                                            ? 'border-accent text-accent '
+                                            : 'border-transparent text-muted hover:text-ink hover:border-ink '
                                     }`}
                                 >
                                     {tab.label} ({tab.count})
@@ -380,20 +361,18 @@ export default function TasksPage() {
                 {/* Tasks List */}
                 {filteredTasks.length === 0 ? (
                     <div className="text-center py-12">
-                        <div className="text-gray-500 dark:text-gray-400">
+                        <div className="text-muted">
                             {filter === 'all' ? 'No tasks found.' : `No ${filter.replace('_', ' ')} tasks found.`}
                         </div>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         {filteredTasks.map((task) => (
-                            <div key={task.id} className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                            <div key={task.id} className="bg-sheet shadow rounded-lg p-6">
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-3 mb-2">
-                                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                                                {task.title}
-                                            </h3>
+                                            <h3 className="text-lg font-medium text-ink">{task.title}</h3>
                                             <span
                                                 className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(task.status)}`}
                                             >
@@ -406,16 +385,14 @@ export default function TasksPage() {
                                             </span>
                                         </div>
 
-                                        {task.description && (
-                                            <p className="text-gray-600 dark:text-gray-300 mb-3">{task.description}</p>
-                                        )}
+                                        {task.description && <p className="text-muted mb-3">{task.description}</p>}
 
-                                        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                                        <div className="flex items-center space-x-4 text-sm text-muted">
                                             <span>
                                                 Client:{' '}
                                                 <Link
                                                     href={`/clients/${task.client.id}`}
-                                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                                    className="text-accent hover:text-ink"
                                                 >
                                                     {task.client.name}
                                                 </Link>
@@ -429,7 +406,7 @@ export default function TasksPage() {
                                         {task.status === 'pending' && (
                                             <button
                                                 onClick={() => updateTaskStatus(task.id, 'in_progress')}
-                                                className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300 text-sm"
+                                                className="text-ink hover:text-ink text-sm"
                                             >
                                                 Start
                                             </button>
@@ -437,7 +414,7 @@ export default function TasksPage() {
                                         {task.status !== 'completed' && (
                                             <button
                                                 onClick={() => updateTaskStatus(task.id, 'completed')}
-                                                className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 text-sm"
+                                                className="text-accent hover:text-ink text-sm"
                                             >
                                                 Complete
                                             </button>
@@ -445,20 +422,20 @@ export default function TasksPage() {
                                         {task.status === 'completed' && (
                                             <button
                                                 onClick={() => updateTaskStatus(task.id, 'pending')}
-                                                className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 text-sm"
+                                                className="text-muted hover:text-ink text-sm"
                                             >
                                                 Reopen
                                             </button>
                                         )}
                                         <button
                                             onClick={() => handleEditTask(task)}
-                                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                                            className="text-accent hover:text-ink text-sm"
                                         >
                                             Edit
                                         </button>
                                         <button
                                             onClick={() => handleShowDeleteTaskModal(task.id)}
-                                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                            className="text-danger hover:text-ink text-sm"
                                             disabled={deletingId === task.id}
                                         >
                                             {deletingId === task.id ? 'Deleting...' : 'Delete'}

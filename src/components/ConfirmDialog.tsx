@@ -46,7 +46,7 @@ export default function ConfirmDialog({
                     {confirmLabel}
                 </h2>
                 {confirmDescription && (
-                    <p className="text-gray-500 text-center" id={descriptionId}>
+                    <p className="text-muted text-center" id={descriptionId}>
                         {confirmDescription}
                     </p>
                 )}
@@ -55,14 +55,14 @@ export default function ConfirmDialog({
                 <button
                     onClick={() => onConfirm()}
                     disabled={isDeleting}
-                    className="bg-red-700 text-white px-4 py-2 rounded-md w-full hover:bg-red-800"
+                    className="bg-danger text-on-accent px-4 py-2 rounded-md w-full hover:bg-ink"
                 >
                     {isDeleting ? 'Deleting...' : 'Confirm'}
                 </button>
                 <button
                     onClick={onCancel}
                     disabled={isDeleting}
-                    className="bg-white text-gray-700 px-4 py-2 rounded-md w-full hover:bg-gray-100"
+                    className="bg-sheet text-ink px-4 py-2 rounded-md w-full hover:bg-paper"
                 >
                     Cancel
                 </button>

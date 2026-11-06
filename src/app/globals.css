@@ -7,6 +7,10 @@
     --ink: #17140f; /* text and rules */
     --accent: #0f5c63; /* deep teal, used rarely to mark things */
     --on-accent: #f6f2e9; /* text on an accent background */
+    --muted: #4f493f; /* secondary text */
+    --rule: #b9b2a4; /* thin lines and input borders */
+    --danger: #a3261b; /* errors and deleting, nothing else */
+    color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -16,6 +20,10 @@
         --ink: #ece5d6;
         --accent: #74cdc6;
         --on-accent: #1c1a17;
+        --muted: #b8b0a1;
+        --rule: #4a453d;
+        --danger: #f0a094;
+        color-scheme: dark;
     }
 }
 
@@ -26,6 +34,9 @@
     --color-ink: var(--ink);
     --color-accent: var(--accent);
     --color-on-accent: var(--on-accent);
+    --color-muted: var(--muted);
+    --color-rule: var(--rule);
+    --color-danger: var(--danger);
     --font-body: var(--font-newsreader), Georgia, serif;
     --font-display: var(--font-young-serif), Georgia, serif;
 }
