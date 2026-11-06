@@ -1,26 +1,37 @@
 @import 'tailwindcss';
 
+/* Handful's colors. Components use these names, so the values only change here. */
 :root {
-    --background: #ffffff;
-    --foreground: #171717;
-}
-
-@theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
+    --paper: #ece7dc; /* page background */
+    --sheet: #f6f2e9; /* inputs and raised surfaces */
+    --ink: #17140f; /* text and rules */
+    --accent: #0f5c63; /* deep teal, used rarely to mark things */
+    --on-accent: #f6f2e9; /* text on an accent background */
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
+        --paper: #1c1a17;
+        --sheet: #27241f;
+        --ink: #ece5d6;
+        --accent: #74cdc6;
+        --on-accent: #1c1a17;
     }
 }
 
+/* Turns the values above into Tailwind classes: bg-paper, text-ink, font-display */
+@theme inline {
+    --color-paper: var(--paper);
+    --color-sheet: var(--sheet);
+    --color-ink: var(--ink);
+    --color-accent: var(--accent);
+    --color-on-accent: var(--on-accent);
+    --font-body: var(--font-newsreader), Georgia, serif;
+    --font-display: var(--font-young-serif), Georgia, serif;
+}
+
 body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: Arial, Helvetica, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-newsreader), Georgia, serif;
 }
