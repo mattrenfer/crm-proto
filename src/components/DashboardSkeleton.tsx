@@ -3,42 +3,30 @@ import Skeleton from '@/components/Skeleton'
 // Mirrors the layout of src/app/page.tsx so content fills in without shifting.
 export default function DashboardSkeleton() {
     return (
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div className="px-4 py-6 sm:px-0">
-                {/* Header: title + subtitle (centered) */}
-                <div className="flex flex-col items-center mb-8">
-                    <Skeleton className="h-10 w-80 mb-4" />
-                    <Skeleton className="h-5 w-72 my-1" />
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 text-lg">
+            {/* Masthead */}
+            <div className="flex flex-col items-center gap-3">
+                <Skeleton className="h-[clamp(4rem,13vw,10rem)] w-3/5" />
+                <div className="w-full pt-3 border-t-4 border-double border-ink">
+                    <Skeleton className="h-7 w-full" />
+                </div>
+            </div>
+
+            <div className="mt-12 flex flex-wrap gap-x-16 gap-y-10">
+                {/* Lead story */}
+                <div className="flex-[2_1_26rem] min-w-0">
+                    <Skeleton className="h-7 w-20" />
+                    <Skeleton className="h-16 w-full mt-4" />
+                    <Skeleton className="h-16 w-2/3 mt-2" />
                 </div>
 
-                {/* Stats: 3 cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {/* Also next */}
+                <div className="flex-[1_1_18rem] min-w-0 pt-4 border-t border-ink">
+                    <Skeleton className="h-8 w-32" />
                     {Array.from({ length: 3 }, (_, i) => (
-                        <div key={i} className="bg-sheet overflow-hidden shadow rounded-lg">
-                            <div className="p-5">
-                                <div className="flex items-center">
-                                    <Skeleton className="h-8 w-8 flex-shrink-0" />
-                                    <div className="ml-5 flex-1">
-                                        <Skeleton className="h-4 w-24 my-0.5" />
-                                        <Skeleton className="h-8 w-12 my-0.5" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Quick actions: 2 cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    {Array.from({ length: 2 }, (_, i) => (
-                        <div key={i} className="border border-rule rounded-lg p-6">
-                            <div className="flex items-center">
-                                <Skeleton className="h-9 w-9 mr-4 flex-shrink-0" />
-                                <div className="flex-1">
-                                    <Skeleton className="h-5 w-36 my-1" />
-                                    <Skeleton className="h-4 w-64 max-w-full my-1" />
-                                </div>
-                            </div>
+                        <div key={i} className="mt-4">
+                            <Skeleton className="h-7 w-full" />
+                            <Skeleton className="h-7 w-20 mt-1" />
                         </div>
                     ))}
                 </div>
