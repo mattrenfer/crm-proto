@@ -37,12 +37,12 @@ export default function ConfirmDialog({
         <dialog
             onClose={onCancel}
             ref={dialogModal}
-            className="p-6 rounded-lg shadow-xl backdrop:bg-black/50 open:flex open:flex-col m-auto"
+            className="p-6 bg-paper text-ink border border-ink rounded-sm shadow-xl backdrop:bg-black/50 open:flex open:flex-col m-auto"
             aria-labelledby={titleId}
             aria-describedby={descriptionId}
         >
             <div className="flex flex-col gap-2 items-center mb-4">
-                <h2 className="text-2xl font-bold text-center" id={titleId}>
+                <h2 className="font-display text-2xl text-center" id={titleId}>
                     {confirmLabel}
                 </h2>
                 {confirmDescription && (
@@ -55,14 +55,14 @@ export default function ConfirmDialog({
                 <button
                     onClick={() => onConfirm()}
                     disabled={isDeleting}
-                    className="bg-danger text-on-accent px-4 py-2 rounded-md w-full hover:bg-ink"
+                    className="bg-danger text-on-accent px-4 min-h-12 rounded-sm w-full font-semibold cursor-pointer hover:bg-ink"
                 >
                     {isDeleting ? 'Deleting...' : 'Confirm'}
                 </button>
                 <button
                     onClick={onCancel}
                     disabled={isDeleting}
-                    className="bg-sheet text-ink px-4 py-2 rounded-md w-full hover:bg-paper"
+                    className="text-ink border border-ink px-4 min-h-12 rounded-sm w-full cursor-pointer hover:bg-sheet"
                 >
                     Cancel
                 </button>

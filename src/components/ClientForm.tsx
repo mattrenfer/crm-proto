@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { clientSchema, ClientFormData } from '@/lib/schemas'
 import { Client } from '@/lib/supabase'
 import { useEffect } from 'react'
+import { buttonClass, errorClass, inputClass, labelClass, secondaryButtonClass } from '@/lib/formStyles'
 
 export default function ClientForm({
     client,
@@ -35,68 +36,50 @@ export default function ClientForm({
         }
     }, [client, resetClientForm])
     return (
-        <div className="mb-6 bg-sheet shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-ink mb-4">{client ? 'Edit Client' : 'Add New Client'}</h2>
-            <form onSubmit={handleSubmitClient(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mb-10 pt-4 border-t border-ink">
+            <h2 className="font-display text-2xl mb-5">{client ? 'Edit client' : 'Add a client'}</h2>
+            <form onSubmit={handleSubmitClient(onSubmit)} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label className="block text-sm font-medium text-ink">Name *</label>
-                        <input
-                            type="text"
-                            {...registerClient('name')}
-                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
-                        />
-                        {clientErrors.name && <p className="mt-1 text-sm text-danger">{clientErrors.name?.message}</p>}
+                        <label htmlFor="client-name" className={labelClass}>
+                            Name *
+                        </label>
+                        <input id="client-name" type="text" {...registerClient('name')} className={inputClass} />
+                        {clientErrors.name && <p className={errorClass}>{clientErrors.name?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-ink">Email *</label>
-                        <input
-                            type="email"
-                            {...registerClient('email')}
-                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
-                        />
-                        {clientErrors.email && (
-                            <p className="mt-1 text-sm text-danger">{clientErrors.email?.message}</p>
-                        )}
+                        <label htmlFor="client-email" className={labelClass}>
+                            Email *
+                        </label>
+                        <input id="client-email" type="email" {...registerClient('email')} className={inputClass} />
+                        {clientErrors.email && <p className={errorClass}>{clientErrors.email?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-ink">Phone</label>
-                        <input
-                            type="tel"
-                            {...registerClient('phone')}
-                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
-                        />
-                        {clientErrors.phone && (
-                            <p className="mt-1 text-sm text-danger">{clientErrors.phone?.message}</p>
-                        )}
+                        <label htmlFor="client-phone" className={labelClass}>
+                            Phone
+                        </label>
+                        <input id="client-phone" type="tel" {...registerClient('phone')} className={inputClass} />
+                        {clientErrors.phone && <p className={errorClass}>{clientErrors.phone?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-ink">Company</label>
-                        <input
-                            type="text"
-                            {...registerClient('company')}
-                            className="mt-1 block w-full border-rule rounded-md shadow-sm focus:ring-accent focus:border-accent"
-                        />
-                        {clientErrors.company && (
-                            <p className="mt-1 text-sm text-danger">{clientErrors.company?.message}</p>
-                        )}
+                        <label htmlFor="client-company" className={labelClass}>
+                            Company
+                        </label>
+                        <input id="client-company" type="text" {...registerClient('company')} className={inputClass} />
+                        {clientErrors.company && <p className={errorClass}>{clientErrors.company?.message}</p>}
                     </div>
                 </div>
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end gap-3">
                     <button
                         type="button"
                         disabled={isSubmittingClient}
                         onClick={() => onCancel()}
-                        className="px-4 py-2 border border-rule rounded-md shadow-sm text-sm font-medium text-ink bg-sheet hover:bg-paper focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
+                        className={secondaryButtonClass}
                     >
                         Cancel
                     </button>
-                    <button
-                        type="submit"
-                        disabled={isSubmittingClient}
-                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-on-accent bg-accent hover:bg-ink focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
-                    >
-                        {isSubmittingClient ? 'Saving...' : client ? 'Update Client' : 'Add Client'}
+                    <button type="submit" disabled={isSubmittingClient} className={buttonClass}>
+                        {isSubmittingClient ? 'Saving...' : client ? 'Save changes' : 'Add client'}
                     </button>
                 </div>
             </form>

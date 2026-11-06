@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getClients, createClient, updateClient, deleteClient } from '@/lib/data'
-import type { Client } from '@/lib/supabase'
+import { getClients, getTasks, createClient, updateClient, deleteClient } from '@/lib/data'
+import type { Client, Task } from '@/lib/supabase'
+import { describeDue } from '@/lib/dates'
+import { buttonClass, textButtonClass } from '@/lib/formStyles'
+import { getNextTaskByClient } from '@/lib/tasks'
+import PageHeader from '@/components/PageHeader'
 import toast from 'react-hot-toast'
 import ClientForm from '@/components/ClientForm'
 import { ClientFormData } from '@/lib/schemas'
@@ -12,6 +16,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
+    const [tasks, setTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [showClientForm, setShowClientForm] = useState(false)
@@ -27,8 +32,9 @@ export default function ClientsPage() {
         try {
             setLoading(true)
             setError(null)
-            const data = await getClients()
-            setClients(data)
+            const [clientsData, tasksData] = await Promise.all([getClients(), getTasks()])
+            setClients(clientsData)
+            setTasks(tasksData)
         } catch (err) {
             console.error('Failed to load clients:', err)
             setError('Failed to load clients. Please try again.')
@@ -129,22 +135,19 @@ export default function ClientsPage() {
 
     if (error) {
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <div className="text-danger mb-4">{error}</div>
-                    <button
-                        onClick={loadClients}
-                        className="px-4 py-2 bg-accent text-on-accent rounded-md hover:bg-ink"
-                    >
-                        Try Again
-                    </button>
-                </div>
+            <div className="max-w-6xl mx-auto px-4 sm:px-8 py-16 text-lg text-center">
+                <p className="text-danger mb-4">{error}</p>
+                <button onClick={loadClients} className={buttonClass}>
+                    Try again
+                </button>
             </div>
         )
     }
 
+    const nextTasks = getNextTaskByClient(tasks)
+
     return (
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-10 text-lg">
             <ConfirmDialog
                 open={pendingDeleteId !== null}
                 isDeleting={deletingId !== null}
@@ -153,79 +156,83 @@ export default function ClientsPage() {
                 confirmLabel="Are you sure you want to delete?"
                 confirmDescription="This action cannot be undone. This will delete the client and all associated data."
             />
-            <div className="px-4 py-6 sm:px-0">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-ink">Clients</h1>
-                    <button
-                        onClick={handleAddClient}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-on-accent bg-accent hover:bg-ink focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent"
-                    >
-                        Add Client
-                    </button>
-                </div>
 
-                {/* Client Form */}
-                {showClientForm && (
-                    <ClientForm client={editingClient} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
-                )}
+            <PageHeader
+                title="Your people"
+                subtitle={`${clients.length} ${clients.length === 1 ? 'client' : 'clients'}`}
+            >
+                <button onClick={handleAddClient} className={buttonClass}>
+                    Add a client
+                </button>
+            </PageHeader>
 
-                {/* Clients List */}
-                {clients.length === 0 ? (
-                    <div className="text-center py-12">
-                        <div className="text-muted">No clients found. Add your first client to get started!</div>
-                    </div>
-                ) : (
-                    <div className="bg-sheet shadow overflow-hidden sm:rounded-md">
-                        <ul className="divide-y divide-rule">
-                            {clients.map((client) => (
-                                <li key={client.id}>
-                                    <div className="px-4 py-4 sm:px-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div>
-                                                    <p className="text-sm font-medium text-accent">
-                                                        <Link href={`/clients/${client.id}`}>{client.name}</Link>
-                                                    </p>
-                                                    <p className="text-sm text-muted">{client.email}</p>
-                                                    {client.company && (
-                                                        <p className="text-sm text-muted">{client.company}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                <Link
-                                                    href={`/clients/${client.id}`}
-                                                    className="text-accent hover:text-ink"
-                                                >
-                                                    View
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleEditClient(client)}
-                                                    className="text-accent hover:text-ink"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleShowDeleteModal(client.id)}
-                                                    className="text-danger hover:text-ink"
-                                                    disabled={deletingId === client.id}
-                                                >
-                                                    {deletingId === client.id ? 'Deleting...' : 'Delete'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                        {client.phone && (
-                                            <div className="mt-2">
-                                                <p className="text-sm text-muted">📞 {client.phone}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-            </div>
+            {showClientForm && (
+                <ClientForm client={editingClient} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
+            )}
+
+            {clients.length === 0 ? (
+                <p className="py-12 text-center">No one here yet. Add your first client to get started.</p>
+            ) : (
+                <ul className="border-b border-ink">
+                    {clients.map((client) => {
+                        const nextTask = nextTasks.get(client.id)
+                        const due = nextTask && describeDue(nextTask.due_date)
+
+                        return (
+                            <li
+                                key={client.id}
+                                className="flex flex-wrap justify-between gap-x-8 gap-y-2 py-5 border-t border-ink"
+                            >
+                                <div className="flex-[2_1_16rem] min-w-0">
+                                    <h2 className="font-display text-3xl leading-tight break-words">
+                                        <Link href={`/clients/${client.id}`} className="hover:text-accent">
+                                            {client.name}
+                                        </Link>
+                                    </h2>
+                                    <p className="mt-1 break-words">
+                                        {client.company && <>{client.company}, </>}
+                                        <a href={`mailto:${client.email}`} className="underline underline-offset-4">
+                                            {client.email}
+                                        </a>
+                                        {client.phone && <>, {client.phone}</>}
+                                    </p>
+                                </div>
+
+                                <div className="flex-[1_1_13rem] min-w-0">
+                                    {nextTask && due ? (
+                                        <>
+                                            <p>{nextTask.title}</p>
+                                            <p className={due.needsYou ? 'italic font-semibold text-accent' : 'italic'}>
+                                                {due.label}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className="italic text-muted">Nothing planned</p>
+                                    )}
+                                </div>
+
+                                <div className="flex items-start gap-3">
+                                    <button
+                                        onClick={() => handleEditClient(client)}
+                                        aria-label={`Edit ${client.name}`}
+                                        className={textButtonClass}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleShowDeleteModal(client.id)}
+                                        aria-label={`Delete ${client.name}`}
+                                        className={textButtonClass}
+                                        disabled={deletingId === client.id}
+                                    >
+                                        {deletingId === client.id ? 'Deleting...' : 'Delete'}
+                                    </button>
+                                </div>
+                            </li>
+                        )
+                    })}
+                </ul>
+            )}
         </div>
     )
 }

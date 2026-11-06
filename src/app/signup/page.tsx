@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import AuthLayout, { authButtonClass, authErrorClass, authInputClass, authLabelClass } from '@/components/AuthLayout'
+import AuthLayout from '@/components/AuthLayout'
+import { buttonClass, errorClass, inputClass, labelClass } from '@/lib/formStyles'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signupSchema, SignupFormData } from '@/lib/schemas'
@@ -109,7 +110,7 @@ export default function SignUpPage() {
                         )}
 
                         <div>
-                            <label htmlFor="email" className={authLabelClass}>
+                            <label htmlFor="email" className={labelClass}>
                                 Email address
                             </label>
                             <input
@@ -119,13 +120,13 @@ export default function SignUpPage() {
                                 autoFocus
                                 {...registerSignup('email')}
                                 disabled={loading}
-                                className={authInputClass}
+                                className={inputClass}
                             />
-                            {signupErrors.email && <p className={authErrorClass}>{signupErrors.email.message}</p>}
+                            {signupErrors.email && <p className={errorClass}>{signupErrors.email.message}</p>}
                         </div>
 
                         <div>
-                            <label htmlFor="password" className={authLabelClass}>
+                            <label htmlFor="password" className={labelClass}>
                                 Password
                             </label>
                             <input
@@ -134,13 +135,13 @@ export default function SignUpPage() {
                                 type="password"
                                 autoComplete="new-password"
                                 disabled={loading}
-                                className={authInputClass}
+                                className={inputClass}
                             />
-                            {signupErrors.password && <p className={authErrorClass}>{signupErrors.password.message}</p>}
+                            {signupErrors.password && <p className={errorClass}>{signupErrors.password.message}</p>}
                         </div>
 
                         <div>
-                            <label htmlFor="confirm-password" className={authLabelClass}>
+                            <label htmlFor="confirm-password" className={labelClass}>
                                 Confirm password
                             </label>
                             <input
@@ -150,14 +151,14 @@ export default function SignUpPage() {
                                 autoComplete="new-password"
                                 required
                                 disabled={loading}
-                                className={authInputClass}
+                                className={inputClass}
                             />
                             {signupErrors.confirmPassword && (
-                                <p className={authErrorClass}>{signupErrors.confirmPassword.message}</p>
+                                <p className={errorClass}>{signupErrors.confirmPassword.message}</p>
                             )}
                         </div>
 
-                        <button type="submit" disabled={loading} className={authButtonClass}>
+                        <button type="submit" disabled={loading} className={`${buttonClass} w-full`}>
                             {loading ? 'Creating your account...' : 'Create an account'}
                         </button>
                     </form>
