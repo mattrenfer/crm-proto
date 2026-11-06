@@ -23,11 +23,13 @@ export default function Navigation() {
                 <div className="flex justify-between h-16">
                     <div className="flex">
                         <div className="flex-shrink-0 flex items-center">
-                            <Link href="/">
-                                <Logo className="text-4xl" />
-                            </Link>
+                            {pathname !== '/' && (
+                                <Link href="/">
+                                    <Logo className="text-4xl" />
+                                </Link>
+                            )}
                         </div>
-                        <div className="hidden sm:ml-10 sm:flex sm:space-x-8">
+                        <div className={`hidden sm:flex sm:space-x-8 ${pathname === '/' ? '' : 'sm:ml-10'}`}>
                             {navItems.map((item) => (
                                 <Link
                                     key={item.href}
@@ -86,7 +88,7 @@ export default function Navigation() {
                         ))}
                     </div>
                 )}
-                <div className="border-b-4 border-double border-ink" />
+                <div className={pathname === '/' ? 'border-b border-ink' : 'border-b-4 border-double border-ink'} />
             </div>
         </nav>
     )
