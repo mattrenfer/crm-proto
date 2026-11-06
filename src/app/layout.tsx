@@ -20,7 +20,7 @@ const youngSerif = Young_Serif({
 })
 
 export const metadata: Metadata = {
-    title: 'Simple CRM',
+    title: 'Handful: Just enough CRM',
     description: 'Keep your clients, tasks and notes in one place.',
 }
 
