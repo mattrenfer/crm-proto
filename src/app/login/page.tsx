@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import AuthLayout, { authButtonClass, authErrorClass, authInputClass, authLabelClass } from '@/components/AuthLayout'
+import AuthLayout from '@/components/AuthLayout'
+import { buttonClass, errorClass, inputClass, labelClass } from '@/lib/formStyles'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, LoginFormData } from '@/lib/schemas'
@@ -89,7 +90,7 @@ export default function LoginPage() {
                 )}
 
                 <div>
-                    <label htmlFor="email" className={authLabelClass}>
+                    <label htmlFor="email" className={labelClass}>
                         Email address
                     </label>
                     <input
@@ -99,13 +100,13 @@ export default function LoginPage() {
                         autoComplete="email"
                         autoFocus
                         disabled={loading}
-                        className={authInputClass}
+                        className={inputClass}
                     />
-                    {loginErrors.email && <p className={authErrorClass}>{loginErrors.email.message}</p>}
+                    {loginErrors.email && <p className={errorClass}>{loginErrors.email.message}</p>}
                 </div>
 
                 <div>
-                    <label htmlFor="password" className={authLabelClass}>
+                    <label htmlFor="password" className={labelClass}>
                         Password
                     </label>
                     <input
@@ -114,12 +115,12 @@ export default function LoginPage() {
                         type="password"
                         autoComplete="current-password"
                         disabled={loading}
-                        className={authInputClass}
+                        className={inputClass}
                     />
-                    {loginErrors.password && <p className={authErrorClass}>{loginErrors.password.message}</p>}
+                    {loginErrors.password && <p className={errorClass}>{loginErrors.password.message}</p>}
                 </div>
 
-                <button type="submit" disabled={loading} className={authButtonClass}>
+                <button type="submit" disabled={loading} className={`${buttonClass} w-full`}>
                     {loading ? 'Signing in...' : 'Sign in'}
                 </button>
             </form>

@@ -1,14 +1,6 @@
 import type { ReactNode } from 'react'
 import Logo from '@/components/Logo'
 
-// Shared so the login and signup forms can't drift apart.
-export const authLabelClass = 'block font-semibold mb-1'
-export const authInputClass =
-    'block w-full min-h-12 px-3 bg-sheet text-ink border border-ink rounded-sm placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed'
-export const authButtonClass =
-    'w-full min-h-12 px-4 bg-accent text-on-accent font-semibold rounded-sm cursor-pointer hover:bg-ink focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
-export const authErrorClass = 'mt-1 text-danger'
-
 /**
  * The front page for logged-out visitors: masthead, what Handful is, then the form.
  * This is where someone new meets the product, so it explains itself before asking for a password.
