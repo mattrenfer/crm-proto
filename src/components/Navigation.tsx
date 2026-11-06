@@ -8,6 +8,9 @@ import Logo from '@/components/Logo'
 export default function Navigation() {
     const pathname = usePathname()
     const { user, signOut } = useAuth()
+
+    // Login and signup have their own big masthead, so a nav there would show the logo twice
+    if (pathname === '/login' || pathname === '/signup') return null
     const navItems = [
         { href: '/', label: 'Dashboard' },
         { href: '/clients', label: 'Clients' },

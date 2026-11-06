@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import AuthMasthead from '@/components/AuthMasthead'
+import AuthLayout, { authButtonClass, authErrorClass, authInputClass, authLabelClass } from '@/components/AuthLayout'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signupSchema, SignupFormData } from '@/lib/schemas'
@@ -83,131 +83,93 @@ export default function SignUpPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-paper px-4">
-            <div className="max-w-md w-full space-y-8">
-                <AuthMasthead />
-                {checkEmail ? (
-                    <>
-                        <h1 className="text-3xl font-bold text-center text-ink">Check your email!</h1>
-                        <p role="status" aria-live="polite" className="mt-2 text-center text-sm text-muted">
-                            We sent a confirmation email to{' '}
-                            <span className="font-medium text-accent">{checkEmail}</span>.
-                        </p>
-                        <p className="mt-2 text-center text-sm text-muted">
-                            Please click the link in the email to confirm your account.
-                        </p>
-                        <p className="mt-2 text-center text-sm text-muted">
-                            <Link href="/login" className="font-medium text-accent hover:text-ink">
-                                Sign in to your account
-                            </Link>
-                        </p>
-                    </>
-                ) : (
-                    <>
-                        {/* Header */}
-                        <div>
-                            <h1 className="text-3xl font-bold text-center text-ink">Sign Up</h1>
-                            <p className="mt-2 text-center text-sm text-muted">
-                                Or{' '}
-                                <Link href="/login" className="font-medium text-accent hover:text-ink">
-                                    sign in to your account
-                                </Link>
+        <AuthLayout>
+            {checkEmail ? (
+                <>
+                    <h1 className="font-display text-2xl">Check your email!</h1>
+                    <p role="status" aria-live="polite" className="mt-5">
+                        We sent a confirmation email to <span className="font-semibold">{checkEmail}</span>.
+                    </p>
+                    <p className="mt-3">Please click the link in the email to confirm your account.</p>
+                    <p className="mt-5">
+                        <Link href="/login" className="font-semibold underline underline-offset-4 hover:text-accent">
+                            Sign in to your account
+                        </Link>
+                    </p>
+                </>
+            ) : (
+                <>
+                    <h1 className="font-display text-2xl">Create an account</h1>
+
+                    <form className="mt-5 flex flex-col gap-5" onSubmit={handleSubmitSignup(handleSubmit)}>
+                        {error && (
+                            <p role="alert" className="text-danger">
+                                {error}
                             </p>
+                        )}
+
+                        <div>
+                            <label htmlFor="email" className={authLabelClass}>
+                                Email address
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                autoComplete="email"
+                                autoFocus
+                                {...registerSignup('email')}
+                                disabled={loading}
+                                className={authInputClass}
+                            />
+                            {signupErrors.email && <p className={authErrorClass}>{signupErrors.email.message}</p>}
                         </div>
 
-                        {/* Form Card */}
-
-                        <div className="bg-sheet py-8 px-6 shadow rounded-lg">
-                            <form className="space-y-6" onSubmit={handleSubmitSignup(handleSubmit)}>
-                                {/* Error Display */}
-                                {error && (
-                                    <div
-                                        role="alert"
-                                        className="bg-sheet border border-danger text-danger px-4 py-3 rounded-lg text-sm"
-                                    >
-                                        {error}
-                                    </div>
-                                )}
-
-                                {/* Email Input */}
-                                <div>
-                                    <label htmlFor="email" className="block text-sm font-medium text-ink mb-2">
-                                        Email address
-                                    </label>
-                                    <input
-                                        id="email"
-                                        type="email"
-                                        autoComplete="email"
-                                        autoFocus
-                                        {...registerSignup('email')}
-                                        disabled={loading}
-                                        className="appearance-none block w-full px-3 py-2 border border-rule rounded-lg shadow-sm placeholder-muted focus:outline-none focus:ring-accent focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
-                                        placeholder="you@example.com"
-                                    />
-                                    {signupErrors && (
-                                        <p className="mt-1 text-sm text-danger">{signupErrors.email?.message}</p>
-                                    )}
-                                </div>
-
-                                {/* Password Input */}
-                                <div>
-                                    <label htmlFor="password" className="block text-sm font-medium text-ink mb-2">
-                                        Password
-                                    </label>
-                                    <input
-                                        id="password"
-                                        {...registerSignup('password')}
-                                        type="password"
-                                        autoComplete="current-password"
-                                        disabled={loading}
-                                        className="appearance-none block w-full px-3 py-2 border border-rule rounded-lg shadow-sm placeholder-muted focus:outline-none focus:ring-accent focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
-                                        placeholder="••••••••"
-                                    />
-                                    {signupErrors && (
-                                        <p className="mt-1 text-sm text-danger">{signupErrors.password?.message}</p>
-                                    )}
-                                </div>
-
-                                {/* ConfirmPassword Input */}
-                                <div>
-                                    <label
-                                        htmlFor="confirm-password"
-                                        className="block text-sm font-medium text-ink mb-2"
-                                    >
-                                        Confirm Password
-                                    </label>
-                                    <input
-                                        id="confirm-password"
-                                        {...registerSignup('confirmPassword')}
-                                        type="password"
-                                        autoComplete="confirm-password"
-                                        required
-                                        disabled={loading}
-                                        className="appearance-none block w-full px-3 py-2 border border-rule rounded-lg shadow-sm placeholder-muted focus:outline-none focus:ring-accent focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
-                                        placeholder="••••••••"
-                                    />
-                                    {signupErrors && (
-                                        <p className="mt-1 text-sm text-danger">
-                                            {signupErrors.confirmPassword?.message}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Submit Button */}
-                                <div>
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-on-accent bg-accent hover:bg-ink focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {loading ? 'Signing up...' : 'Sign Up'}
-                                    </button>
-                                </div>
-                            </form>
+                        <div>
+                            <label htmlFor="password" className={authLabelClass}>
+                                Password
+                            </label>
+                            <input
+                                id="password"
+                                {...registerSignup('password')}
+                                type="password"
+                                autoComplete="new-password"
+                                disabled={loading}
+                                className={authInputClass}
+                            />
+                            {signupErrors.password && <p className={authErrorClass}>{signupErrors.password.message}</p>}
                         </div>
-                    </>
-                )}
-            </div>
-        </div>
+
+                        <div>
+                            <label htmlFor="confirm-password" className={authLabelClass}>
+                                Confirm password
+                            </label>
+                            <input
+                                id="confirm-password"
+                                {...registerSignup('confirmPassword')}
+                                type="password"
+                                autoComplete="new-password"
+                                required
+                                disabled={loading}
+                                className={authInputClass}
+                            />
+                            {signupErrors.confirmPassword && (
+                                <p className={authErrorClass}>{signupErrors.confirmPassword.message}</p>
+                            )}
+                        </div>
+
+                        <button type="submit" disabled={loading} className={authButtonClass}>
+                            {loading ? 'Creating your account...' : 'Create an account'}
+                        </button>
+                    </form>
+
+                    <p className="mt-5">
+                        Already have an account?{' '}
+                        <Link href="/login" className="font-semibold underline underline-offset-4 hover:text-accent">
+                            Sign in
+                        </Link>
+                    </p>
+                </>
+            )}
+        </AuthLayout>
     )
 }
