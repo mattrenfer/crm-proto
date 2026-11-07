@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { getClients, createClient, updateClient, deleteClient } from '@/lib/data'
-import type { Client } from '@/lib/supabase'
+import { getClients, getTasks, createClient, updateClient, deleteClient } from '@/lib/data'
+import type { Client, Task } from '@/lib/supabase'
+import { describeDue } from '@/lib/dates'
+import { buttonClass, textButtonClass } from '@/lib/formStyles'
+import { getNextTaskByClient } from '@/lib/tasks'
+import PageHeader from '@/components/PageHeader'
 import toast from 'react-hot-toast'
 import ClientForm from '@/components/ClientForm'
 import { ClientFormData } from '@/lib/schemas'
@@ -12,6 +16,7 @@ import ConfirmDialog from '@/components/ConfirmDialog'
 
 export default function ClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
+    const [tasks, setTasks] = useState<Task[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [showClientForm, setShowClientForm] = useState(false)
@@ -27,8 +32,9 @@ export default function ClientsPage() {
         try {
             setLoading(true)
             setError(null)
-            const data = await getClients()
-            setClients(data)
+            const [clientsData, tasksData] = await Promise.all([getClients(), getTasks()])
+            setClients(clientsData)
+            setTasks(tasksData)
         } catch (err) {
             console.error('Failed to load clients:', err)
             setError('Failed to load clients. Please try again.')
@@ -77,9 +83,10 @@ export default function ClientsPage() {
         setEditingClient(null)
     }
 
+    // Clicking Edit on the row that's already open closes it
     const handleEditClient = (client: Client) => {
-        setShowClientForm(true)
-        setEditingClient(client)
+        setShowClientForm(false)
+        setEditingClient(editingClient?.id === client.id ? null : client)
     }
 
     const handleCloseForm = () => {
@@ -129,22 +136,19 @@ export default function ClientsPage() {
 
     if (error) {
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
-                    <button
-                        onClick={loadClients}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                        Try Again
-                    </button>
-                </div>
+            <div className="max-w-6xl mx-auto px-4 sm:px-8 py-16 text-lg text-center">
+                <p className="text-danger mb-4">{error}</p>
+                <button onClick={loadClients} className={buttonClass}>
+                    Try again
+                </button>
             </div>
         )
     }
 
+    const nextTasks = getNextTaskByClient(tasks)
+
     return (
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-10 text-lg">
             <ConfirmDialog
                 open={pendingDeleteId !== null}
                 isDeleting={deletingId !== null}
@@ -153,87 +157,109 @@ export default function ClientsPage() {
                 confirmLabel="Are you sure you want to delete?"
                 confirmDescription="This action cannot be undone. This will delete the client and all associated data."
             />
-            <div className="px-4 py-6 sm:px-0">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Clients</h1>
-                    <button
-                        onClick={handleAddClient}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                        Add Client
-                    </button>
+
+            <PageHeader
+                title="Your people"
+                subtitle={`${clients.length} ${clients.length === 1 ? 'client' : 'clients'}`}
+            >
+                <button onClick={handleAddClient} className={buttonClass}>
+                    Add a client
+                </button>
+            </PageHeader>
+
+            {/* Adding starts at the top. Editing opens in the row being edited. */}
+            {showClientForm && !editingClient && (
+                <div className="mb-10">
+                    <ClientForm client={null} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
                 </div>
+            )}
 
-                {/* Client Form */}
-                {showClientForm && (
-                    <ClientForm client={editingClient} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
-                )}
+            {clients.length === 0 ? (
+                <p className="py-12 text-center">No one here yet. Add your first client to get started.</p>
+            ) : (
+                <ul className="border-b border-ink">
+                    {clients.map((client) => {
+                        const nextTask = nextTasks.get(client.id)
+                        const due = nextTask && describeDue(nextTask.due_date)
 
-                {/* Clients List */}
-                {clients.length === 0 ? (
-                    <div className="text-center py-12">
-                        <div className="text-gray-500 dark:text-gray-400">
-                            No clients found. Add your first client to get started!
-                        </div>
-                    </div>
-                ) : (
-                    <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {clients.map((client) => (
-                                <li key={client.id}>
-                                    <div className="px-4 py-4 sm:px-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div>
-                                                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                                                        <Link href={`/clients/${client.id}`}>{client.name}</Link>
-                                                    </p>
-                                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                        {client.email}
-                                                    </p>
-                                                    {client.company && (
-                                                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                            {client.company}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                <Link
-                                                    href={`/clients/${client.id}`}
-                                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                                >
-                                                    View
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleEditClient(client)}
-                                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleShowDeleteModal(client.id)}
-                                                    className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                                    disabled={deletingId === client.id}
-                                                >
-                                                    {deletingId === client.id ? 'Deleting...' : 'Delete'}
-                                                </button>
-                                            </div>
-                                        </div>
+                        return (
+                            <li
+                                key={client.id}
+                                className="flex flex-wrap justify-between gap-x-8 gap-y-3 py-8 border-t border-ink"
+                            >
+                                <div className="flex-[2_1_16rem] min-w-0">
+                                    <h2 className="font-display text-3xl leading-tight break-words">
+                                        <Link href={`/clients/${client.id}`} className="hover:text-accent">
+                                            {client.name}
+                                        </Link>
+                                    </h2>
+                                    {/* One detail per line, so each is easy to scan */}
+                                    <div className="mt-2 break-words">
+                                        {client.company && <p>{client.company}</p>}
+                                        <p>
+                                            <a href={`mailto:${client.email}`} className="underline underline-offset-4">
+                                                {client.email}
+                                            </a>
+                                        </p>
                                         {client.phone && (
-                                            <div className="mt-2">
-                                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                    📞 {client.phone}
-                                                </p>
-                                            </div>
+                                            <p>
+                                                <a
+                                                    href={`tel:${client.phone}`}
+                                                    className="underline underline-offset-4"
+                                                >
+                                                    {client.phone}
+                                                </a>
+                                            </p>
                                         )}
                                     </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-            </div>
+                                </div>
+
+                                <div className="flex-[1_1_13rem] min-w-0">
+                                    {nextTask && due ? (
+                                        <>
+                                            <p>{nextTask.title}</p>
+                                            <p className={due.needsYou ? 'italic font-semibold text-accent' : 'italic'}>
+                                                {due.label}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className="italic text-muted">Nothing planned</p>
+                                    )}
+                                </div>
+
+                                <div className="flex items-start gap-3">
+                                    <button
+                                        onClick={() => handleEditClient(client)}
+                                        aria-label={`Edit ${client.name}`}
+                                        aria-expanded={editingClient?.id === client.id}
+                                        className={textButtonClass}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleShowDeleteModal(client.id)}
+                                        aria-label={`Delete ${client.name}`}
+                                        className={textButtonClass}
+                                        disabled={deletingId === client.id}
+                                    >
+                                        {deletingId === client.id ? 'Deleting...' : 'Delete'}
+                                    </button>
+                                </div>
+
+                                {editingClient?.id === client.id && (
+                                    <div className="basis-full">
+                                        <ClientForm
+                                            client={editingClient}
+                                            onSubmit={handleSaveClient}
+                                            onCancel={handleCloseForm}
+                                        />
+                                    </div>
+                                )}
+                            </li>
+                        )
+                    })}
+                </ul>
+            )}
         </div>
     )
 }

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { sortByUrgency } from '@/lib/tasks'
 import type { Client, Task, Note } from './supabase'
 
 // This data layer is for SERVER COMPONENTS ONLY
@@ -8,15 +9,22 @@ import type { Client, Task, Note } from './supabase'
  * Dashboard Data Access Functions
  */
 
-export async function getDashboardStats() {
+export async function getDashboardData() {
     try {
         const [clients, tasks] = await Promise.all([getClients(), getTasks()])
-        const totalClients = clients.length
-        const activeTasks = tasks.filter((task) => task.status === 'pending' || task.status === 'in_progress').length
-        const pendingTasks = tasks.filter((task) => task.status === 'pending').length
-        return { totalClients, activeTasks, pendingTasks }
+        const clientNames = new Map(clients.map((client) => [client.id, client.name]))
+
+        return {
+            totalClients: clients.length,
+            inProgress: tasks.filter((task) => task.status === 'in_progress').length,
+            notStarted: tasks.filter((task) => task.status === 'pending').length,
+            // The most urgent becomes the lead story, and the next three sit beside it
+            urgentTasks: sortByUrgency(tasks)
+                .slice(0, 4)
+                .map((task) => ({ ...task, clientName: clientNames.get(task.client_id) ?? 'Unknown client' })),
+        }
     } catch (error) {
-        console.error('Unexpected error in getDashboardStats:', error)
+        console.error('Unexpected error in getDashboardData:', error)
         throw error
     }
 }

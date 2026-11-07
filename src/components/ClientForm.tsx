@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { clientSchema, ClientFormData } from '@/lib/schemas'
 import { Client } from '@/lib/supabase'
 import { useEffect } from 'react'
+import { buttonClass, errorClass, inputClass, labelClass, secondaryButtonClass } from '@/lib/formStyles'
 
 export default function ClientForm({
     client,
@@ -21,6 +22,7 @@ export default function ClientForm({
         handleSubmit: handleSubmitClient,
         formState: { errors: clientErrors, isSubmitting: isSubmittingClient },
         reset: resetClientForm,
+        setFocus,
     } = useForm<ClientFormData>({ resolver: zodResolver(clientSchema) })
     useEffect(() => {
         if (client) {
@@ -34,75 +36,57 @@ export default function ClientForm({
             resetClientForm({ name: '', email: '', phone: '', company: '' })
         }
     }, [client, resetClientForm])
+
+    // Moves keyboard and screen reader users straight into the form when it opens
+    useEffect(() => {
+        setFocus('name')
+    }, [client, setFocus])
+
     return (
-        <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                {client ? 'Edit Client' : 'Add New Client'}
-            </h2>
-            <form onSubmit={handleSubmitClient(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="pt-4 border-t border-ink">
+            <h2 className="font-display text-2xl mb-5">{client ? 'Edit client' : 'Add a client'}</h2>
+            <form onSubmit={handleSubmitClient(onSubmit)} className="space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name *</label>
-                        <input
-                            type="text"
-                            {...registerClient('name')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
-                        {clientErrors.name && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{clientErrors.name?.message}</p>
-                        )}
+                        <label htmlFor="client-name" className={labelClass}>
+                            Name *
+                        </label>
+                        <input id="client-name" type="text" {...registerClient('name')} className={inputClass} />
+                        {clientErrors.name && <p className={errorClass}>{clientErrors.name?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email *</label>
-                        <input
-                            type="email"
-                            {...registerClient('email')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
-                        {clientErrors.email && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{clientErrors.email?.message}</p>
-                        )}
+                        <label htmlFor="client-email" className={labelClass}>
+                            Email *
+                        </label>
+                        <input id="client-email" type="email" {...registerClient('email')} className={inputClass} />
+                        {clientErrors.email && <p className={errorClass}>{clientErrors.email?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
-                        <input
-                            type="tel"
-                            {...registerClient('phone')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
-                        {clientErrors.phone && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{clientErrors.phone?.message}</p>
-                        )}
+                        <label htmlFor="client-phone" className={labelClass}>
+                            Phone
+                        </label>
+                        <input id="client-phone" type="tel" {...registerClient('phone')} className={inputClass} />
+                        {clientErrors.phone && <p className={errorClass}>{clientErrors.phone?.message}</p>}
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company</label>
-                        <input
-                            type="text"
-                            {...registerClient('company')}
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
-                        {clientErrors.company && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                {clientErrors.company?.message}
-                            </p>
-                        )}
+                        <label htmlFor="client-company" className={labelClass}>
+                            Company
+                        </label>
+                        <input id="client-company" type="text" {...registerClient('company')} className={inputClass} />
+                        {clientErrors.company && <p className={errorClass}>{clientErrors.company?.message}</p>}
                     </div>
                 </div>
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end gap-3">
                     <button
                         type="button"
                         disabled={isSubmittingClient}
                         onClick={() => onCancel()}
-                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+                        className={secondaryButtonClass}
                     >
                         Cancel
                     </button>
-                    <button
-                        type="submit"
-                        disabled={isSubmittingClient}
-                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                        {isSubmittingClient ? 'Saving...' : client ? 'Update Client' : 'Add Client'}
+                    <button type="submit" disabled={isSubmittingClient} className={buttonClass}>
+                        {isSubmittingClient ? 'Saving...' : client ? 'Save changes' : 'Add client'}
                     </button>
                 </div>
             </form>

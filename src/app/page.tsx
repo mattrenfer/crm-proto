@@ -1,5 +1,9 @@
 import Link from 'next/link'
-import { getDashboardStats } from '../lib/data-server'
+import DueLabel from '@/components/DueLabel'
+import Logo from '@/components/Logo'
+import TodayDate from '@/components/TodayDate'
+import { getDashboardData } from '@/lib/data-server'
+import { buttonClass } from '@/lib/formStyles'
 
 // Stats depend on who is logged in (cookies), so render per request instead of trying to pre-render at build time
 export const dynamic = 'force-dynamic'
@@ -11,146 +15,124 @@ const gettingStartedSteps = [
 ]
 
 export default async function HomePage() {
-    const { totalClients, activeTasks, pendingTasks } = await getDashboardStats()
+    const { totalClients, inProgress, notStarted, urgentTasks } = await getDashboardData()
+    const [lead, ...others] = urgentTasks
 
     return (
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8" id="homepage-container">
-            <div className="px-4 py-6 sm:px-0" id="main-content">
-                {/* Header */}
-                <div className="text-center mb-8" id="header-section">
-                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Welcome to Simple CRM</h1>
-                    <p className="text-lg text-gray-600 dark:text-gray-300" id="subtitle">
-                        Manage your clients and tasks efficiently
-                    </p>
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 text-lg">
+            {/* Masthead */}
+            <header className="flex flex-col gap-3 text-center">
+                <p>
+                    <Logo className="text-[clamp(4rem,13vw,10rem)] leading-none" />
+                </p>
+                <div className="flex flex-wrap justify-between gap-x-8 pt-3 border-t-4 border-double border-ink italic">
+                    <TodayDate />
+                    <span>Just enough CRM</span>
                 </div>
+            </header>
 
-                {/* Dashboard Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" id="dashboard-section">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <div className="text-2xl">👥</div>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                            Total Clients
-                                        </dt>
-                                        <dd className="text-3xl font-semibold text-gray-900 dark:text-white">
-                                            {totalClients}
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <div className="text-2xl">⚡</div>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                            Active Tasks
-                                        </dt>
-                                        <dd className="text-3xl font-semibold text-orange-600 dark:text-orange-400">
-                                            {activeTasks}
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-                        <div className="p-5">
-                            <div className="flex items-center">
-                                <div className="flex-shrink-0">
-                                    <div className="text-2xl">📋</div>
-                                </div>
-                                <div className="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                                            Pending Tasks
-                                        </dt>
-                                        <dd className="text-3xl font-semibold text-red-600 dark:text-red-400">
-                                            {pendingTasks}
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8" id="quick-actions-section">
-                    <Link href="/clients" className="group">
-                        <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-6 hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">
-                            <div className="flex items-center">
-                                <div className="text-3xl mr-4">👥</div>
-                                <div>
-                                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 group-hover:text-blue-800 dark:group-hover:text-blue-200">
-                                        Manage Clients
-                                    </h3>
-                                    <p className="text-blue-700 dark:text-blue-300">
-                                        Add, view, and manage your client relationships
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+            {totalClients === 0 ? (
+                <section aria-labelledby="getting-started" className="mt-12">
+                    <h1 id="getting-started" className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-tight">
+                        Get started in 3 steps
+                    </h1>
+                    <ol className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {gettingStartedSteps.map((step, index) => (
+                            <li key={step.title} className="pt-4 border-t border-ink">
+                                <p className="font-display text-3xl text-accent">{index + 1}</p>
+                                <h2 className="mt-2 font-display text-2xl">{step.title}</h2>
+                                <p className="mt-1">{step.text}</p>
+                            </li>
+                        ))}
+                    </ol>
+                    <Link href="/clients" className={`mt-8 ${buttonClass}`}>
+                        Add your first client
                     </Link>
-
-                    <Link href="/tasks" className="group">
-                        <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-6 hover:bg-green-100 dark:hover:bg-green-800 transition-colors">
-                            <div className="flex items-center">
-                                <div className="text-3xl mr-4">📋</div>
-                                <div>
-                                    <h3 className="text-lg font-semibold text-green-900 dark:text-green-100 group-hover:text-green-800 dark:group-hover:text-green-200">
-                                        Manage Tasks
-                                    </h3>
-                                    <p className="text-green-700 dark:text-green-300">
-                                        Track and update task progress for all clients
+                </section>
+            ) : (
+                <>
+                    <div className="mt-12 flex flex-wrap gap-x-16 gap-y-10">
+                        <section className="flex-[2_1_26rem] min-w-0 flex flex-col gap-4">
+                            {lead ? (
+                                <>
+                                    <DueLabel date={lead.due_date} />
+                                    <h1 className="break-words">
+                                        <span className="block font-display text-[clamp(2.75rem,7vw,5.5rem)] leading-none tracking-tight">
+                                            {lead.clientName}
+                                        </span>
+                                        <span className="block mt-3 italic text-[clamp(1.5rem,3vw,2.25rem)] leading-tight">
+                                            {lead.title}
+                                        </span>
+                                    </h1>
+                                    {lead.description && <p className="max-w-xl">{lead.description}</p>}
+                                    <p>
+                                        <Link
+                                            href={`/clients/${lead.client_id}`}
+                                            className="font-semibold underline underline-offset-4 hover:text-accent"
+                                        >
+                                            Open {lead.clientName}&apos;s page
+                                        </Link>
                                     </p>
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
-                </div>
+                                </>
+                            ) : (
+                                <>
+                                    <h1 className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-tight tracking-tight">
+                                        Nothing needs you right now.
+                                    </h1>
+                                    <p>
+                                        <Link
+                                            href="/tasks"
+                                            className="font-semibold underline underline-offset-4 hover:text-accent"
+                                        >
+                                            Add a task
+                                        </Link>
+                                    </p>
+                                </>
+                            )}
+                        </section>
 
-                {/* Getting Started: only for new users who haven't added a client yet */}
-                {totalClients === 0 && (
-                    <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6" id="getting-started-section">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Get started in 3 steps</h2>
-                        <ol className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {gettingStartedSteps.map((step, index) => (
-                                <li key={step.title} className="flex">
-                                    <span
-                                        aria-hidden="true"
-                                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-200"
-                                    >
-                                        {index + 1}
-                                    </span>
-                                    <div className="ml-3">
-                                        <h3 className="font-medium text-gray-900 dark:text-white">{step.title}</h3>
-                                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{step.text}</p>
-                                    </div>
-                                </li>
-                            ))}
-                        </ol>
-                        <Link
-                            href="/clients"
-                            className="mt-6 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
-                        >
-                            Add your first client
-                        </Link>
+                        {others.length > 0 && (
+                            <section
+                                aria-labelledby="also-heading"
+                                className="flex-[1_1_18rem] min-w-0 pt-4 border-t border-ink"
+                            >
+                                <h2 id="also-heading" className="font-display text-2xl">
+                                    Also next
+                                </h2>
+                                <ul className="mt-4 flex flex-col gap-4">
+                                    {others.map((task) => (
+                                        <li key={task.id}>
+                                            <Link
+                                                href={`/clients/${task.client_id}`}
+                                                className="block font-display text-xl hover:text-accent break-words"
+                                            >
+                                                {task.clientName}
+                                            </Link>
+                                            <p className="break-words">{task.title}</p>
+                                            <DueLabel date={task.due_date} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </section>
+                        )}
                     </div>
-                )}
-            </div>
+
+                    <dl className="mt-12 pt-6 border-t-4 border-double border-ink grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div>
+                            <dt>Clients</dt>
+                            <dd className="font-display text-5xl">{totalClients}</dd>
+                        </div>
+                        <div>
+                            <dt>Tasks in progress</dt>
+                            <dd className="font-display text-5xl">{inProgress}</dd>
+                        </div>
+                        <div>
+                            <dt>Not started</dt>
+                            <dd className="font-display text-5xl">{notStarted}</dd>
+                        </div>
+                    </dl>
+                </>
+            )}
         </div>
     )
 }

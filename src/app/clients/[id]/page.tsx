@@ -3,6 +3,7 @@
 import ClientDetailSkeleton from '@/components/ClientDetailSkeleton'
 import ClientForm from '@/components/ClientForm'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import NoteForm from '@/components/NoteForm'
 import TaskForm from '@/components/TaskForm'
 import {
     createNote,
@@ -16,14 +17,14 @@ import {
     updateNote,
     updateTask,
 } from '@/lib/data'
-import { formatDate } from '@/lib/dates'
-import { ClientFormData, NoteFormData, noteSchema, TaskFormData } from '@/lib/schemas'
+import { describeDue } from '@/lib/dates'
+import { buttonClass, inputClass, textButtonClass } from '@/lib/formStyles'
+import { ClientFormData, NoteFormData, TaskFormData } from '@/lib/schemas'
 import type { Client, Note, Task } from '@/lib/supabase'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { sortByUrgency, statusLabels } from '@/lib/tasks'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 
 export default function ClientDetailPage() {
@@ -35,7 +36,6 @@ export default function ClientDetailPage() {
     const [notes, setNotes] = useState<Note[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [activeTab, setActiveTab] = useState<'tasks' | 'notes'>('tasks')
     const [showTaskForm, setShowTaskForm] = useState(false)
     const [showNoteForm, setShowNoteForm] = useState(false)
     const [showClientForm, setShowClientForm] = useState(false)
@@ -44,13 +44,6 @@ export default function ClientDetailPage() {
     const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
     const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(null)
     const [deletingId, setDeletingId] = useState<string | null>(null)
-
-    const {
-        register: registerNote,
-        handleSubmit: handleSubmitNote,
-        formState: { errors: noteErrors, isSubmitting: isSubmittingNote },
-        reset: resetNoteForm,
-    } = useForm<NoteFormData>({ resolver: zodResolver(noteSchema) })
 
     const fetchClientData = useCallback(async () => {
         try {
@@ -160,7 +153,6 @@ export default function ClientDetailPage() {
             const created = await createNote(clientId, data.content)
             setNotes([created, ...notes])
             setShowNoteForm(false)
-            resetNoteForm()
             toast.success('Note added successfully!')
         } catch (err) {
             console.error('Error adding note:', err)
@@ -174,7 +166,6 @@ export default function ClientDetailPage() {
             setNotes(notes.map((note) => (note.id === editingNote!.id ? updated : note)))
             setShowNoteForm(false)
             setEditingNote(null)
-            resetNoteForm()
             toast.success('Note updated successfully!')
         } catch (err) {
             console.error('Failed to update note:', err)
@@ -204,20 +195,14 @@ export default function ClientDetailPage() {
 
     if (error) {
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <div className="text-red-600 dark:text-red-400 mb-4">{error}</div>
-                    <button
-                        onClick={fetchClientData}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 mr-4"
-                    >
-                        Try Again
+            <div className="max-w-6xl mx-auto px-4 sm:px-8 py-16 text-lg text-center">
+                <p className="text-danger mb-4">{error}</p>
+                <div className="flex flex-wrap justify-center items-center gap-4">
+                    <button onClick={fetchClientData} className={buttonClass}>
+                        Try again
                     </button>
-                    <Link
-                        href="/clients"
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 underline"
-                    >
-                        Return to Clients
+                    <Link href="/clients" className="underline underline-offset-4 hover:text-accent">
+                        Back to your people
                     </Link>
                 </div>
             </div>
@@ -226,22 +211,13 @@ export default function ClientDetailPage() {
 
     if (!client) {
         return (
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="text-center py-12">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Client not found</h2>
-                    <Link
-                        href="/clients"
-                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 underline"
-                    >
-                        Return to Clients
-                    </Link>
-                </div>
+            <div className="max-w-6xl mx-auto px-4 sm:px-8 py-16 text-lg text-center">
+                <h1 className="font-display text-3xl mb-4">Client not found</h1>
+                <Link href="/clients" className="underline underline-offset-4 hover:text-accent">
+                    Back to your people
+                </Link>
             </div>
         )
-    }
-
-    const handleEditClient = () => {
-        setShowClientForm(true)
     }
 
     const handleCloseForm = () => {
@@ -252,9 +228,15 @@ export default function ClientDetailPage() {
         await updateClientData(client.id, data)
     }
 
-    const handleEditTask = (task: Task) => {
-        setEditingTask(task)
+    const handleAddTask = () => {
+        setEditingTask(null)
         setShowTaskForm(true)
+    }
+
+    // Clicking Edit on the row that's already open closes it
+    const handleEditTask = (task: Task) => {
+        setShowTaskForm(false)
+        setEditingTask(editingTask?.id === task.id ? null : task)
     }
 
     const handleSaveTask = async (data: TaskFormData) => {
@@ -270,9 +252,14 @@ export default function ClientDetailPage() {
         setEditingTask(null)
     }
 
-    const handleEditNote = (note: Note) => {
-        setEditingNote(note)
+    const handleAddNote = () => {
+        setEditingNote(null)
         setShowNoteForm(true)
+    }
+
+    const handleEditNote = (note: Note) => {
+        setShowNoteForm(false)
+        setEditingNote(editingNote?.id === note.id ? null : note)
     }
 
     const handleOnTaskConfirm = () => {
@@ -305,8 +292,11 @@ export default function ClientDetailPage() {
         setPendingDeleteNoteId(null)
     }
 
+    const visibleTasks = [...sortByUrgency(tasks), ...tasks.filter((task) => task.status === 'completed')]
+    const clientSince = new Date(client.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+
     return (
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-10 text-lg">
             <ConfirmDialog
                 open={pendingDeleteTaskId !== null}
                 isDeleting={deletingId !== null}
@@ -321,309 +311,208 @@ export default function ClientDetailPage() {
                 onCancel={handleCancelDelete}
                 confirmLabel="Are you sure you want to delete this note?"
             />
-            <div className="px-4 py-6 sm:px-0">
-                {/* Header */}
-                <div className="mb-6">
-                    <Link
-                        href="/clients"
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mb-4 inline-block"
+
+            <header className="mb-10">
+                <Link href="/clients" className="underline underline-offset-4 hover:text-accent">
+                    Back to your people
+                </Link>
+                <h1 className="mt-4 font-display text-[clamp(3rem,9vw,7rem)] leading-none tracking-tight break-words">
+                    {client.name}
+                </h1>
+                <div className="mt-4 flex flex-wrap justify-between items-center gap-x-8 gap-y-2">
+                    <p className="min-w-0 break-words">
+                        {client.company && <>{client.company}, </>}
+                        <a href={`mailto:${client.email}`} className="underline underline-offset-4">
+                            {client.email}
+                        </a>
+                        {client.phone && (
+                            <>
+                                ,{' '}
+                                <a href={`tel:${client.phone}`} className="underline underline-offset-4">
+                                    {client.phone}
+                                </a>
+                            </>
+                        )}
+                        . <span className="italic">Client since {clientSince}.</span>
+                    </p>
+                    <button
+                        onClick={() => setShowClientForm(!showClientForm)}
+                        aria-expanded={showClientForm}
+                        aria-label={`Edit ${client.name}`}
+                        className={textButtonClass}
                     >
-                        ← Back to Clients
-                    </Link>
-                    {showClientForm && (
+                        Edit
+                    </button>
+                </div>
+                {showClientForm && (
+                    <div className="mt-6">
                         <ClientForm client={client} onSubmit={handleSaveClient} onCancel={handleCloseForm} />
-                    )}
-                    {!showClientForm && (
-                        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                            <div className="flex justify-between items-center">
-                                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{client.name}</h1>
-                                <div>
-                                    <button
-                                        onClick={handleEditClient}
-                                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                    >
-                                        Edit Client
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
-                                    <p className="text-gray-900 dark:text-white">{client.email}</p>
-                                </div>
-                                {client.phone && (
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Phone</p>
-                                        <p className="text-gray-900 dark:text-white">{client.phone}</p>
-                                    </div>
-                                )}
-                                {client.company && (
-                                    <div>
-                                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Company</p>
-                                        <p className="text-gray-900 dark:text-white">{client.company}</p>
-                                    </div>
-                                )}
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Client Since</p>
-                                    <p className="text-gray-900 dark:text-white">
-                                        {new Date(client.created_at).toLocaleDateString()}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Tabs */}
-                <div className="mb-6">
-                    <div className="border-b border-gray-200 dark:border-gray-700">
-                        <nav className="-mb-px flex space-x-8">
-                            <button
-                                onClick={() => setActiveTab('tasks')}
-                                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'tasks'
-                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-                                }`}
-                            >
-                                Tasks ({tasks.length})
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('notes')}
-                                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                                    activeTab === 'notes'
-                                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
-                                }`}
-                            >
-                                Notes ({notes.length})
-                            </button>
-                        </nav>
                     </div>
-                </div>
+                )}
+            </header>
 
-                {/* Tasks Tab */}
-                {activeTab === 'tasks' && (
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Tasks</h2>
-                            <button
-                                onClick={() => setShowTaskForm(true)}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
-                            >
-                                Add Task
-                            </button>
+            <div className="flex flex-wrap items-start gap-x-16 gap-y-12">
+                {/* Notes get the most room, because they're the human part of the record */}
+                <section aria-labelledby="notes-heading" className="flex-[3_1_26rem] min-w-0">
+                    <div className="flex flex-wrap justify-between items-center gap-x-8 gap-y-3 mb-5">
+                        <h2 id="notes-heading" className="font-display text-3xl">
+                            Your notes
+                        </h2>
+                        <button onClick={handleAddNote} className={buttonClass}>
+                            Add a note
+                        </button>
+                    </div>
+
+                    {showNoteForm && !editingNote && (
+                        <div className="mb-6">
+                            <NoteForm note={null} onSubmit={addNote} onCancel={handleCloseNoteForm} />
                         </div>
+                    )}
 
-                        {/* Add Task Form */}
-                        {(showTaskForm || editingTask) && (
+                    {notes.length === 0 ? (
+                        <p className="py-6 border-t border-ink">
+                            No notes yet. Write down what you want to remember about {client.name}.
+                        </p>
+                    ) : (
+                        <div className="border-b border-ink">
+                            {notes.map((note) => (
+                                <article key={note.id} className="py-5 border-t border-ink">
+                                    <p className="italic">
+                                        {new Date(note.created_at).toLocaleDateString(undefined, {
+                                            weekday: 'long',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                        })}
+                                    </p>
+                                    <p className="mt-2 text-2xl leading-snug whitespace-pre-wrap break-words">
+                                        {note.content}
+                                    </p>
+                                    <div className="mt-2 flex gap-3">
+                                        <button
+                                            onClick={() => handleEditNote(note)}
+                                            aria-expanded={editingNote?.id === note.id}
+                                            aria-label="Edit this note"
+                                            className={textButtonClass}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            disabled={deletingId === note.id}
+                                            onClick={() => handleShowDeleteNoteModal(note.id)}
+                                            aria-label="Delete this note"
+                                            className={textButtonClass}
+                                        >
+                                            {deletingId === note.id ? 'Deleting...' : 'Delete'}
+                                        </button>
+                                    </div>
+                                    {editingNote?.id === note.id && (
+                                        <div className="mt-4">
+                                            <NoteForm
+                                                note={editingNote}
+                                                onSubmit={updateNoteData}
+                                                onCancel={handleCloseNoteForm}
+                                            />
+                                        </div>
+                                    )}
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                <section aria-labelledby="tasks-heading" className="flex-[2_1_18rem] min-w-0">
+                    <div className="flex flex-wrap justify-between items-center gap-x-8 gap-y-3 mb-5">
+                        <h2 id="tasks-heading" className="font-display text-3xl">
+                            What&apos;s next
+                        </h2>
+                        <button onClick={handleAddTask} className={textButtonClass}>
+                            Add a task
+                        </button>
+                    </div>
+
+                    {showTaskForm && !editingTask && (
+                        <div className="mb-6">
                             <TaskForm
-                                task={editingTask}
+                                task={null}
                                 onSubmit={handleSaveTask}
                                 onCancel={handleCloseTaskForm}
                                 clients={null}
                                 clientId={clientId}
                             />
-                        )}
-
-                        {/* Tasks List */}
-                        {tasks.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                No tasks found for this client.
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {tasks.map((task) => (
-                                    <div key={task.id} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex-1">
-                                                <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-                                                    {task.title}
-                                                </h4>
-                                                {task.description && (
-                                                    <p className="mt-1 text-gray-600 dark:text-gray-300">
-                                                        {task.description}
-                                                    </p>
-                                                )}
-                                                <div className="mt-2 flex items-center space-x-4 text-sm">
-                                                    <span
-                                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                            task.status === 'completed'
-                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                                                : task.status === 'in_progress'
-                                                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                                                        }`}
-                                                    >
-                                                        {task.status.replace('_', ' ')}
-                                                    </span>
-                                                    <span
-                                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                            task.priority === 'high'
-                                                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                                                : task.priority === 'medium'
-                                                                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                                                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                                                        }`}
-                                                    >
-                                                        {task.priority} priority
-                                                    </span>
-                                                    {task.due_date && (
-                                                        <span className="text-gray-500 dark:text-gray-400">
-                                                            Due: {formatDate(task.due_date)}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
-                                                {task.status !== 'completed' && (
-                                                    <button
-                                                        onClick={() => updateTaskStatus(task.id, 'completed')}
-                                                        className="text-green-600 hover:text-green-900 dark:text-green-400"
-                                                    >
-                                                        Mark Complete
-                                                    </button>
-                                                )}
-                                                {task.status === 'pending' && (
-                                                    <button
-                                                        onClick={() => updateTaskStatus(task.id, 'in_progress')}
-                                                        className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400"
-                                                    >
-                                                        Start
-                                                    </button>
-                                                )}
-                                                {task.status === 'completed' && (
-                                                    <button
-                                                        onClick={() => updateTaskStatus(task.id, 'pending')}
-                                                        className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300"
-                                                    >
-                                                        Reopen
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleEditTask(task)}
-                                                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() => handleShowDeleteTaskModal(task.id)}
-                                                    className="text-red-600 hover:text-red-900 dark:text-red-400"
-                                                    disabled={deletingId === task.id}
-                                                >
-                                                    {deletingId === task.id ? 'Deleting...' : 'Delete'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Notes Tab */}
-                {activeTab === 'notes' && (
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Notes</h2>
-                            <button
-                                onClick={() => setShowNoteForm(true)}
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                                Add Note
-                            </button>
                         </div>
+                    )}
 
-                        {/* Add Note Form */}
-                        {(showNoteForm || editingNote) && (
-                            <div className="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                                    {editingNote ? 'Edit Note' : 'Add New Note'}
-                                </h3>
-                                <form
-                                    onSubmit={
-                                        editingNote ? handleSubmitNote(updateNoteData) : handleSubmitNote(addNote)
-                                    }
-                                    className="space-y-4"
-                                >
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            Note Content *
+                    {visibleTasks.length === 0 ? (
+                        <p className="py-6 border-t border-ink">Nothing planned yet.</p>
+                    ) : (
+                        <ul className="border-b border-ink">
+                            {visibleTasks.map((task) => {
+                                const isDone = task.status === 'completed'
+                                const due = describeDue(task.due_date)
+
+                                return (
+                                    <li key={task.id} className="py-4 border-t border-ink">
+                                        <h3 className="font-display text-xl leading-snug break-words">{task.title}</h3>
+                                        {task.description && <p className="mt-1">{task.description}</p>}
+                                        <p
+                                            className={
+                                                !isDone && due.needsYou ? 'italic font-semibold text-accent' : 'italic'
+                                            }
+                                        >
+                                            {isDone ? 'Done' : due.label}
+                                        </p>
+                                        <p>{task.priority} priority</p>
+                                        <label htmlFor={`status-${task.id}`} className="mt-2 block text-base">
+                                            Status
                                         </label>
-                                        <textarea
-                                            {...registerNote('content')}
-                                            defaultValue={editingNote?.content}
-                                            rows={4}
-                                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            placeholder="Enter your note here..."
-                                        />
-                                        {noteErrors && noteErrors.content && (
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                                                {noteErrors.content?.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="flex justify-end space-x-3">
-                                        <button
-                                            type="button"
-                                            disabled={isSubmittingNote}
-                                            onClick={handleCloseNoteForm}
-                                            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
+                                        <select
+                                            id={`status-${task.id}`}
+                                            value={task.status}
+                                            onChange={(e) =>
+                                                updateTaskStatus(task.id, e.target.value as Task['status'])
+                                            }
+                                            className={inputClass}
                                         >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={isSubmittingNote}
-                                            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-                                        >
-                                            {isSubmittingNote ? 'Saving...' : editingNote ? 'Update Note' : 'Add Note'}
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        )}
-
-                        {/* Notes List */}
-                        {notes.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                No notes found for this client.
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {notes.map((note) => (
-                                    <div key={note.id} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 flex">
-                                        <div className="flex-1">
-                                            <div className="text-gray-900 dark:text-white whitespace-pre-wrap">
-                                                {note.content}
-                                            </div>
-                                            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                                {new Date(note.created_at).toLocaleString()}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
+                                            <option value="pending">{statusLabels.pending}</option>
+                                            <option value="in_progress">{statusLabels.in_progress}</option>
+                                            <option value="completed">{statusLabels.completed}</option>
+                                        </select>
+                                        <div className="mt-2 flex gap-3">
                                             <button
-                                                onClick={() => handleEditNote(note)}
-                                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                                                onClick={() => handleEditTask(task)}
+                                                aria-expanded={editingTask?.id === task.id}
+                                                aria-label={`Edit ${task.title}`}
+                                                className={textButtonClass}
                                             >
                                                 Edit
                                             </button>
                                             <button
-                                                disabled={deletingId === note.id}
-                                                onClick={() => handleShowDeleteNoteModal(note.id)}
-                                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 text-sm"
+                                                onClick={() => handleShowDeleteTaskModal(task.id)}
+                                                aria-label={`Delete ${task.title}`}
+                                                className={textButtonClass}
+                                                disabled={deletingId === task.id}
                                             >
-                                                {deletingId === note.id ? 'Deleting...' : 'Delete'}
+                                                {deletingId === task.id ? 'Deleting...' : 'Delete'}
                                             </button>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
+                                        {editingTask?.id === task.id && (
+                                            <div className="mt-4">
+                                                <TaskForm
+                                                    task={editingTask}
+                                                    onSubmit={handleSaveTask}
+                                                    onCancel={handleCloseTaskForm}
+                                                    clients={null}
+                                                    clientId={clientId}
+                                                />
+                                            </div>
+                                        )}
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    )}
+                </section>
             </div>
         </div>
     )
