@@ -15,10 +15,12 @@ export default function ClientListSkeleton() {
 
             <ul className="border-b border-ink">
                 {Array.from({ length: 5 }, (_, i) => (
-                    <li key={i} className="flex flex-wrap justify-between gap-x-8 gap-y-2 py-5 border-t border-ink">
+                    <li key={i} className="flex flex-wrap justify-between gap-x-8 gap-y-3 py-8 border-t border-ink">
                         <div className="flex-[2_1_16rem] min-w-0">
                             <Skeleton className="h-8 w-56 max-w-full" />
-                            <Skeleton className="h-6 w-72 max-w-full mt-1" />
+                            <Skeleton className="h-6 w-44 max-w-full mt-3" />
+                            <Skeleton className="h-6 w-56 max-w-full mt-1" />
+                            <Skeleton className="h-6 w-32 mt-1" />
                         </div>
                         <div className="flex-[1_1_13rem] min-w-0">
                             <Skeleton className="h-6 w-44 max-w-full" />
