@@ -22,6 +22,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                             Keep track of your clients, tasks and notes in one place.
                         </p>
                         <p>Clients can be a handful. Your CRM shouldn&apos;t be.</p>
+                        {/* New visitors land here, so the note sits above the fold, not only in the footer */}
+                        <p className="text-base italic">Handful is an early release, and it&apos;s still growing.</p>
                     </section>
 
                     <div className="flex-[2_1_20rem] min-w-0 pt-4 border-t border-ink">{children}</div>
