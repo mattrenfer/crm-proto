@@ -118,6 +118,11 @@ export default function LoginPage() {
                         className={inputClass}
                     />
                     {loginErrors.password && <p className={errorClass}>{loginErrors.password.message}</p>}
+                    <p className="mt-2">
+                        <Link href="/forgot-password" className="underline underline-offset-4 hover:text-accent">
+                            Forgot your password?
+                        </Link>
+                    </p>
                 </div>
 
                 <button type="submit" disabled={loading} className={`${buttonClass} w-full`}>
