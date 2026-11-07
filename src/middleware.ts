@@ -12,8 +12,15 @@ export async function middleware(request: NextRequest) {
 
     const pathname = request.nextUrl.pathname
 
-    const publicRoutes = ['/login', '/signup']
+    // Signed-out pages: signed-in users get sent to the dashboard instead
+    const publicRoutes = ['/login', '/signup', '/forgot-password']
     const isPublicRoute = publicRoutes.includes(pathname)
+
+    // The reset link signs the user in before they choose a new password, so this page
+    // has to work both signed out (arriving) and signed in (after the code is swapped)
+    if (pathname === '/reset-password') {
+        return response
+    }
 
     // Dev routes - accessible in development but blocked in production
     const isDevRoute = pathname.startsWith('/dev')
