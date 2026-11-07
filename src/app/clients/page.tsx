@@ -185,7 +185,7 @@ export default function ClientsPage() {
                         return (
                             <li
                                 key={client.id}
-                                className="flex flex-wrap justify-between gap-x-8 gap-y-2 py-5 border-t border-ink"
+                                className="flex flex-wrap justify-between gap-x-8 gap-y-3 py-8 border-t border-ink"
                             >
                                 <div className="flex-[2_1_16rem] min-w-0">
                                     <h2 className="font-display text-3xl leading-tight break-words">
@@ -193,13 +193,25 @@ export default function ClientsPage() {
                                             {client.name}
                                         </Link>
                                     </h2>
-                                    <p className="mt-1 break-words">
-                                        {client.company && <>{client.company}, </>}
-                                        <a href={`mailto:${client.email}`} className="underline underline-offset-4">
-                                            {client.email}
-                                        </a>
-                                        {client.phone && <>, {client.phone}</>}
-                                    </p>
+                                    {/* One detail per line, so each is easy to scan */}
+                                    <div className="mt-2 break-words">
+                                        {client.company && <p>{client.company}</p>}
+                                        <p>
+                                            <a href={`mailto:${client.email}`} className="underline underline-offset-4">
+                                                {client.email}
+                                            </a>
+                                        </p>
+                                        {client.phone && (
+                                            <p>
+                                                <a
+                                                    href={`tel:${client.phone}`}
+                                                    className="underline underline-offset-4"
+                                                >
+                                                    {client.phone}
+                                                </a>
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="flex-[1_1_13rem] min-w-0">
