@@ -13,7 +13,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                     <p>
                         <Logo className="text-[clamp(4rem,13vw,10rem)] leading-none" />
                     </p>
-                    <p className="pt-3 border-t-4 border-double border-ink italic">Just enough CRM · Early release</p>
+                    <p className="pt-3 border-t-4 border-double border-ink italic">Just enough CRM</p>
                 </header>
 
                 <div className="flex flex-wrap items-start gap-x-16 gap-y-10">

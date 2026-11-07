@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Newsreader, Young_Serif } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
+import SiteFooter from '@/components/SiteFooter'
 import { Toaster } from 'react-hot-toast'
 import { Providers } from '@/components/Providers'
 import { Analytics } from '@vercel/analytics/next'
@@ -46,6 +47,7 @@ export default function RootLayout({
                     </div>
                     <Navigation />
                     <main className="min-h-screen bg-paper">{children}</main>
+                    <SiteFooter />
                 </Providers>
                 <Analytics />
             </body>
