@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
         if (resetError) {
             console.error('Password reset error:', resetError)
             if (resetError.code === 'over_email_send_rate_limit') {
-                setError('Too many requests right now. Please try again in a little while.')
+                setError('A link was sent a moment ago. Please wait a minute before asking for another.')
             } else {
                 setError('Unable to send the email. Please try again.')
             }
