@@ -15,6 +15,10 @@ import { buttonClass, errorClass, inputClass, labelClass } from '@/lib/formStyle
  * The link carries a one-time code. Swapping it for a session signs the user in,
  * and then they can set a new password. The swap only works in the browser that asked
  * for the email, because it checks a secret saved there at that time (PKCE).
+ *
+ * The Supabase browser client does that swap by itself when it starts (detectSessionInUrl),
+ * and the app shares one client. So this page doesn't swap the code again, which would fail
+ * because codes only work once. It waits for the client to finish and checks for a session.
  */
 export default function ResetPasswordPage() {
     const [linkState, setLinkState] = useState<'checking' | 'ready' | 'invalid'>('checking')
@@ -29,25 +33,17 @@ export default function ResetPasswordPage() {
     useEffect(() => {
         const checkLink = async () => {
             const supabase = createClient()
-            const code = new URLSearchParams(window.location.search).get('code')
 
-            if (code) {
-                const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-                if (exchangeError) {
-                    console.error('Reset link error:', exchangeError)
-                    setLinkState('invalid')
-                    return
-                }
-                // Drop the used code from the address bar, so a refresh doesn't try it again
-                window.history.replaceState(null, '', '/reset-password')
-                setLinkState('ready')
-                return
-            }
-
-            // No code: only continue if the link was already used to sign in on this page
+            // getSession waits until the client has finished handling the code in the address
             const {
                 data: { session },
             } = await supabase.auth.getSession()
+
+            // The code has been used either way, so drop it from the address bar
+            if (window.location.search) {
+                window.history.replaceState(null, '', '/reset-password')
+            }
+
             setLinkState(session ? 'ready' : 'invalid')
         }
 
