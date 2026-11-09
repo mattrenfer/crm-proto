@@ -4312,7 +4312,7 @@ Same behavior as before, but the dependency list is now **complete and checked b
 
 **Trap caught while drafting: declaration order.** A dependency array is read **during render**, top to bottom. If the effect sits *above* `const fetchClientData = ...`, it reads the name before it exists and crashes with *"Cannot access 'fetchClientData' before initialization."* Before the change this was fine, because the name was only used *inside* the effect, which runs after rendering finishes. So the effect moved below the function.
 
-> **Interview version:** *"The effect called a function defined in the component, so the function had to be a dependency. A plain function is recreated every render, which would rerun the effect in a loop, so I wrapped it in `useCallback` with `[clientId]` to keep it stable unless the client changes. I couldn't move it inside the effect because the Try Again button also calls it."*
+> **In short:** *"The effect called a function defined in the component, so the function had to be a dependency. A plain function is recreated every render, which would rerun the effect in a loop, so I wrapped it in `useCallback` with `[clientId]` to keep it stable unless the client changes. I couldn't move it inside the effect because the Try Again button also calls it."*
 
 ### 7. Prettier Decisions
 - **No semicolons, single quotes, 4 spaces:** matches most of the code I'd already written.
@@ -4326,7 +4326,7 @@ Same behavior as before, but the dependency list is now **complete and checked b
 - `npm run lint` 0 warnings (was 3), `npm run typecheck` passes, `npm run format:check` passes, build clean.
 - Bundle sizes: first load 100–181 kB per route, so no optimization needed.
 
-## 🗣 How to Say It in an Interview
+## 🗣 In Short
 1. **Build-time check:** *"I validate config at build time so a missing setting fails the deploy with a clear message, instead of shipping a broken app that users discover."*
 2. **Service role key:** *"The anon key is public by design, because RLS limits it to the logged-in user's own rows. The service role key bypasses RLS, so in a `NEXT_PUBLIC_` variable it's in every visitor's browser and anyone could read everyone's data. It only belongs in server-only code, and my env check refuses to start if it's in the wrong place."*
 3. **Lint warnings:** *"An 'unused variable' warning turned out to mean the signup page never showed its error. I keep lint at zero warnings so a new one gets noticed."*
@@ -4403,7 +4403,7 @@ Checked in Central time: old code → `11/2/2026`, `formatDate` → `11/3/2026`.
 ## 🧪 Tested
 Add without a due date (both pages); add with a date and confirm the same date shows; edit to clear a date; edit to add one; **change status on a task with a due date (date stays)**. Typecheck, lint, Prettier pass. #38 will add unit tests for `emptyToNull` and `formatDate`.
 
-## 🗣 How to Say It in an Interview
+## 🗣 In Short
 > *"Empty date inputs send an empty string, which Postgres rejects for a DATE column, so I normalize empty to null in the data layer, where every form goes through it. In review I caught that my first version also turned a missing field into null, which would have erased due dates on status-only updates, so it only converts the field when the update includes it. I also fixed an off-by-one-day display: date-only strings are parsed as UTC midnight, so I build the date in local time."*
 
 ---
@@ -4493,7 +4493,7 @@ Before: user B could create a task with *their own* `user_id` but **user A's `cl
 - Rollback drill: 3 expected failures, then 12/12 after rebuild
 - Live: dry run listed only migration 2; push succeeded; same schema query matched; app checked in the browser
 
-## 🗣 How to Say It in an Interview
+## 🗣 In Short
 1. **Migrations:** *"The schema had been changed by hand in the dashboard, and my notes had drifted from what was really deployed. I inspected the live database, recorded it as a baseline migration, marked it applied, and made every change after that a reviewed migration file."*
 2. **The RLS gap:** *"RLS stopped users reading each other's data, but not referencing it. A user could attach a task to another user's client ID. I added a WITH CHECK requiring the parent client to belong to the same user, on insert and update."*
 3. **Testing:** *"I test migrations on a separate empty project, with a SQL script that acts as two users. I proved the test could catch the hole by rolling the fix back and watching those exact cases fail."*
@@ -4547,7 +4547,7 @@ Phase 3 made the waiting **visible** ("Saving...", "Deleting..."), which is the 
 
 **If adding one optimistic action:** task status changes are the natural candidate, using React 19's **`useOptimistic`** hook.
 
-## How to Say It in an Interview
+## In Short
 > *"It's server-confirmed, not optimistic: I wait for the insert, then add the row the database returns, which avoids refetching the list. I chose that because new records get their ID from the database and deletes cascade, so a rollback would be confusing. For quick, reversible actions like toggling a task's status, I'd use an optimistic update with rollback, for example with React 19's `useOptimistic`."*
 
 ---
