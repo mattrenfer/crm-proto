@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import AuthLayout from '@/components/AuthLayout'
-import { buttonClass, errorClass, inputClass, labelClass } from '@/lib/formStyles'
+import { buttonClass, errorClass, inputClass, labelClass, secondaryButtonClass } from '@/lib/formStyles'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, LoginFormData } from '@/lib/schemas'
@@ -43,6 +43,11 @@ export default function LoginPage() {
         }
 
         checkUser()
+
+        // The demo route sends visitors back here with ?demo=unavailable if it couldn't sign in
+        if (new URLSearchParams(window.location.search).get('demo') === 'unavailable') {
+            setError('The demo account is unavailable right now. Please try again later.')
+        }
     }, [])
 
     const handleSubmit = async (data: LoginFormData) => {
@@ -127,6 +132,14 @@ export default function LoginPage() {
 
                 <button type="submit" disabled={loading} className={`${buttonClass} w-full`}>
                     {loading ? 'Signing in...' : 'Sign in'}
+                </button>
+            </form>
+
+            {/* A plain form, so it works even before JavaScript loads. The server does the sign-in. */}
+            <form action="/api/demo" method="post" className="mt-8 pt-5 border-t border-ink">
+                <p>Just looking? Try it with sample clients, tasks and notes.</p>
+                <button type="submit" className={`mt-3 ${secondaryButtonClass} w-full`}>
+                    Look around with the demo account
                 </button>
             </form>
 
