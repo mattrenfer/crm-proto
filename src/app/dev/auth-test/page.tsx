@@ -19,15 +19,10 @@ import toast from 'react-hot-toast'
  * ⚠️ IMPORTANT: Add production protection in middleware.ts before deploying!
  */
 export default function DevAuthTestPage() {
-    const [email, setEmail] = useState('test@example.com')
-    const [password, setPassword] = useState('password123')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
     const [result, setResult] = useState<Record<string, unknown> | null>(null)
     const [session, setSession] = useState<Session | null>(null)
-
-    const testUsers = [
-        { email: 'mary@test.com', password: 'password123', label: 'Mary 👩' },
-        { email: 'matt@test.com', password: 'password123', label: 'Matt 👨' },
-    ]
 
     const handleSignUp = async () => {
         const supabase = createClient()
@@ -92,7 +87,7 @@ export default function DevAuthTestPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                placeholder="password123"
+                                placeholder="Password"
                             />
                         </div>
                     </div>
@@ -126,30 +121,6 @@ export default function DevAuthTestPage() {
                         >
                             Get Session
                         </button>
-                    </div>
-                </div>
-
-                {/* Quick Login Section */}
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
-                    <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-                        Quick Login (RLS Testing)
-                    </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                        Click to populate email/password, then Sign In or Sign Up
-                    </p>
-                    <div className="flex gap-3">
-                        {testUsers.map((user) => (
-                            <button
-                                key={user.email}
-                                onClick={() => {
-                                    setEmail(user.email)
-                                    setPassword(user.password)
-                                }}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-                            >
-                                {user.label}
-                            </button>
-                        ))}
                     </div>
                 </div>
 

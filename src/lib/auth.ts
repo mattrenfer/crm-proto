@@ -25,7 +25,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
  * import { signUp } from '@/lib/auth'
  *
  * async function handleSignup() {
- *   const { data, error } = await signUp('user@example.com', 'password123')
+ *   const { data, error } = await signUp('user@example.com', 'a-strong-password')
  *   if (error) {
  *     console.error('Signup failed:', error.message)
  *   } else {
@@ -58,7 +58,7 @@ export async function signUp(email: string, password: string) {
  * import { signIn } from '@/lib/auth'
  *
  * async function handleLogin() {
- *   const { data, error } = await signIn('user@example.com', 'password123')
+ *   const { data, error } = await signIn('user@example.com', 'a-strong-password')
  *   if (error) {
  *     console.error('Login failed:', error.message)
  *   } else {
