@@ -4598,6 +4598,29 @@ A **CNAME** says "this name is an alias for that one." `crm` points to Vercel, s
 
 ---
 
+# 🖐 The Shared Demo Account
+
+**Date:** November 10, 2026
+**GitHub Issue:** #48
+
+**How this was built:** I wrote the `/api/demo` route, with hints and review. I chose the starburst from mockups and decided how far to take the demo. Claude drafted the starburst, the trigger, the nightly reset and these notes.
+
+## 🔑 Key Concepts
+- **Why the sign-in runs on the server:** only `NEXT_PUBLIC_*` variables reach the browser. Giving the password that prefix would publish it, so the server holds it and hands the browser only a session.
+- **GET and POST:** GET means "show me this page." POST means "do this thing." The starburst is a form with one button and no fields, and it sends a POST.
+- **303 vs 307:** after the POST, the route redirects to the dashboard. 303 tells the browser to load the next page with a GET. 307, the default for `NextResponse.redirect`, would send the POST again.
+- **A session is enough to change a password.** The reset email only proves who you are so you can get a session. A demo visitor already has one, so `/reset-password` works for them with no email.
+- **Block it where it can't be bypassed.** Hiding the form wouldn't stop someone using the browser console. A database trigger stops every route, the same reason RLS lives in the database.
+- **`current_user` tells the two apart:** Supabase Auth connects as `supabase_auth_admin`, and the SQL editor doesn't, so the trigger refuses the app and still lets me make changes.
+
+## 🧪 How It Was Tested
+On the test project, through the real Auth service: the demo can sign in, its password change is refused, a normal user can still change theirs, the SQL editor still can, and the seed still runs.
+
+## 🗣 In Short
+*"The demo is a shared account, so I treated it as untrusted. Its data resets nightly, and a database trigger stops anyone from changing its credentials. Traffic is low, so one shared account is enough. If usage grew, I'd give each visitor a private copy with anonymous sign-ins."*
+
+---
+
 # 🔁 Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic
 
 **Added:** October 14, 2026 (a correction). Tickets 1.3 and 1.4 called this codebase's updates "optimistic." **They aren't.** A mock interview question caught it: *"Your code does `const created = await createClient(data); setClients([created, ...clients])`. Is this an optimistic update?"* **No.**
