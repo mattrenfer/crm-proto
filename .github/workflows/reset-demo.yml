@@ -1,0 +1,18 @@
+name: Reset the demo account
+
+# The demo is shared, so this puts the sample data back every night.
+# It only runs on the schedule or by hand, so code in a pull request can't reach the secret.
+on:
+    schedule:
+        - cron: '0 8 * * *'
+    workflow_dispatch:
+
+jobs:
+    reset:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Reload the sample data
+              env:
+                  DATABASE_URL: ${{ secrets.DEMO_DB_URL }}
+              run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed/demo.sql
