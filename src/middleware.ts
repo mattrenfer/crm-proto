@@ -22,6 +22,11 @@ export async function middleware(request: NextRequest) {
         return response
     }
 
+    // The demo button posts here while signed out, and the route signs the visitor in
+    if (pathname === '/api/demo') {
+        return response
+    }
+
     // Dev routes - accessible in development but blocked in production
     const isDevRoute = pathname.startsWith('/dev')
 

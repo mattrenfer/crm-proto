@@ -43,6 +43,11 @@ export default function LoginPage() {
         }
 
         checkUser()
+
+        // The demo route sends visitors back here with ?demo=unavailable if it couldn't sign in
+        if (new URLSearchParams(window.location.search).get('demo') === 'unavailable') {
+            setError('The demo account is unavailable right now. Please try again later.')
+        }
     }, [])
 
     const handleSubmit = async (data: LoginFormData) => {
@@ -79,7 +84,7 @@ export default function LoginPage() {
     }
 
     return (
-        <AuthLayout>
+        <AuthLayout showDemo>
             <h1 className="font-display text-2xl">Sign in</h1>
 
             <form className="mt-5 flex flex-col gap-5" onSubmit={handleSubmitLogin(handleSubmit)}>

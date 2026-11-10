@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react'
+import DemoSeal from '@/components/DemoSeal'
 import Logo from '@/components/Logo'
 
 /**
  * The front page for logged-out visitors: masthead, what Handful is, then the form.
  * This is where someone new meets the product, so it explains itself before asking for a password.
+ * showDemo adds the demo starburst, for the pages where someone is deciding whether to sign up.
  */
-export default function AuthLayout({ children }: { children: ReactNode }) {
+export default function AuthLayout({ children, showDemo = false }: { children: ReactNode; showDemo?: boolean }) {
     return (
         <div className="min-h-screen bg-paper text-ink text-lg px-4 sm:px-8 py-8">
             <div className="max-w-6xl mx-auto flex flex-col gap-12">
@@ -21,9 +23,16 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
                         <p className="font-display text-[clamp(2.25rem,5vw,4rem)] leading-tight tracking-tight text-balance">
                             Keep track of your clients, tasks and notes in one place.
                         </p>
-                        <p>Clients can be a handful. Your CRM shouldn&apos;t be.</p>
-                        {/* New visitors land here, so the note sits above the fold, not only in the footer */}
-                        <p className="text-base italic">Handful is an early release, and it&apos;s still growing.</p>
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0 flex flex-col gap-5">
+                                <p>Clients can be a handful. Your CRM shouldn&apos;t be.</p>
+                                {/* New visitors land here, so the note sits above the fold, not only in the footer */}
+                                <p className="text-base italic">
+                                    Handful is an early release, and it&apos;s still growing.
+                                </p>
+                            </div>
+                            {showDemo && <DemoSeal />}
+                        </div>
                     </section>
 
                     <div className="flex-[2_1_20rem] min-w-0 pt-4 border-t border-ink">{children}</div>

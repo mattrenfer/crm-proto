@@ -84,7 +84,7 @@ export default function SignUpPage() {
     }
 
     return (
-        <AuthLayout>
+        <AuthLayout showDemo>
             {checkEmail ? (
                 <>
                     <h1 className="font-display text-2xl">Check your email!</h1>
