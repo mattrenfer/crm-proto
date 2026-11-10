@@ -8,7 +8,7 @@
 
 ## Why it exists
 
-A cousin of mine worked somewhere that used two CRMs. One was simple but lacked features. The other had everything but was hard to use. Handful aims for the space between them: low tech, intuitive, and human.
+A small business was using two CRMs to manage its clients. One was simple but lacked features. The other had everything but was hard to use. Handful aims for the space between them: low tech, intuitive, and human.
 
 ## What it does
 
