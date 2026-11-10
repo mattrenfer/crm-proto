@@ -1,146 +1,82 @@
-# Simple CRM
+# Handful
 
-A Customer Relationship Management (CRM) system using modern web development with Next.js, TypeScript, Tailwind CSS, and Supabase.
+**Just enough CRM.** Most CRMs are a database you have to read. Handful is a front page that tells you who needs you today.
 
-**Author**: Matthew Russell Renfer
+**Live:** https://handful.matthewrenfer.com (early release)
 
-## Features
+![The Handful dashboard, with a client's most urgent task as the lead story](docs/images/dashboard.png)
 
--   **Client Management**: Add, view, and manage client contacts
--   **Task Management**: Create and track tasks for each client
--   **Notes**: Add notes and comments for clients
--   **Dashboard**: Overview of clients, tasks, and activities
--   **Responsive Design**: Works on desktop and mobile devices
+## Why it exists
 
-## Tech Stack
+A cousin of mine worked somewhere that used two CRMs. One was simple but lacked features. The other had everything but was hard to use. Handful aims for the space between them: low tech, intuitive, and human.
 
--   **Frontend**: Next.js 15, React 19, TypeScript
--   **Styling**: Tailwind CSS 4
--   **Database**: Supabase (PostgreSQL)
--   **Authentication**: Supabase Auth (ready to implement)
+## What it does
 
+-   **A dashboard that decides what matters.** Your most urgent task becomes the lead story, with the next few beside it.
+-   **Your people.** Each client's details, with their next task beside their name.
+-   **Notes and tasks together** on each client's page.
+-   **Plain language.** "Still on your list" instead of "Overdue."
+-   **Private by default.** Each account's data is kept separate in the database itself.
+-   **Light and dark modes**, and it works on a phone.
 
-## How This Was Built
+## How it's built
 
-See LEARNING_NOTES.md.
+| | |
+|---|---|
+| **App** | Next.js 15 (App Router), React 19, TypeScript |
+| **Styling** | Tailwind CSS 4, with color tokens for light and dark |
+| **Data and sign-in** | Supabase (Postgres and Auth) |
+| **Forms** | React Hook Form and Zod |
+| **Hosting** | Vercel, with Resend for email |
 
-## Getting Started
+-   **Row Level Security** keeps each person's data private in the database, so a bug in the interface can't expose it. `supabase/tests/rls_test.sql` checks it with two users.
+-   **The schema lives in migrations** in `supabase/migrations/`, and they're tried on a separate test project first.
+-   **Urgency is a few small pure functions** in `src/lib/tasks.ts` and `src/lib/dates.ts`.
 
-### Prerequisites
+## How this was built
 
--   Node.js 18 or later
--   A Supabase account and project
+It started as a prototype scaffolded with GitHub Copilot, and it's been built since with Claude Code. Most of the code was generated from my prompts, and I integrated and tested every change. I set the product direction and the design, and I wrote parts of it myself, including a database migration and several bug fixes. `LEARNING_NOTES.md` is my running record of what I learned along the way.
 
-### Installation
+## Running it locally
 
-1. Clone the repository:
+You'll need Node.js 20 or later, and a free [Supabase](https://supabase.com) project.
 
-    ```bash
-    git clone https://github.com/yourusername/crm-proto.git
-    cd crm-proto
-    ```
+```bash
+git clone https://github.com/mattrenfer/crm-proto.git
+cd crm-proto
+npm install
+cp .env.local.example .env.local   # then add your Supabase URL and anon key
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push --linked      # builds the database from the migrations
+npm run dev
+```
 
-2. Install dependencies:
+Then open http://localhost:3000. The database workflow is in `supabase/README.md`.
 
-    ```bash
-    npm install
-    ```
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the development server |
+| `npm run build` | Production build, with type checking |
+| `npm run lint` | Lint |
+| `npm run typecheck` | Check types |
+| `npm run format` | Format with Prettier |
 
-3. Set up your Supabase project:
-
-    - Create a new project on [Supabase](https://supabase.com)
-    - Copy your project URL and anon key
-
-4. Configure environment variables:
-
-    - Copy `.env.local` and update with your Supabase credentials:
-
-    ```env
-    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-    ```
-
-5. Set up the database:
-
-    ```bash
-    npx supabase login
-    npx supabase link --project-ref <your-project-ref>
-    npx supabase db push --linked
-    ```
-
-    This applies the migrations in `supabase/migrations/` (see `supabase/README.md`).
-
-6. Start the development server:
-
-    ```bash
-    npm run dev
-    ```
-
-7. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Database Schema
-
-The application uses three main tables:
-
--   **clients**: Store client contact information
--   **tasks**: Track tasks and their status for each client
--   **notes**: Store notes and comments about clients
-
-The schema, including Row Level Security policies, is defined by the migrations in `supabase/migrations/`.
-
-## Project Structure
+## Project layout
 
 ```
 src/
-├── app/                    # Next.js app router pages
-│   ├── clients/           # Client management pages
-│   ├── tasks/             # Task management pages
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx          # Homepage/dashboard
-├── components/            # Reusable components
-│   └── Navigation.tsx     # Main navigation
-└── lib/                   # Utility libraries
-    └── supabase.ts       # Supabase client and types
+├── app/          # Pages: dashboard, clients, tasks, sign-in
+├── components/   # Forms, navigation, layout, loading skeletons
+├── contexts/     # Session state for the interface
+├── lib/          # Data access, schemas, urgency and date logic
+└── middleware.ts # Keeps signed-out visitors on the sign-in pages
+supabase/
+├── migrations/   # The database schema, in order
+├── seed/         # Sample data for the demo account
+└── tests/        # The two-user Row Level Security test
 ```
 
-## Usage
+## What's next
 
-### Adding Clients
-
-1. Navigate to the "Clients" page
-2. Click "Add Client"
-3. Fill in the client information
-4. Click "Add Client" to save
-
-### Managing Tasks
-
-1. Go to a client's detail page
-2. Click on the "Tasks" tab
-3. Click "Add Task" to create a new task
-4. Update task status as needed
-
-### Adding Notes
-
-1. Go to a client's detail page
-2. Click on the "Notes" tab
-3. Click "Add Note" to add a new note
-
-## Next Steps
-
-This is a basic CRM implementation. You can extend it by:
-
--   Adding user authentication
--   Implementing user permissions and roles
--   Adding email integration
--   Creating reports and analytics
--   Adding file attachments
--   Implementing calendar integration
--   Adding client communication history
-
-## About This Project
-
-This started as a scaffolded prototype with GitHub Copilot and is now being developed and customized as a learning project. The goal is to build a functional CRM while exploring Next.js 15's App Router, React 19, Tailwind CSS 4, and Supabase integration.
-
-## License
-
-MIT License
+Handful is an early release. Before a 1.0, it needs search, automated tests, reminders, account deletion, data export and a privacy policy.
