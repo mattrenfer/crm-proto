@@ -1,6 +1,6 @@
 # Handful
 
-**Just enough CRM.** Most CRMs are a database you have to read. Handful is a front page that tells you who needs you today.
+**For the handful of people who count on you.** Most CRMs are a database you have to read. Handful is a front page that tells you who needs you today.
 
 **Live:** https://handful.matthewrenfer.com (early release)
 
