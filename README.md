@@ -42,8 +42,8 @@ It started as a prototype scaffolded with GitHub Copilot, and it's been built si
 You'll need Node.js 20 or later, and a free [Supabase](https://supabase.com) project.
 
 ```bash
-git clone https://github.com/mattrenfer/crm-proto.git
-cd crm-proto
+git clone https://github.com/mattrenfer/handful.git
+cd handful
 npm install
 cp .env.local.example .env.local   # then add your Supabase URL and anon key
 npx supabase login
