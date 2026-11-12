@@ -15,7 +15,7 @@ export default function AuthLayout({ children, showDemo = false }: { children: R
                     <p>
                         <Logo className="text-[clamp(4rem,13vw,10rem)] leading-none" />
                     </p>
-                    <p className="pt-3 border-t-4 border-double border-ink italic">Just enough CRM</p>
+                    <p className="pt-3 border-t-4 border-double border-ink italic">For the handful of people who count on you</p>
                 </header>
 
                 <div className="flex flex-wrap items-start gap-x-16 gap-y-10">

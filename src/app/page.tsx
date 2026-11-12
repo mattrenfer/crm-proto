@@ -27,7 +27,7 @@ export default async function HomePage() {
                 </p>
                 <div className="flex flex-wrap justify-between gap-x-8 pt-3 border-t-4 border-double border-ink italic">
                     <TodayDate />
-                    <span>Just enough CRM</span>
+                    <span>For the handful of people who count on you</span>
                 </div>
             </header>
 
