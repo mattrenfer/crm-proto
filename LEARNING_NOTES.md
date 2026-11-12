@@ -4621,6 +4621,28 @@ On the test project, through the real Auth service: the demo can sign in, its pa
 
 ---
 
+# 🧱 Launch Hardening: search_path and Length Limits
+
+**Date:** November 12, 2026
+
+**How this was built:** I planned the launch checklist with a review session. Claude drafted both migrations, the matching form limits, the tests and these notes. I reviewed them before they shipped.
+
+## 🔑 Key Concepts
+- **A fixed `search_path`:** a function without one looks up names (tables, functions) in whatever schemas the caller's session lists. If someone could put their own object earlier in that list, the function could end up calling it. `set search_path = ''` means every name has to be written in full, like `public.clients`, so nothing can be swapped in. The Security Advisor flags any function that doesn't set it.
+- **Why the body didn't change:** `update_updated_at_column()` only calls `now()`, which lives in `pg_catalog`. Postgres always searches `pg_catalog`, even with an empty `search_path`, so one `alter function` line was enough.
+- **`varchar(n)` vs `text`:** `varchar(255)` already has a limit built in. `text` has none, so `tasks.description` and `notes.content` could hold megabytes. A check constraint (`char_length(content) <= 5000`) adds the limit.
+- **Characters, not bytes:** `char_length` counts characters, so "é" counts as 1 even though it takes 2 bytes. People see a limit that matches what they typed.
+- **Two layers, same numbers:** Zod in the form gives a friendly message before anything is sent. The database constraint is the backstop for anything that skips the form, like a direct API call with the anon key. The form is for people; the database is for security.
+- **The limits must match:** if Zod allowed more than the database, people would hit a raw database error. One small mismatch remains on purpose: JavaScript counts an emoji as 2, so the form is very slightly stricter than the database, which is the safe direction.
+
+## 🧪 How It Was Tested
+On the test project: the function's search_path is empty, a note of exactly 5,000 characters saves and 5,001 is refused, 5,000 accented letters still fit, a task with no description or exactly 2,000 characters saves and 2,001 is refused, `updated_at` still updates, and the two-user RLS test still passes (12 of 12).
+
+## 🗣 In Short
+*"Before launch I closed two gaps the Security Advisor and a review found. I pinned a trigger function's search_path so its name lookups can't be hijacked, and I added length limits to the two unlimited text columns, checked in the form for a friendly message and in the database so nothing can skip them."*
+
+---
+
 # 🔁 Data Update Patterns: Refetch vs Server-Confirmed vs Optimistic
 
 **Added:** October 14, 2026 (a correction). Tickets 1.3 and 1.4 called this codebase's updates "optimistic." **They aren't.** A mock interview question caught it: *"Your code does `const created = await createClient(data); setClients([created, ...clients])`. Is this an optimistic update?"* **No.**
