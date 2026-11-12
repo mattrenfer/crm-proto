@@ -8,6 +8,8 @@ The database schema (tables, indexes, triggers, Row Level Security policies) is 
 | `migrations/20261031180837_initial_schema.sql` | Baseline: the live database as it was on 2026-10-31, known gaps included |
 | `migrations/20261031180902_tighten_rls_and_constraints.sql` | `user_id` NOT NULL, `user_id` indexes, policies for logged-in users only, tasks/notes must belong to your own client |
 | `migrations/20261110180000_protect_demo_account.sql` | Refuses password and email changes on the shared demo account |
+| `migrations/20261112190000_fix_updated_at_search_path.sql` | Fixes the `search_path` of the `updated_at` trigger function (Security Advisor) |
+| `migrations/20261112190100_limit_text_lengths.sql` | Length limits: notes 5,000 characters, task descriptions 2,000 |
 | `tests/rls_test.sql` | Two-user RLS test. **Test project only** |
 
 Two Supabase projects: **`crm-proto-test`** (throwaway, for trying migrations) and **`CRM Proto`** (live).
