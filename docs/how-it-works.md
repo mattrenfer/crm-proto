@@ -1,15 +1,15 @@
 # How It Works
 
-Each flow has a short overview first, then details for follow-up questions.
+Each flow has a short overview first, then answers to common questions. For the overall structure, see
+[architecture.md](architecture.md).
 
 ## Adding a task
 
 ### The overview
 
-> Let me walk through the request lifecycle. It's basically a round trip. It starts with a form that collects and
-> validates the input. A submit handler passes that to a data layer, which sends it down to the database. The database
-> checks it with Row Level Security and then stores it. The result comes back up to the submit handler, which then
-> updates the screen.
+Adding a task is a round trip. A form collects and validates the input. A submit handler passes it to the data layer,
+which sends it to the database. The database checks it with Row Level Security and stores it. The saved row comes back
+up to the submit handler, which updates the screen.
 
 ```
   Form          Screen
@@ -24,18 +24,18 @@ Each flow has a short overview first, then details for follow-up questions.
 | Step | Its job |
 |---|---|
 | Form | Collects and validates the input |
-| Submit handler (`addTask`) | The traffic controller: takes the form data to the data layer, then updates the UI with the result |
+| Submit handler (`addTask`) | Takes the form data to the data layer, then updates the screen with the result |
 | Data layer | Talks to Supabase |
 | Database | Checks the rules, stores the row |
 | Screen | Shows the updated list and a toast |
 
-### If they ask
+### Common questions
 
-**How do you validate?**
+**How is input validated?**
 React Hook Form holds the values and Zod checks them. If validation fails, the user sees errors right away.
 
 **Why React Hook Form instead of `useState`?**
-It keeps the form uncontrolled, so I don't manage state per field and typing doesn't re-render the whole form.
+It keeps the form uncontrolled, so there's no state per field and typing doesn't re-render the whole form.
 
 **Why doesn't the form save the task itself?**
 The form is reused, so each parent passes in its own submit handler: one for adding, one for editing, and another on the
@@ -55,12 +55,14 @@ From the signed token. The browser can change the data it sends, but it can't fa
 That the task's `user_id` matches the token, and that its client belongs to the same user.
 
 **How does the screen update?**
-The database returns the saved row with its ID, and the submit handler adds it to the list. I use the returned row because the
-list needs that ID for editing and deleting.
+The database returns the saved row with its ID, and the submit handler adds it to the list. The returned row is used
+because the list needs that ID for editing and deleting.
 
 **What if it fails?**
-The data layer throws an error, and the submit handler catches it and shows an error toast. The form stays open with the user's input.
+The data layer throws an error, and the submit handler catches it and shows an error toast. The form stays open with the
+user's input.
 
 **Is this a typical pattern?**
-Yes, it's a layered architecture. The difference is that the browser talks directly to Supabase, with no API server of
-mine in between, so the rules live in the database. Anything that needs a secret key would need a server.
+Yes, it's a layered architecture. The difference is that the browser talks directly to Supabase, with no API server in
+between, so the rules live in the database. Anything that needs a secret key runs on the server (for example, the demo
+sign-in in `src/app/api/demo/route.ts`).
