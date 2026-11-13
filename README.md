@@ -35,7 +35,9 @@ A small business was using two CRMs to manage its clients. One was simple but la
 
 ## How this was built
 
-It started as a prototype scaffolded with GitHub Copilot, and it's been built since with Claude Code. Most of the code was generated from my prompts, and I integrated and tested every change. I set the product direction and the design, and I wrote parts of it myself, including a database migration and several bug fixes. `LEARNING_NOTES.md` is my running record of what I learned along the way.
+It started as a prototype scaffolded with GitHub Copilot, and it's been built since with Claude Code. Most of the code was generated from my prompts, and I integrated and tested every change. I set the product direction and the design, and I wrote parts of it myself, including a database migration and several bug fixes.
+
+More detail: [architecture](docs/architecture.md), [design decisions](docs/design-decisions.md), and [how a request flows](docs/how-it-works.md).
 
 ## Running it locally
 
@@ -79,4 +81,4 @@ supabase/
 
 ## What's next
 
-Handful is an early release. Before a 1.0, it needs search, automated tests, reminders, account deletion, data export and a privacy policy.
+Handful is an early release. Before a 1.0, it needs search, automated tests, reminders, self-serve account deletion and data export.
