@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import AuthLayout from '@/components/AuthLayout'
 import { forgotPasswordSchema, ForgotPasswordFormData } from '@/lib/schemas'
 import { buttonClass, errorClass, inputClass, labelClass } from '@/lib/formStyles'
+import { TURNSTILE_FAILED_MESSAGE, useTurnstile } from '@/lib/useTurnstile'
 
 /**
  * Forgot password: asks for an email and sends a reset link.
@@ -18,6 +19,8 @@ import { buttonClass, errorClass, inputClass, labelClass } from '@/lib/formStyle
 export default function ForgotPasswordPage() {
     const [sentTo, setSentTo] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
+    // Supabase checks a CAPTCHA token here too, so nobody can use this form to send floods of emails
+    const turnstile = useTurnstile()
 
     const {
         register,
@@ -27,16 +30,23 @@ export default function ForgotPasswordPage() {
 
     const onSubmit = async (data: ForgotPasswordFormData) => {
         setError(null)
+        const captchaToken = await turnstile.getToken()
+        if (!captchaToken) return
+
         const supabase = createClient()
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(data.email, {
             // Must be listed under Redirect URLs in Supabase, or the link falls back to the Site URL
             redirectTo: `${window.location.origin}/reset-password`,
+            captchaToken,
         })
+        turnstile.reset() // a token works once, so get a fresh one for the next try
 
         if (resetError) {
             console.error('Password reset error:', resetError)
             if (resetError.code === 'over_email_send_rate_limit') {
                 setError('A link was sent a moment ago. Please wait a minute before asking for another.')
+            } else if (resetError.code === 'captcha_failed') {
+                setError(TURNSTILE_FAILED_MESSAGE)
             } else {
                 setError('Unable to send the email. Please try again.')
             }
@@ -84,6 +94,14 @@ export default function ForgotPasswordPage() {
                             />
                             {errors.email && <p className={errorClass}>{errors.email.message}</p>}
                         </div>
+
+                        {/* Empty while the check runs invisibly; a challenge would appear here if one were ever needed */}
+                        <div ref={turnstile.ref} />
+                        {turnstile.failed && (
+                            <p role="alert" className="text-danger">
+                                {TURNSTILE_FAILED_MESSAGE}
+                            </p>
+                        )}
 
                         <button type="submit" disabled={isSubmitting} className={`${buttonClass} w-full`}>
                             {isSubmitting ? 'Sending...' : 'Send the link'}

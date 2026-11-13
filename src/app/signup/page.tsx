@@ -8,6 +8,7 @@ import { buttonClass, errorClass, inputClass, labelClass } from '@/lib/formStyle
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { signupSchema, SignupFormData } from '@/lib/schemas'
+import { TURNSTILE_FAILED_MESSAGE, useTurnstile } from '@/lib/useTurnstile'
 
 /**
  * SignUp page - allows users to sign up with email and password.
@@ -22,6 +23,7 @@ export default function SignUpPage() {
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const [checkEmail, setCheckEmail] = useState<string | null>(null)
+    const turnstile = useTurnstile()
 
     const {
         register: registerSignup,
@@ -51,10 +53,15 @@ export default function SignUpPage() {
         setLoading(true)
 
         try {
+            // Supabase refuses a sign-up without a CAPTCHA token. If the check failed, the form already says so.
+            const captchaToken = await turnstile.getToken()
+            if (!captchaToken) return
+
             const supabase = createClient()
             const { data: signUpData, error: authError } = await supabase.auth.signUp({
                 email: data.email,
                 password: data.password,
+                options: { captchaToken },
             })
 
             if (authError) {
@@ -63,6 +70,8 @@ export default function SignUpPage() {
                     setError('Email already in use. Please use a different email.')
                 } else if (authError.code === 'over_email_send_rate_limit') {
                     setError('Too many sign-up attempts right now. Please try again in a little while.')
+                } else if (authError.code === 'captcha_failed') {
+                    setError(TURNSTILE_FAILED_MESSAGE)
                 } else {
                     setError('Unable to sign up. Please try again.')
                 }
@@ -79,6 +88,7 @@ export default function SignUpPage() {
             console.error('Sign up error:', err)
             setError('Unable to connect. Please check your internet connection.')
         } finally {
+            turnstile.reset() // a token works once, so get a fresh one for the next try
             setLoading(false)
         }
     }
@@ -157,6 +167,14 @@ export default function SignUpPage() {
                                 <p className={errorClass}>{signupErrors.confirmPassword.message}</p>
                             )}
                         </div>
+
+                        {/* Empty while the check runs invisibly; a challenge would appear here if one were ever needed */}
+                        <div ref={turnstile.ref} />
+                        {turnstile.failed && (
+                            <p role="alert" className="text-danger">
+                                {TURNSTILE_FAILED_MESSAGE} You can still try the demo.
+                            </p>
+                        )}
 
                         <button type="submit" disabled={loading} className={`${buttonClass} w-full`}>
                             {loading ? 'Creating your account...' : 'Create an account'}

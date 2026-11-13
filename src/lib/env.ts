@@ -45,11 +45,16 @@ const envSchema = z.object({
             (key) => !isSecretKey(key),
             'NEXT_PUBLIC_SUPABASE_ANON_KEY is a service role / secret key. It bypasses Row Level Security and must never be public. Use the anon (publishable) key instead.',
         ),
+    // Public by design: Cloudflare's script needs it in the browser. The secret key lives only in Supabase.
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: z
+        .string('NEXT_PUBLIC_TURNSTILE_SITE_KEY is missing. Copy the site key from Cloudflare > Turnstile.')
+        .min(1, 'NEXT_PUBLIC_TURNSTILE_SITE_KEY is empty. Copy the site key from Cloudflare > Turnstile.'),
 })
 
 const result = envSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
 })
 
 if (!result.success) {
@@ -60,4 +65,5 @@ if (!result.success) {
 export const env = {
     supabaseUrl: result.data.NEXT_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: result.data.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    turnstileSiteKey: result.data.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
 }

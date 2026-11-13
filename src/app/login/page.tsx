@@ -8,6 +8,7 @@ import { buttonClass, errorClass, inputClass, labelClass } from '@/lib/formStyle
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, LoginFormData } from '@/lib/schemas'
+import { TURNSTILE_FAILED_MESSAGE, useTurnstile } from '@/lib/useTurnstile'
 
 /**
  * Login page - allows users to sign in with email and password.
@@ -27,6 +28,9 @@ export default function LoginPage() {
     } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) })
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
+    // Sign-in needs a CAPTCHA token too: Supabase checks it on every password sign-in.
+    // The demo button doesn't use this; its server route signs in another way.
+    const turnstile = useTurnstile()
 
     // Check if user is already logged in
     useEffect(() => {
@@ -55,10 +59,14 @@ export default function LoginPage() {
         setLoading(true)
 
         try {
+            const captchaToken = await turnstile.getToken()
+            if (!captchaToken) return
+
             const supabase = createClient()
             const { error: authError } = await supabase.auth.signInWithPassword({
                 email: data.email,
                 password: data.password,
+                options: { captchaToken },
             })
 
             if (authError) {
@@ -67,6 +75,8 @@ export default function LoginPage() {
                     setError('Invalid email or password. Please try again.')
                 } else if (authError.message.includes('Email not confirmed')) {
                     setError('Please confirm your email before logging in.')
+                } else if (authError.code === 'captcha_failed') {
+                    setError(TURNSTILE_FAILED_MESSAGE)
                 } else {
                     setError('An error occurred during login. Please try again.')
                 }
@@ -79,6 +89,7 @@ export default function LoginPage() {
             console.error('Login error:', err)
             setError('Unable to connect. Please check your internet connection.')
         } finally {
+            turnstile.reset() // a token works once, so get a fresh one for the next try
             setLoading(false)
         }
     }
@@ -129,6 +140,14 @@ export default function LoginPage() {
                         </Link>
                     </p>
                 </div>
+
+                {/* Empty while the check runs invisibly; a challenge would appear here if one were ever needed */}
+                <div ref={turnstile.ref} />
+                {turnstile.failed && (
+                    <p role="alert" className="text-danger">
+                        {TURNSTILE_FAILED_MESSAGE} You can still try the demo.
+                    </p>
+                )}
 
                 <button type="submit" disabled={loading} className={`${buttonClass} w-full`}>
                     {loading ? 'Signing in...' : 'Sign in'}
