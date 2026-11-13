@@ -4621,6 +4621,33 @@ On the test project, through the real Auth service: the demo can sign in, its pa
 
 ---
 
+# 🤖 CAPTCHA with Cloudflare Turnstile
+
+**Date:** November 13, 2026
+
+**How this was built:** I chose invisible Turnstile and decided the demo must never depend on it. When Supabase turned out to require CAPTCHA on sign-in too, I picked the service role bypass for the demo (option A of three). I set up Cloudflare, Vercel and Supabase myself. Claude drafted the hook, the form changes, the reworked demo route (my original route, now signing in another way), the privacy page, the tests and these notes.
+
+## 🔑 Key Concepts
+- **How the check works:** Cloudflare's script checks the browser in the background and hands the page a **token**. The page sends the token to Supabase with the sign-up. Supabase asks Cloudflare, using the **secret key** saved in the Supabase dashboard, whether the token is real. The site key is public; the secret never touches the app.
+- **Tokens work once and expire after a few minutes.** That's why every form calls `turnstile.reset()` after each try. Otherwise a wrong password would leave the form holding a used token.
+- **Supabase can't protect sign-up alone.** Turning CAPTCHA on covers sign-up, password sign-in and password reset together. The docs don't say so; the Auth source code (`verifyCaptcha`) does. Only refreshing a session and requests made with the service role key skip it.
+- **Why not check the token ourselves on sign-up only?** A bot doesn't have to use our page. It can call Supabase's sign-up API directly with the public anon key. The check only protects anything if Supabase does it.
+- **The demo bypass:** the demo route signs in with the **service role key**, which Supabase lets past CAPTCHA. It's safe enough because the key is read only in that server route, the request contains nothing from the visitor, and it can only sign in to an account we own. The session it returns is an ordinary user session, still limited by RLS. Then `setSession` saves it into the visitor's cookies through the normal client.
+- **Why the demo must not depend on Cloudflare:** recruiters on corporate VPNs are exactly who Cloudflare is unsure about, and the demo is what they'll try first.
+- **Invisible mode needs a privacy policy** that links Cloudflare's Turnstile Privacy Addendum, a condition of using it. So Handful now has a short `/privacy` page.
+- **Fail politely:** if the script is blocked (an ad blocker, an outage) or the check fails, the form says so in plain words instead of failing silently, and points people to the demo.
+- **Order of rollout:** ship the code first (it works with CAPTCHA on or off), then switch CAPTCHA on in Supabase. Switching it off again is the rollback.
+
+## 🧪 How It Was Tested
+On the test project, with Cloudflare's published test keys (the invisible "always passes" site key and the test secret):
+- **API:** sign-up, sign-in and password reset are refused without a token; sign-up and sign-in work with one; the service role key gets past CAPTCHA, and its session works in a normal client.
+- **Browser:** the demo signs in; sign-in with the invisible token works; sign-up gets past CAPTCHA; with Cloudflare blocked, the login form shows the friendly message and the demo still works; `/privacy` loads signed out.
+
+## 🗣 In Short
+*"Sign-up, sign-in and password reset are protected by Cloudflare Turnstile in invisible mode, so people never solve a puzzle. Supabase verifies the token itself, because a check in my own code could be skipped by calling the API directly. The demo signs in from a server route with the service role key, which Supabase allows past CAPTCHA, so the demo never depends on Cloudflare."*
+
+---
+
 # 🧱 Launch Hardening: search_path and Length Limits
 
 **Date:** November 12, 2026

@@ -22,6 +22,11 @@ export async function middleware(request: NextRequest) {
         return response
     }
 
+    // Everyone can read the privacy page, signed in or not
+    if (pathname === '/privacy') {
+        return response
+    }
+
     // The demo button posts here while signed out, and the route signs the visitor in
     if (pathname === '/api/demo') {
         return response
