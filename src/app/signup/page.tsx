@@ -163,6 +163,19 @@ export default function SignUpPage() {
                         </button>
                     </form>
 
+                    {/* Said where people decide to sign up, before they type anything in */}
+                    <p className="mt-5 text-base italic">
+                        Please don&apos;t store anything sensitive while Handful is in early release. Want your account
+                        deleted?{' '}
+                        <a
+                            href="mailto:matthewrussellrenfer@gmail.com?subject=Delete%20my%20Handful%20account"
+                            className="underline underline-offset-4 hover:text-accent"
+                        >
+                            Email me
+                        </a>
+                        .
+                    </p>
+
                     <p className="mt-5">
                         Already have an account?{' '}
                         <Link href="/login" className="font-semibold underline underline-offset-4 hover:text-accent">
