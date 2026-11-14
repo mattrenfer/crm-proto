@@ -100,6 +100,8 @@ read only in `src/app/api/demo/route.ts`. See `.env.local.example`.
 
 - **Vercel** builds every push; pull requests get preview deployments.
 - **Resend** sends confirmation and reset emails from a `mail.` subdomain.
+- **Demo check:** `.github/workflows/demo-check.yml` signs in to the demo every hour, the way a visitor does, and
+  checks the dashboard shows the sample data. A failed run emails the owner.
 - **Keep-alive:** `.github/workflows/keep-alive.yml` queries the database twice a week, because free Supabase projects
   pause when idle.
 - **Vercel Analytics** counts page visits without cookies. The [privacy page](../src/app/privacy/page.tsx) lists every
